@@ -1,0 +1,954 @@
+---
+title: "soil"
+author: "Christina Alba"
+date: "September 29, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r check data and attach libraries}
+
+
+soil_forR <- read.csv("Q:\\Research\\Grants and Funding\\HighLineCanalConservancy_2019\\7_Project\\Stormwater\\Stats_in_R\\soil_forR.csv", header = TRUE, as.is = TRUE)
+
+head(soil_forR)
+str(soil_forR)
+
+library(tidyverse)
+library(ggplot2)
+library(forcats)
+library(ggpubr)
+
+```
+
+
+```{r boxplots for organic matter}
+help(boxplot)
+attach(soil_forR)
+
+boxplot(per_om)
+quantile(per_om, probs=c(0, 0.25, 0.5, 0.75, 1))
+
+boxplot(per_om ~ location)
+
+#summarize SOM
+soil_forR %>%
+  group_by(baseline, location) %>%
+  get_summary_stats(per_om, type = "mean")
+
+soil_forR %>%
+  group_by(baseline) %>%
+  get_summary_stats(per_om, type = "mean_se")
+
+max(soil_forR$per_om)
+min(soil_forR$per_om)
+
+
+#r add data points to boxplot of OM by bank location
+library(tidyverse)
+library(ggplot2)
+
+
+soil_forR %>% ggplot(aes(x=location, y=per_om)) +
+  geom_boxplot()+
+  theme_bw(base_size=16)
+
+#add data points w/o jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=per_om)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=per_om)) +
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  theme_bw(base_size=16)
+
+#change width of boxes and add axis labels with jitter
+
+soil_forR %>% ggplot(aes(x=location, y=per_om))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.10)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Bank location", y = "Soil organic matter (%)")+
+  theme_bw(base_size=16)
+
+#change width of boxes and add axis labels with NO jitter
+soil_forR %>% ggplot(aes(x=location, y=per_om))+
+  geom_boxplot(width = 0.5)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Bank location", y = "Soil organic matter (%)")+
+  theme_bw(base_size=16)
+
+
+#boxplot of OM by baseline transect with reorder function enabled and with jitter
+
+
+#soil_forR %>% ggplot(aes(x=baseline, y=per_om)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,per_om, mean), y=per_om))+ 
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Soil organic matter (%)")+
+  theme_bw(base_size=16)
+  
+  
+#boxplot of OM by baseline transect with reorder function enabled and NO jitter  
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,per_om, mean), y=per_om))+ 
+  geom_boxplot(width = 0.5)+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Soil organic matter (%)")+
+  theme_bw(base_size=16)
+
+
+#boxplot of OM by baseline with bank location by color
+
+
+#soil_forR %>% ggplot(aes(x=baseline, y=per_om, color=location)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,per_om, mean),y=per_om, color=location)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="black", fill="black")+
+  labs(x = "Transect ID", y = "Soil organic matter (%)", color = "Bank location")+
+  #xlab("Transect location")+ylab("Soil organic matter (%)")+
+  theme_bw(base_size=16)
+
+```
+
+
+```{r means with data points for SOM}
+
+#https://rpkgs.datanovia.com/ggpubr/reference/ggbarplot.html
+
+
+#summarize mean and SE of SOM
+soil_forR %>%
+  group_by(baseline) %>%
+  get_summary_stats(per_om, type = "mean_se")
+
+attach(soil_forR)
+
+#Basic bar plot of means +/- SE by bank location, points jittered
+ggbarplot(soil_forR, x = "location", y = "per_om", width = 0.5,
+          add = c("mean_se", "jitter"))
+
+#Basic bar plot of means +/- SE by bank location, points as dotplot
+ggbarplot(soil_forR, x = "location", y = "per_om", width = 0.5,
+          #sort.val = c("asc"),
+          #color = "steelblue",
+          add = c("mean_se", "dotplot"))
+
+#Basic bar plot of means +/- SE by transect, points as dotplot
+ggbarplot(soil_forR, x = "baseline", y = "per_om",
+          sort.val = c("asc"),
+          #color = "steelblue",
+          add = c("mean_se", "dotplot"))
+
+#Basic bar plot of means +/- SE by bank location and transect
+ggbarplot(soil_forR, x = "location", y = "per_om",
+          add = c("mean_se", "jitter"),
+          color = "baseline", palette = "jco",
+          position = position_dodge(0.8))
+
+#Basic bar plot of means +/- SE by transect and bank location
+ggbarplot(soil_forR, x = "baseline", y = "per_om",
+          add = c("mean_se", "jitter"),
+          color = "location", palette = "jco",
+          position = position_dodge(0.8))
+
+```
+
+
+```{r boxplots of pH}
+
+
+#summarize pH
+soil_forR %>%
+  group_by(baseline, location) %>%
+  get_summary_stats(ph, type = "mean")
+
+soil_forR %>%
+  group_by(baseline) %>%
+  get_summary_stats(ph, type = "mean_se")
+
+#boxplot of pH by bank location
+
+soil_forR %>% ggplot(aes(x=location, y=ph)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="red", fill="red")+
+  labs(x = "Bank location", y = "Soil pH")+
+  theme_bw(base_size=16)
+
+#boxplot of pH by baseline reordered by baseline
+
+#soil_forR %>% ggplot(aes(x=baseline, y=ph)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,ph, mean), y=ph))+ 
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="red", fill="red")+
+  labs(x = "Baseline Transect ID", y = "Soil pH")+
+  theme_bw(base_size=16)
+
+#add color for baseline and add means and reorder by mean
+#soil_forR %>% ggplot(aes(x=location, y=ph, color=baseline)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,ph, mean),y=ph, color=location)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="black", fill="black")+
+  labs(x = "Baseline Transect ID", y = "pH", color = "Bank location")+
+  theme_bw(base_size=16)
+
+```
+
+
+
+
+```{r boxplots of nitrate}
+
+attach(soil_forR)
+
+#add data points w/o jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=no3_n)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=no3_n)) +
+  geom_boxplot()+
+  geom_jitter()+
+  labs(x = "Bank location", y = "Nitrate nitrogen (NO3-N)")+
+  theme_bw(base_size=16)
+
+#change width of boxes for bank location and add means
+
+soil_forR %>% ggplot(aes(x=location, y=no3_n)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Bank location", y = "Nitrate nitrogen (NO3-N) in ppm")+
+  theme_bw(base_size=16)
+
+#add data points w/o jitter for baseline
+soil_forR %>% ggplot(aes(x=baseline, y=no3_n)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for baseline
+
+soil_forR %>% ggplot(aes(x=baseline, y=no3_n)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change box width
+
+#soil_forR %>% ggplot(aes(x=baseline, y=no3_n)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,no3_n, mean), y=no3_n))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Nitrate nitrogen (NO3-N) in ppm")+
+  theme_bw(base_size=16)
+
+#add color for bank location
+
+#soil_forR %>% ggplot(aes(x=baseline, y=no3_n, color=location)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,no3_n, mean),y=no3_n, color=location)) +
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="black", fill="black")+
+  labs(x = "Transect ID", y = "Nitrate nitrogen (NO3-N) in ppm", color = "Bank location")+
+  theme_bw(base_size=16)
+
+```
+
+
+
+
+```{r boxplots of ec as proxy for salinity}
+
+#summarize EC
+soil_forR %>%
+  group_by(baseline) %>%
+  get_summary_stats(ec, type = "mean_se")
+
+soil_forR %>%
+  group_by(baseline) %>%
+  get_summary_stats(ec, type = "mean_se")
+
+max(soil_forR$ec)
+min(soil_forR$ec)
+
+#add data points w/o jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=ec)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=ec)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change width of boxes for bank location, add labels and means
+
+soil_forR %>% ggplot(aes(x=location, y=ec)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Bank location", y = "Electrical conductivity (mmhos/cm)")+
+  theme_bw(base_size=16)
+
+#add data points w/o jitter for baseline
+soil_forR %>% ggplot(aes(x=baseline, y=ec)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for baseline
+
+soil_forR %>% ggplot(aes(x=baseline, y=ec)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change box width, add labels and means and reorder by mean
+
+#soil_forR %>% ggplot(aes(x=baseline, y=ec)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline, ec, mean), y=ec))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="red", fill="red")+
+  labs(x = "Baseline Transect ID", y = "Electrical conductivity (mmhos/cm)")+
+  theme_bw(base_size=16)
+
+#add color for bank location
+
+#soil_forR %>% ggplot(aes(x=baseline, y=ec, color=location)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline, ec, mean), y=ec, color=location))+
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="black", fill="black")+
+  labs(x = "Baseline Transect ID", y = "Electrical conductivity (mmhos/cm)", color = "Bank location")+
+  theme_bw(base_size=16)
+
+```
+
+
+```{r boxplots of P}
+
+attach(soil_forR)
+library(tidyverse)
+library(ggplot2)
+
+#add data points w/o jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=p)) +
+  geom_boxplot()+
+  geom_point()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  theme_bw(base_size=16)
+
+#add data points with jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=p)) +
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  theme_bw(base_size=16)
+
+#change width of boxes for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=p)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Bank location", y = "Phosphorous in ppm")+
+  theme_bw(base_size=16)
+
+#add data points w/o jitter for baseline
+soil_forR %>% ggplot(aes(x=baseline, y=p)) +
+  geom_boxplot()+
+  geom_point()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Phosphorous in ppm")+
+  theme_bw(base_size=16)
+
+#add data points with jitter for baseline
+
+soil_forR %>% ggplot(aes(x=baseline, y=p)) +
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Phosphorous in ppm")+
+  theme_bw(base_size=16)
+
+#change box width, add labels and means and reorder means
+
+#soil_forR %>% ggplot(aes(x=baseline, y=p)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline, p, mean), y=p))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Phosphorous in ppm")+
+  theme_bw(base_size=16)
+
+#add color for bank location
+
+#soil_forR %>% ggplot(aes(x=baseline, y=p, color=location)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline, p, mean), y=p, color=location))+
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="black", fill="black")+
+  labs(x = "Transect ID", y = "Phosphorous in ppm", color = "Bank location")+
+  theme_bw(base_size=16)
+
+```
+
+```{r boxplots of K}
+
+attach(soil_forR)
+library(tidyverse)
+library(ggplot2)
+
+#add data points w/o jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=k)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=k)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change width of boxes for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=k)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Potassium in ppm")+
+  theme_bw(base_size=16)
+
+#add data points w/o jitter for baseline
+soil_forR %>% ggplot(aes(x=baseline, y=k)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for baseline
+
+soil_forR %>% ggplot(aes(x=baseline, y=k)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change box width add labels and means and reorder means
+
+soil_forR %>% ggplot(aes(x=fct_reorder(baseline, k, mean), y=k))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Potassium in ppm")+
+  theme_bw(base_size=16)
+
+#add color for bank location
+
+#soil_forR %>% ggplot(aes(x=baseline, y=k, color=location)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline, k, mean), y=k, color=location))+
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="black", fill="black")+
+  labs(x = "Transect ID", y = "Potassium in ppm", color = "Bank location")+
+  theme_bw(base_size=16)
+```
+
+```{r boxplots of zn}
+
+#add data points w/o jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=zn)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=zn)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change width of boxes for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=zn)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Zinc in ppm")+
+  theme_bw(base_size=16)
+
+#add data points w/o jitter for baseline
+soil_forR %>% ggplot(aes(x=baseline, y=zn)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for baseline
+
+soil_forR %>% ggplot(aes(x=baseline, y=zn)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change box width add labels and means and reorder means
+
+soil_forR %>% ggplot(aes(x=fct_reorder(baseline, zn, mean), y=zn))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Zinc in ppm")+
+  theme_bw(base_size=16)
+
+#add color for bank location
+
+#soil_forR %>% ggplot(aes(x=baseline, y=zn, color=location)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline, zn, mean), y=zn, color=location))+
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="black", fill="black")+
+  labs(x = "Transect ID", y = "Zinc in ppm", color = "Bank location")+
+  theme_bw(base_size=16)
+  
+```
+
+```{r boxplots of fe}
+#add data points w/o jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=fe)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=fe)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change width of boxes for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=fe)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Iron in ppm")+
+  theme_bw(base_size=16)
+
+#add data points w/o jitter for baseline
+soil_forR %>% ggplot(aes(x=baseline, y=fe)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for baseline
+
+soil_forR %>% ggplot(aes(x=baseline, y=fe)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change box width add labels and means and reorder means
+
+soil_forR %>% ggplot(aes(x=fct_reorder(baseline, fe, mean), y=fe))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Iron in ppm")+
+  theme_bw(base_size=16)
+
+#add color for bank location
+
+#soil_forR %>% ggplot(aes(x=baseline, y=fe, color=location)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline, fe, mean), y=fe, color=location))+
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="black", fill="black")+
+  labs(x = "Transect ID", y = "Iron in ppm", color = "Bank location")+
+  theme_bw(base_size=16)
+```
+
+
+```{r boxplots of magnesium}
+#add data points w/o jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=mn)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=mn)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change width of boxes for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=mn)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Magnesium in ppm")+
+  theme_bw(base_size=16)
+
+#add data points w/o jitter for baseline
+soil_forR %>% ggplot(aes(x=baseline, y=mn)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for baseline
+
+soil_forR %>% ggplot(aes(x=baseline, y=mn)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change box width add labels and means and reorder means
+
+soil_forR %>% ggplot(aes(x=fct_reorder(baseline, mn, mean), y=mn))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Magnesium in ppm")+
+  theme_bw(base_size=16)
+
+#add color for bank location
+
+#soil_forR %>% ggplot(aes(x=baseline, y=mn, color=location)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline, mn, mean), y=mn, color=location))+
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="black", fill="black")+
+  labs(x = "Transect ID", y = "Magnesium in ppm", color = "Bank location")+
+  theme_bw(base_size=16)
+
+```
+
+
+```{r boxplots of copper}
+
+#add data points w/o jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=cu)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=cu)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change width of boxes for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=cu)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Copper in ppm")+
+  theme_bw(base_size=16)
+
+#add data points w/o jitter for baseline
+soil_forR %>% ggplot(aes(x=baseline, y=cu)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for baseline
+
+soil_forR %>% ggplot(aes(x=baseline, y=cu)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change box width add labels and means and reorder means
+
+soil_forR %>% ggplot(aes(x=fct_reorder(baseline, cu, mean), y=cu))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Copper in ppm")+
+  theme_bw(base_size=16)
+
+#add color for bank location
+
+#soil_forR %>% ggplot(aes(x=baseline, y=cu, color=location)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline, cu, mean), y=cu, color=location))+
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="black", fill="black")+
+  labs(x = "Transect ID", y = "Copper in ppm", color = "Bank location")+
+  theme_bw(base_size=16)
+
+```
+
+
+```{r boxplots of bulk density}
+
+#add data points w/o jitter for bank location
+
+#summarize mean and SE of bulk density
+soil_forR %>%
+  group_by(baseline) %>%
+  get_summary_stats(bulkden, type = "mean_se")
+
+soil_forR %>% ggplot(aes(x=location, y=bulkden)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+max(soil_forR$bulkden)
+min(soil_forR$bulkden)
+
+#add data points with jitter for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=bulkden)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change width of boxes for bank location
+
+soil_forR %>% ggplot(aes(x=location, y=bulkden)) +
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Bulk Density ")+
+  theme_bw(base_size=16)
+
+#add data points w/o jitter for baseline
+soil_forR %>% ggplot(aes(x=baseline, y=bulkden)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#add data points with jitter for baseline
+
+soil_forR %>% ggplot(aes(x=baseline, y=bulkden)) +
+  geom_boxplot()+
+  geom_jitter()+
+  theme_bw(base_size=16)
+
+#change box width add labels and means and reorder means
+
+soil_forR %>% ggplot(aes(x=fct_reorder(baseline, bulkden, mean), y=bulkden))+
+  geom_boxplot(width = 0.5)+
+  geom_jitter(alpha = 0.6, width = 0.15)+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Bulk density")+
+  theme_bw(base_size=16)
+
+#change box width add labels and means and reorder means, point not jittered
+
+soil_forR %>% ggplot(aes(x=fct_reorder(baseline, bulkden, mean), y=bulkden))+
+  geom_boxplot(width = 0.5)+
+  geom_point()+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="red", fill="red")+
+  labs(x = "Transect ID", y = "Bulk density")+
+  theme_bw(base_size=16)
+
+#add color for bank location
+
+#soil_forR %>% ggplot(aes(x=baseline, y=bulkden, color=location)) +
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline, bulkden, mean), y=bulkden, color=location))+
+  geom_boxplot()+
+  geom_jitter()+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="black", fill="black")+
+  labs(x = "Transect ID", y = "Bulk density", color = "Bank location")+
+  theme_bw(base_size=16)
+
+```
+
+
+```{r regressions/correlations percent OM against macronutrients}
+
+attach(soil_forR)
+library(ggpubr)
+
+#scatter.smooth(x=ph, y=ec, main="ph ~ ec")
+#scatter.smooth(x=ph, y=p, main="ph ~ p")
+#scatter.smooth(x=ph, y=no3_n, main="ph ~ no3_n")
+#scatter.smooth(x=no3_n, y=p, main="no3_n ~ p")
+
+#percent SOM against nutrients by bank location
+
+ggscatter(soil_forR, x ="per_om", y = "p", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "Percent organic matter", ylab = "Phosphorous",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "Percent organic matter", ylab = "Phosphorous")
+
+#percent SOM against no3_n by bank location
+ggscatter(soil_forR, x ="per_om", y = "no3_n", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "Percent organic matter", ylab = "Nitrate-nitrogen",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "Percent organic matter", ylab = "Nitrate-nitrogen")
+
+#percent SOM against potassium by bank location
+
+ggscatter(soil_forR, x ="per_om", y = "k", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "Percent organic matter", ylab = "Potassium",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "Percent organic matter", ylab = "Potassium")
+
+```
+
+
+```{r regressions/correlations soil nutrients against each other}
+
+#nitrate-nitrogen against phosphorous by bank location
+
+ggscatter(soil_forR, x ="no3_n", y = "p", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "Nitrate-nitrogen", ylab = "Phosphorous",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "Nitrate-nitrogen", ylab = "Phosphorous")
+
+#nitrate-nitrogen against potassium by bank location
+
+ggscatter(soil_forR, x ="no3_n", y = "k", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "Nitrate-nitrogen", ylab = "Potassium",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "Nitrate-nitrogen", ylab = "Potassium")
+
+#Phosphorous against potassium by bank location
+
+ggscatter(soil_forR, x ="p", y = "k", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "Phosphorous", ylab = "Potassium",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "Phosphorous", ylab = "Potassium")
+```
+
+```{r regresssions/correlations texture other stuff}
+
+#Macronutrients against sand fraction by bank location
+
+ggscatter(soil_forR, x ="per_sand", y = "p", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "Percent sand", ylab = "Phosphorus",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "Percent sand", ylab = "Phosphorus")
+
+ggscatter(soil_forR, x ="per_sand", y = "no3_n", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "Percent sand", ylab = "Nitrate-nitrogen",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "Percent sand", ylab = "Nitrate-nitrogen")
+
+ggscatter(soil_forR, x ="per_sand", y = "k", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "Percent sand", ylab = "Potassium",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "Percent sand", ylab = "Potassium")
+```
+
+
+```{r SOM against texture fractions}
+
+#SOM against percent sand
+
+ggscatter(soil_forR, x ="per_sand", y = "per_om", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "Percent sand", ylab = "Percent organic matter",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "Percent sand", ylab = "Percent organic matter")
+
+
+```
+
+```{r regressions/correlations pH other stuff}
+
+#pH against SOM by bank location with reg line and CIs added
+
+ggscatter(soil_forR, x ="ph", y = "per_om", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "pH", ylab = "Percent organic matter",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "pH", ylab = "Percent organic matter")
+
+#pH against nitrate-nitrogen by bank location with reg line and CIs added
+
+ggscatter(soil_forR, x ="ph", y = "no3_n", na.rm = TRUE,
+          #xlim = c(25,35), ylim = c(0,20),
+          xlab = "pH", ylab = "Nitrate-nitrogen",
+          add = "reg.line", conf.int = TRUE, color = "location",
+          pallete = "jco", shape = "location")+
+          #cor.coef = TRUE, cor.method = "pearson",
+          stat_cor(aes(color = location, label.x = 3))
+          #xlab = "pH", ylab = "Nitrate-nitrogen")
+```
+
+
