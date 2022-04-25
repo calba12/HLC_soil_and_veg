@@ -1,0 +1,162 @@
+---
+title: "HLC_Veg_Analysis"
+author: "Christina Alba"
+date: "1/14/2022"
+output: html_document
+---
+
+```{r libraries, bring in file, some cleaning}
+
+library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(ggpubr); library(rstatix);library(writexl);
+library(ggformula); library(tidyr)
+
+#Bring in raw data file
+veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
+
+head(veg)
+str(veg)
+
+View(veg)
+
+#change sample bout to a factor
+
+tibble::glimpse(veg)
+veg <- veg %>%
+  mutate(sample.bout = as.factor(sample.bout))%>%
+  mutate(baseline.rep = as.factor(baseline.rep))
+
+str(veg)
+
+## Remove zero from Hit.Number
+
+veg <- veg[veg$Hit.Number != "0",]
+View(veg)
+
+#Rename unwieldly columns; remove unwanted columns
+vegdf <- veg %>% select(-Number.of.Points.Along.Transect_fromRick) %>%
+rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc)
+
+head(vegdf)
+View(vegdf)
+
+
+```
+
+
+```{r count hits at each level of organization: canal, baseline, transect}
+
+#Summing number of hits at each level of organization (whole canal, baselines, transects)
+
+#Whole-canal level: number of species hits by sample bout and hit number, includes foliar and ground first hits
+df.canal <- vegdf %>% 
+  group_by(sample.bout, Hit.Number) %>%
+  summarise(Species.Hit = n()) 
+
+View(df.canal)
+write_xlsx(df.canal, 'hits_byCanal.xlsx')
+
+#Baseline level: number of species hits by sample bout and hit number, includes foliar and ground first hits
+df.baseline <- vegdf %>% 
+  group_by(sample.bout, baseline, Hit.Number) %>%
+  summarise(Species.Hit = n()) 
+
+View(df.baseline)
+
+write_xlsx(df.baseline, 'hits_byBaseline.xlsx')
+
+#Transect level: number of species hits by sample bout and hit number, includes foliar and ground first hits
+
+df.transect <- vegdf %>% 
+  group_by(sample.bout, baseline, baseline.rep, Hit.Number) %>%
+  summarise(Species.Hit = n()) 
+
+View(df.transect)
+
+write_xlsx(df.transect, 'hits_byTransect.xlsx')
+
+```
+
+
+```{r species and ground hit proportions at each scale of organization}
+
+
+#Foliar hits only
+#Group species counts by sample bout, hit number, transect, etc.
+#Use summarise to count hits by species, drop NA's
+
+
+veg_only_transect <- vegdf %>%
+  group_by(sample.bout, Hit.Number, Transect, Num_transect_points, Bank_Location, FunctionalGroup, Nativity, WIS, Species.Hit) %>%
+  summarise(Species = n()) %>%
+  drop_na()
+
+head(veg_only_transect)
+View(veg_only_transect)
+
+#Foliar hits only
+#summarize species proportions at scale of whole canal, includes all sample bouts and hits
+#Used sum(prop_species$Freq) code to count 1909 total hits across whole canal
+
+prop_species_canal <- veg_only_transect %>%
+  group_by(Species.Hit) %>%
+  summarise(Freq = sum(Species)) %>%
+  mutate(prop = Freq/1909)
+  
+View(prop_species_canal)
+
+sum(prop_species_canal$Freq)
+
+#Foliar hits only
+#Now group by bank location, includes all sample bouts and hits
+
+prop_bank <- veg_only_transect %>%
+  group_by(Bank_Location) %>%
+  summarise(Freq = sum(Species))
+
+View(prop_bank)
+
+sum(prop_bank$Freq)
+
+#Foliar hits only
+#Now group by bank location and species, includes all sample bouts and hits
+
+prop_species_bank <- veg_only_transect %>%
+  group_by(Species.Hit, Bank_Location) %>%
+  summarise(Freq = sum(Species))
+
+View(prop_species_bank)
+
+#Distinct species presence by bank location
+
+distinct_species_bank <- prop_species_bank %>%
+  distinct(Bank_Location)%>%
+  arrange(desc(Bank_Location))
+
+View(distinct_species_bank)
+
+
+#Ground hits only
+#Group species counts by sample bout, hit number, transect, etc.
+#Use summarise to count hits by species, drop NA's
+
+ground_only_transect <- vegdf %>%
+  group_by(sample.bout, Hit.Number, baseline, Transect, Num_transect_points, Transect.Point.Soil.Surface) %>%
+  summarise(Ground = n()) %>%eq
+  drop_na()
+
+head(ground_only_transect)
+View(ground_only_transect)
+
+#summarize ground hit proportions at scale of whole canal, includes all sample bouts and hits
+#Used sum(prop_ground$Freq) code to count 4664 total hits
+
+prop_ground <- ground_only_transect %>%
+  group_by(Transect.Point.Soil.Surface) %>%
+  summarise(Freq = sum(Ground)) %>%
+  mutate(prop = Freq/4664)
+  
+View(prop_ground)
+
+sum(prop_ground$Freq)
+
+```
