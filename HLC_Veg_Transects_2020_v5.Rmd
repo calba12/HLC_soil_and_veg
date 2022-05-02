@@ -84,12 +84,14 @@ write_xlsx(df.transect, 'hits_byTransect.xlsx')
 #Use summarise to count hits by species, drop NA's
 
 veg_only_transect <- vegdf %>%
-  group_by(sample.bout, Hit.Number, Transect, Num_transect_points, Bank_Location, FunctionalGroup, Nativity, WIS, Species.Hit) %>%
+  group_by(sample.bout, Hit.Number, baseline, Transect, Num_transect_points, Bank_Location, FunctionalGroup, Nativity, Cvalue, WIS, Species.Hit) %>%
   summarise(Species = n()) %>%
   drop_na()
 
 head(veg_only_transect)
 View(veg_only_transect)
+
+#This has both sample bouts
 
 write_xlsx(veg_only_transect, 'Species_counts.xlsx')
 
@@ -144,12 +146,16 @@ View(distinct_species_bank)
 #Use summarise to count hits by species, drop NA's
 
 ground_only_transect <- vegdf %>%
-  group_by(sample.bout, Hit.Number, baseline, Transect, Num_transect_points, Transect.Point.Soil.Surface) %>%
-  summarise(Ground = n()) %>%eq
+  group_by(sample.bout, Hit.Number, Bank_Location, baseline, Transect, Num_transect_points, Transect.Point.Soil.Surface) %>%
+  summarise(Ground = n()) %>%
   drop_na()
 
 head(ground_only_transect)
 View(ground_only_transect)
+
+write_xlsx(ground_only_transect, 'Ground_counts.xlsx')
+
+getwd()
 
 #summarize ground hit proportions at scale of whole canal, includes all sample bouts and hits
 #Used sum(prop_ground$Freq) code to count 4664 total hits
