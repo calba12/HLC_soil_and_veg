@@ -8,8 +8,7 @@ output: html_document
 
 ```{r libraries, bring in file, some cleaning}
 
-library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(ggpubr); library(rstatix);library(writexl);
-library(ggformula); library(tidyr)
+library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2)
 
 #Bring in raw data file
 veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
@@ -78,13 +77,11 @@ write_xlsx(df.transect, 'hits_byTransect.xlsx')
 ```
 
 
-```{r species and ground hit proportions at each scale of organization}
-
+```{r species hits exploration}
 
 #Foliar hits only
 #Group species counts by sample bout, hit number, transect, etc.
 #Use summarise to count hits by species, drop NA's
-
 
 veg_only_transect <- vegdf %>%
   group_by(sample.bout, Hit.Number, Transect, Num_transect_points, Bank_Location, FunctionalGroup, Nativity, WIS, Species.Hit) %>%
@@ -94,7 +91,7 @@ veg_only_transect <- vegdf %>%
 head(veg_only_transect)
 View(veg_only_transect)
 
-
+write_xlsx(veg_only_transect, 'Species_counts.xlsx')
 
 #Foliar hits only
 #summarize species proportions at scale of whole canal, includes all sample bouts and hits
@@ -137,6 +134,10 @@ distinct_species_bank <- prop_species_bank %>%
 
 View(distinct_species_bank)
 
+```
+
+
+```{r ground hits exploration}
 
 #Ground hits only
 #Group species counts by sample bout, hit number, transect, etc.
@@ -161,5 +162,49 @@ prop_ground <- ground_only_transect %>%
 View(prop_ground)
 
 sum(prop_ground$Freq)
+
+```
+
+
+```{r graph WIS}
+
+WIS_baseline <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/WIS_baseline_upload.csv")
+
+str(WIS_baseline)
+View(WIS_baseline)
+
+#Remove unwanted columns and change to long format
+
+WIS_baseline <- select(WIS_baseline, -Total.Hits, - UPL, -FACU, -FAC, -FACW, -OBL)
+
+WIS_baseline_long <- melt(WIS_baseline, id.vars = c("Baseline","Transect"))
+
+View(WIS_baseline_long)
+
+#add data points w/o jitter 
+#Facet by WIS type
+
+WIS_baseline_long %>% ggplot(aes(x=Baseline, y=value)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)+
+  facet_wrap(~variable)
+
+#add data points w/o jitter
+#Facet by Baseline
+
+WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)+
+  facet_wrap(~Baseline)
+
+#add data points w/o jitter
+#No facet by baseline; includes all 45 transects
+
+WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
 
 ```
