@@ -200,7 +200,7 @@ WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
   facet_wrap(~Baseline)
 
 #add data points w/o jitter
-#No facet by baseline; includes all 45 transects
+#Not faceted by baseline; includes all 45 transects
 
 WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
   geom_boxplot()+
