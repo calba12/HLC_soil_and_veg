@@ -13,6 +13,8 @@ library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2)
 #Bring in raw data file
 veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
 
+#Check: do we need to add Alissa's home computer location to bring in raw data file
+
 head(veg)
 str(veg)
 
@@ -20,7 +22,6 @@ View(veg)
 
 #change sample bout to a factor
 
-tibble::glimpse(veg)
 veg <- veg %>%
   mutate(sample.bout = as.factor(sample.bout))%>%
   mutate(baseline.rep = as.factor(baseline.rep))
@@ -91,7 +92,7 @@ veg_only_transect <- vegdf %>%
 head(veg_only_transect)
 View(veg_only_transect)
 
-#This has both sample bouts
+#The Excel file exported below has both sample bouts
 
 write_xlsx(veg_only_transect, 'Species_counts.xlsx')
 
@@ -172,7 +173,7 @@ sum(prop_ground$Freq)
 ```
 
 
-```{r graph WIS}
+```{r graph WIS by baseline}
 
 WIS_baseline <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/WIS_baseline_upload.csv")
 
@@ -207,10 +208,67 @@ WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
 
 #add data points w/o jitter
 #Not faceted by baseline; includes all 45 transects
+#Need to figure out how to plot only the 9 baselines, not all 45 transects
 
 WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
   geom_boxplot()+
   geom_point()+
   theme_bw(base_size=16)
+
+```
+
+
+```{r graph WIS by bank location}
+
+#This csv contains only first sampling bout and first hits
+
+WIS_bankLoc <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/WIS_byBankLoc_Upload.csv")
+
+str(WIS_bankLoc)
+View(WIS_bankLoc)
+
+#Remove unwanted columns and change to long format
+
+WIS_bankLoc <- select(WIS_bankLoc, -Total.Hits, -Hits.by.Loc, - UPL, -FACU, -FAC, -FACW, -OBL)
+
+WIS_bankLoc_long <- melt(WIS_bankLoc, id.vars = c("Baseline","Transect", "Location"))
+
+View(WIS_bankLoc_long)
+
+ 
+#add data points w/o jitter for bank location
+#change width of boxes and add axis labels 
+
+p <- WIS_bankLoc_long %>% ggplot(aes(x=variable, y=value))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Wetland Indicator Status", y = "Proportion")+
+  theme_bw(base_size = 16)
+print(p)
+
+p + facet_wrap(~Location)
+
+#Need to get the means of each baseline
+#The above currently graphs all 45 transects
+
+df_WIS_baseline_means <- WIS_bankLoc_long %>%
+  group_by(Baseline, Location, variable) %>%
+  dplyr::summarise(Mean = mean(value))
+
+View(df_WIS_baseline_means)
+
+#Now create new boxplot with baseline means
+
+p <- df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Wetland Indicator Status", y = "Proportion")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)
+print(p)
+
+p + facet_wrap(~Location)
 
 ```
