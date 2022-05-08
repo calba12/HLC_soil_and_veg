@@ -99,21 +99,80 @@ write_xlsx(veg_only_transect, 'Species_counts.xlsx')
 #Foliar hits only
 #summarize species proportions at scale of whole canal, includes all sample bouts and hits
 #Used sum(prop_species$Freq) code to count 1909 total hits across whole canal
+#Use to determine which species have at least 1% cover
+#To see all species, remove the filter statement
 
 prop_species_canal <- veg_only_transect %>%
   group_by(Species.Hit) %>%
   summarise(Freq = sum(Species)) %>%
-  mutate(prop = Freq/1909)
+  mutate(prop = Freq/1909) %>%
+  filter(prop > 0.0099) %>%
+  arrange(desc(prop))
   
 View(prop_species_canal)
 
 sum(prop_species_canal$Freq)
 
+#Now filter out species with 1% as shown from the above
+
+Common_species_canal <- veg_only_transect %>%
+  group_by(baseline) %>%
+  filter(Species.Hit == "Bromus inermis"| Species.Hit == "Phalaris arundinacea" | Species.Hit == "Elymus repens"
+         | Species.Hit == "Convolvulus arvensis" | Species.Hit == "Cirsium arvense" | Species.Hit == "Dactylis glomerata"
+         | Species.Hit == "	Carex emoryi" | Species.Hit == "Rhamnus cathartica" | Species.Hit == "Symphyotrichum lanceolatum ssp. hesperium"
+         | Species.Hit == "Taraxacum officinale" | Species.Hit == "Schedonorus arundinaceus" | Species.Hit == "Symphoricarpos occidentalis"
+         | Species.Hit == "Salix exigua ssp. exigua" | Species.Hit == "Medicago sativa" | Species.Hit == "Typha angustifolia"
+         | Species.Hit == "Ulmus pumila" | Species.Hit == "Bromus tectorum") 
+  
+  
+View(Common_species_canal)
+
+#The Excel file exported below has both sample bouts
+
+write_xlsx(Common_species_canal, 'Common_species_counts.xlsx')
+
+
+#Same as above but look at only first sample bout 
+
+veg_only_transect_firstOnly <- filter(veg_only_transect, sample.bout == "1")
+View(veg_only_transect_firstOnly)
+
+
+prop_species_canal_firstOnly <- veg_only_transect_firstOnly %>%
+  group_by(Species.Hit) %>%
+  summarise(Freq = sum(Species)) %>%
+  mutate(prop = Freq/631) %>%
+  filter(prop > 0.0099) %>%
+  arrange(desc(prop))
+
+View(prop_species_canal_firstOnly)
+
+sum(prop_species_canal_firstOnly$Species)
+
+
+#Same as above but look at only second sample bout 
+
+veg_only_transect_secondOnly <- filter(veg_only_transect, sample.bout == "2")
+View(veg_only_transect_secondOnly)
+
+
+prop_species_canal_secondOnly <- veg_only_transect_secondOnly %>%
+  group_by(Species.Hit) %>%
+  summarise(Freq = sum(Species)) %>%
+  mutate(prop = Freq/1052) %>%
+  filter(prop > 0.0099) %>%
+  arrange(desc(prop))
+
+View(prop_species_canal_secondOnly)
+
+sum(veg_only_transect_secondOnly$Species)
+
+
 #Foliar hits only
-#Now group by bank location, includes all sample bouts and hits
+#Use most common species determined above and group by bank location and baseline, includes all sample bouts and hits
 
 prop_bank <- veg_only_transect %>%
-  group_by(Bank_Location) %>%
+  group_by(Species.Hit, Bank_Location) %>%
   summarise(Freq = sum(Species))
 
 View(prop_bank)
@@ -335,6 +394,98 @@ df_NatIntro_baseline_means %>% ggplot(aes(x=Location, y=Mean))+
   theme_bw(base_size = 16)
 
 
+
+
+```
+
+
+```{r graph common species}
+
+#This csv contains both sampling bouts
+
+Common_species <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/Common_species_props_upload.csv")
+
+str(Common_species)
+View(Common_species)
+
+#Remove unwanted columns and change to long format
+
+Common_species <- select(Common_species, -Total.Hits, -Hit.by.loc)
+
+Common_species_long <- melt(Common_species, id.vars = c("Baseline","Transect", "Location"))
+
+View(Common_species_long)
+
+
+Common_species_long %>% ggplot(aes(x=variable, y=value))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  theme_bw(base_size = 16)
+
+#Need to get the means of each baseline
+#The above code currently graphs all 45 transects
+
+df_commonSpp_baseline_means <- Common_species_long %>%
+  group_by(Baseline, variable) %>%
+  dplyr::summarise(Mean = mean(value))
+
+View(df_commonSpp_baseline_means)
+
+
+#Now create new boxplot with baseline means
+
+df_commonSpp_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+
+
+#Now get the means of each species by bank location
+
+df_commonSpp_bankLoc_means <- Common_species_long %>%
+  group_by(Baseline, Location, variable) %>%
+  dplyr::summarise(Mean = mean(value))
+
+View(df_commonSpp_bankLoc_means)
+
+#Now create new boxplot with baseline means by bank location
+
+p <- df_commonSpp_bankLoc_means %>% ggplot(aes(x=variable, y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+p + facet_wrap(~Location)
+
+
+#Add code that reorders from highest to lowest cover
+#Not working yet, don't know why
+
+p <- df_commonSpp_bankLoc_means %>% ggplot(aes(x=fct_reorder(variable,Mean,mean), y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+p + facet_wrap(~Location)
 
 
 ```
