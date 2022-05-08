@@ -121,10 +121,19 @@ View(prop_bank)
 sum(prop_bank$Freq)
 
 #Foliar hits only
-#Now group by bank location and species, includes all sample bouts and hits
+#Use the code below to create a data set where we have a list
+#of each species that occurs in the upper/middle/lower banks
+#Then can look at the proportion of native and intro species present that are 
+#grouped into the various functional/WIS groups #Thinking we will find
+#that native/intro differently distributed across the bank gradient and
+#native/intro do different "jobs" based on their functional group and WIS
+#Maybe use a percentage bar chart to show groups of native/intro
+#by upper middle lower banks
+
+#REDO BELOW AFTER FIRST SELECTING FOR ONLY THE FIRST SAMPLE BOUT AND FIRST HIT
 
 prop_species_bank <- veg_only_transect %>%
-  group_by(Species.Hit, Bank_Location) %>%
+  group_by(Species.Hit, Bank_Location, FunctionalGroup, Nativity, WIS) %>%
   summarise(Freq = sum(Species))
 
 View(prop_species_bank)
@@ -132,7 +141,7 @@ View(prop_species_bank)
 #Distinct species presence by bank location
 
 distinct_species_bank <- prop_species_bank %>%
-  distinct(Bank_Location)%>%
+  distinct(Bank_Location, FunctionalGroup, Nativity, WIS)%>%
   arrange(desc(Bank_Location))
 
 View(distinct_species_bank)
@@ -238,6 +247,9 @@ View(WIS_bankLoc_long)
  
 #add data points w/o jitter for bank location
 #change width of boxes and add axis labels 
+#Visualize boxplots and can see that the level of replication being graphed is wrong
+#b/c it is showing all 45 transects
+
 
 p <- WIS_bankLoc_long %>% ggplot(aes(x=variable, y=value))+
   geom_boxplot()+
@@ -250,7 +262,7 @@ print(p)
 p + facet_wrap(~Location)
 
 #Need to get the means of each baseline
-#The above currently graphs all 45 transects
+#The above code currently graphs all 45 transects
 
 df_WIS_baseline_means <- WIS_bankLoc_long %>%
   group_by(Baseline, Location, variable) %>%
@@ -270,5 +282,59 @@ p <- df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
 print(p)
 
 p + facet_wrap(~Location)
+
+```
+
+
+```{r graph native/intro by bank location}
+
+#This csv contains only first sampling bout and first hits
+
+NatIntro_bankLoc <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/NativeIntro_byBankLoc_Upload.csv")
+
+str(NatIntro_bankLoc)
+View(NatIntro_bankLoc)
+
+#Remove unwanted columns 
+
+NatIntro_bankLoc <- select(NatIntro_bankLoc, -Total.Hits, -Hits.by.Loc, - Native, -Introduced)
+
+View(NatIntro_bankLoc)
+
+#add data points w/o jitter for bank location
+#change width of boxes and add axis labels 
+#Visualize boxplots and can see that the level of replication being graphed is wrong
+#b/c it is showing all 45 transects
+
+
+NatIntro_bankLoc %>% ggplot(aes(x=Location, y=Prop.native))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Bank Location", y = "Proportion of Cover")+
+  theme_bw(base_size = 16)
+
+
+#Need to get the means of each baseline
+#The above code currently graphs all 45 transects
+
+df_NatIntro_baseline_means <- NatIntro_bankLoc %>%
+  group_by(Baseline, Location) %>%
+  dplyr::summarise(Mean = mean(Prop.native))
+
+View(df_NatIntro_baseline_means)
+
+#Now create new boxplot with baseline means
+
+df_NatIntro_baseline_means %>% ggplot(aes(x=Location, y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Bank Location", y = "Proportion of Native Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = Location), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)
+
+
+
 
 ```
