@@ -276,9 +276,23 @@ WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
 
 #add data points w/o jitter
 #Not faceted by baseline; includes all 45 transects
-#Need to figure out how to plot only the 9 baselines, not all 45 transects
 
 WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)
+
+#Need to get the means of each baseline
+
+df_WIS_baseline_means <- WIS_baseline_long %>%
+  group_by(Baseline, variable) %>%
+  dplyr::summarise(Mean = mean(value))
+
+View(df_WIS_baseline_means)
+
+#Now do boxplot 
+
+df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
   geom_boxplot()+
   geom_point()+
   theme_bw(base_size=16)
@@ -337,7 +351,9 @@ p <- df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
 
   labs(x = "Wetland Indicator Status", y = "Proportion")+
   stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
 print(p)
 
 p + facet_wrap(~Location)
@@ -371,6 +387,7 @@ NatIntro_bankLoc %>% ggplot(aes(x=Location, y=Prop.native))+
   geom_point()+
 
   labs(x = "Bank Location", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = Location), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
   theme_bw(base_size = 16)
 
 
@@ -383,18 +400,27 @@ df_NatIntro_baseline_means <- NatIntro_bankLoc %>%
 
 View(df_NatIntro_baseline_means)
 
-#Now create new boxplot with baseline means
 
-df_NatIntro_baseline_means %>% ggplot(aes(x=Location, y=Mean))+
+#Now create new boxplot with baseline means averaging over bank location
+
+NatIntro_bankLoc %>% ggplot(aes(x=fct_reorder(Baseline, Prop.native, mean, .desc = TRUE), y =Prop.native))+
   geom_boxplot()+
   geom_point()+
 
-  labs(x = "Bank Location", y = "Proportion of Native Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = Location), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  labs(x = "Baseline", y = "Proportion of Native Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = Baseline), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
   theme_bw(base_size = 16)
 
 
+#Now create boxplot that looks at baseline x bank location
 
+NatIntro_bankLoc %>% ggplot(aes(x=fct_reorder(Baseline, Prop.native, mean, .desc = TRUE), y =Prop.native, color=Location))+
+  geom_boxplot(width = 0.5)+
+  geom_point()+
+
+  labs(x = "Baseline", y = "Proportion of Native Cover", color = "Bank Location")+
+  stat_summary(fun=mean, geom="point", aes(group = Baseline), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)
 
 ```
 
@@ -487,5 +513,59 @@ print(p)
 
 p + facet_wrap(~Location)
 
+
+```
+
+
+```{r graph ground cover}
+
+#This csv contains both sampling bouts
+
+Ground_cover <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/Ground_coverProps_upload.csv")
+
+str(Ground_cover)
+View(Ground_cover)
+
+#Remove unwanted columns and change to long format
+
+Ground_cover <- select(Ground_cover, -Total.Hits, -Hit.by.Loc, -Bare, -Litter, -WoodDebris, -Water, -Rock, -Prop.Water, -Prop.Rock)
+
+Ground_cover_long <- melt(Ground_cover, id.vars = c("Baseline","Transect", "Location"))
+
+View(Ground_cover_long)
+
+
+Ground_cover_long %>% ggplot(aes(x=variable, y=value))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Cover Type", y = "Proportion of Cover")+
+  theme_bw(base_size = 16)
+
+
+#Need to get the means of each baseline
+#The above code currently graphs all 45 transects
+
+df_GroundCover_baseline_means <- Ground_cover_long %>%
+  group_by(Baseline, Location, variable) %>%
+  dplyr::summarise(Mean = mean(value))
+
+View(df_GroundCover_baseline_means)
+
+
+#Now create new boxplot with baseline means by bank location
+
+p <- df_GroundCover_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Cover Type", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+p + facet_wrap(~Location)
 
 ```
