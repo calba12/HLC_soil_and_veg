@@ -569,3 +569,65 @@ print(p)
 p + facet_wrap(~Location)
 
 ```
+
+
+```{r graph functional groups}
+
+#This csv contains only first sampling bout and first hits
+
+FG_bankLoc <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/FunctionalGroup_byBankLoc_Upload.csv")
+
+str(FG_bankLoc)
+View(FG_bankLoc)
+
+#Remove unwanted columns and change to long format
+
+FG_bankLoc <- select(FG_bankLoc, -Total.Hits, -Hit.by.loc, -PG, -PF, -AF, -VF, -BF, -All.SLF, -W, -AG, -prop.W, -prop.AG)
+
+FG_bankLoc_long <- melt(FG_bankLoc, id.vars = c("Baseline","Transect", "Location"))
+
+View(FG_bankLoc_long)
+
+#add data points w/o jitter for bank location
+#change width of boxes and add axis labels 
+#Visualize boxplots and can see that the level of replication being graphed is wrong
+#b/c it is showing all 45 transects
+
+
+p <- FG_bankLoc_long %>% ggplot(aes(x=variable, y=value))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Functional Group", y = "Proportion")+
+  theme_bw(base_size = 16)
+print(p)
+
+p + facet_wrap(~Location)
+
+#Need to get the means of each baseline
+#The above code currently graphs all 45 transects
+
+df_FG_baseline_means <- FG_bankLoc_long %>%
+  group_by(Baseline, Location, variable) %>%
+  dplyr::summarise(Mean = mean(value))
+
+View(df_FG_baseline_means)
+
+
+#Now create new boxplot with baseline means
+
+p <- df_FG_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Functional Group", y = "Proportion")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+p + facet_wrap(~Location)
+
+
+```
