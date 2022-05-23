@@ -520,6 +520,8 @@ p + facet_wrap(~Location)
 ```{r graph ground cover}
 
 #This csv contains both sampling bouts
+#Based on graphing, this way of looking at it is not too informative; need to combine ground cover and foliar cover to
+#get a feel for bank locations with veg cover versus none
 
 Ground_cover <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/Ground_coverProps_upload.csv")
 
