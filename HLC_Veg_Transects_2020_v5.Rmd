@@ -8,7 +8,7 @@ output: html_document
 
 ```{r libraries, bring in file, some cleaning}
 
-library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2)
+library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2); library(sjPlot); library(emmeans)
 
 #Bring in raw data file
 veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
@@ -263,6 +263,7 @@ WIS_baseline_long %>% ggplot(aes(x=Baseline, y=value)) +
   geom_boxplot()+
   geom_point()+
   theme_bw(base_size=16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
   facet_wrap(~variable)
 
 #add data points w/o jitter
@@ -272,6 +273,7 @@ WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
   geom_boxplot()+
   geom_point()+
   theme_bw(base_size=16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
   facet_wrap(~Baseline)
 
 #add data points w/o jitter
@@ -280,7 +282,8 @@ WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
 WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
   geom_boxplot()+
   geom_point()+
-  theme_bw(base_size=16)
+  theme_bw(base_size=16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
 
 #Need to get the means of each baseline
 
@@ -295,12 +298,13 @@ View(df_WIS_baseline_means)
 df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
   geom_boxplot()+
   geom_point()+
-  theme_bw(base_size=16)
+  theme_bw(base_size=16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
 
 ```
 
 
-```{r graph WIS by bank location}
+```{r graph WIS by bank location then move on to model}
 
 #This csv contains only first sampling bout and first hits
 
@@ -329,7 +333,8 @@ p <- WIS_bankLoc_long %>% ggplot(aes(x=variable, y=value))+
   geom_point()+
 
   labs(x = "Wetland Indicator Status", y = "Proportion")+
-  theme_bw(base_size = 16)
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
 print(p)
 
 p + facet_wrap(~Location)
@@ -357,6 +362,25 @@ p <- df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
 print(p)
 
 p + facet_wrap(~Location)
+
+
+
+#Proportion upland species; Gaussian family fixed and random effects
+lm_gaus_null <- lm(Prop.UPL ~ 1, data = WIS_bankLoc)
+lm_gaus_UPL <- lm(Prop.UPL ~ Location, data = WIS_bankLoc) 
+
+AIC(lm_gaus_null,lm_gaus_UPL)
+
+glm_gaus_UPL <- lmer(Prop.UPL ~ Location + (1|Baseline),data = WIS_bankLoc)
+
+effectsize::standardize(glm_gaus_UPL) %>% summary()
+plot_residuals(glm_gaus_UPL)
+plot_model(glm_gaus_UPL, type = "diag")
+sjPlot::plot_model(glm_gaus_UPL , type = "est", show.values = T)
+
+sjPlot::tab_model(glm_gaus_UPL, title = "Upland WIS", dv.labels = "Proportion Cover")
+
+emmeans(glm_gaus_UPL, pairwise ~ Location, adjust = "tukey")
 
 ```
 
