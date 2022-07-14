@@ -12,30 +12,45 @@ library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2)
 library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2); library(sjPlot); library(emmeans)
 
 #Bring in raw data file
-veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
 
-#Check: do we need to add Alissa's home computer location to bring in raw data file
+#Import data using a relative pathway
+veg <- read.csv("./20201204_allHitsData_postQC_prep4.csv")
+
 
 head(veg)
 str(veg)
 
 View(veg)
 
-#change sample bout to a factor
+#add "sp." to species names
+#$ after name makes it specific so that it isn't correcting to 'Carex sp. emoryi', for example
+#I did it! my first code <3
+veg_sp <- data.frame(veg)
 
-veg <- veg %>%
+veg_sp$VegHit_SoilSurfaceHit<-veg_sp$VegHit_SoilSurfaceHit %>% 
+  str_replace_all(c('Carex$'='Carex sp.','Persicaria$'='Persicaria sp.','Rosa$'='Rosa sp.','Sagittaria$'='Sagittaria sp.', 'Bidens$'='Bidens sp.', 'Tilia$'='Tilia sp.', 'Asclepias$'='Asclepias sp.', 'Chenopodium$'='Chenopodium sp.'))
+
+veg_sp$Species.Hit <-veg_sp$Species.Hit %>% 
+  str_replace_all(c('Carex$'='Carex sp.','Persicaria$'='Persicaria sp.','Rosa$'='Rosa sp.','Sagittaria$'='Sagittaria sp.','Bidens$'='Bidens sp.', 'Tilia$'='Tilia sp.', 'Asclepias$'='Asclepias sp.', 'Chenopodium$'='Chenopodium sp.'))
+
+#change sample bout to a factor
+#changed veg to be veg_sp
+
+veg_sp <- veg_sp %>%
   mutate(sample.bout = as.factor(sample.bout))%>%
   mutate(baseline.rep = as.factor(baseline.rep))
 
-str(veg)
+str(veg_sp)
 
 ## Remove zero from Hit.Number
 
-veg <- veg[veg$Hit.Number != "0",]
-View(veg)
+veg_sp <- veg_sp[veg_sp$Hit.Number != "0",]
+View(veg_sp)
 
 #Rename unwieldly columns; remove unwanted columns
-vegdf <- veg %>% select(-Number.of.Points.Along.Transect_fromRick) %>%
+# "-" means to drop that variable
+#vegdf now using veg_sp instead of og "veg"
+vegdf <- veg_sp %>% select(-Number.of.Points.Along.Transect_fromRick) %>%
 rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc)
 
 head(vegdf)
@@ -64,6 +79,7 @@ df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
   select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
   
 View(df_Spp_bout1)
+
 
 ```
 
