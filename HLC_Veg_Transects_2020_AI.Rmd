@@ -76,9 +76,12 @@ df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
   arrange(VegHit_SoilSurfaceHit)%>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
          & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
-  select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
+  select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS, Nativity)
   
 View(df_Spp_bout1)
+
+#Export to Excel
+#write_xlsx(df_Spp_bout1, 'Veg_SpeciesList2_AI07222022.xlsx') 
 
 
 ```
@@ -113,7 +116,7 @@ df.transect <- vegdf %>%
 
 View(df.transect)
 
-write_xlsx(df.transect, 'hits_byTransect.xlsx')
+#write_xlsx(df.transect, 'hits_byTransect.xlsx')
 
 ```
 
