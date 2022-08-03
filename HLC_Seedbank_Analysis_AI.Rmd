@@ -15,7 +15,7 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 
 #Import data using a relative pathway
 
-seedbank <- read.csv("./20220714_HLC_SB_Data_Final2.csv")
+seedbank <- read.csv("./20220802_HLC_SB_Data_Final4.csv")
 
 
 head(seedbank)
@@ -23,7 +23,7 @@ str(seedbank)
 
 View(seedbank)
 
-#I don't know if below is necessary or not yet for any of the variables
+#I don't know if below is necessary or not yet for any of the variables, going to keep the code in case it is useful later
 #change sample bout to a factor
 #changed veg to be veg_sp
 
@@ -68,22 +68,22 @@ View(df)
 #df_bout1 <- subset(vegdf,sample.bout =="1")
 #View(df_bout1)
 
-df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
-  arrange(VegHit_SoilSurfaceHit)%>%
-  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
-         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
-  select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
+#Veg code: df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
+  #arrange(VegHit_SoilSurfaceHit)%>%
+  #subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+   #      & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
+  #select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
 
 df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
   arrange(Species_Name)%>%
   subset(Species_Name!="Unknown" & Species_Name!="Unknown forb"
          & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown grass")%>%
-  select(Species_Name, Bank_Gradient, Longevity_2, Habit, Functional_Group_2, Origin, WIS)
+  select(Species_Name, Bank_Location, Longevity_2, Habit, Functional_Group_2, Nativity, WIS)
 
 View(df_Spp)
 
 #Export to Excel
-write_xlsx(df_Spp, 'SB_SpeciesList_AI_07222022.xlsx') 
+write_xlsx(df_Spp, 'SB_SpeciesList_V2_AI_08022022.xlsx') 
 
 
 
