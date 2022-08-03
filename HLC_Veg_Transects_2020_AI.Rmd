@@ -97,7 +97,7 @@ df.canal <- vegdf %>%
   summarise(Species.Hit = n()) 
 
 View(df.canal)
-write_xlsx(df.canal, 'hits_byCanal.xlsx')
+#write_xlsx(df.canal, 'hits_byCanal.xlsx')
 
 #Baseline level: number of species hits by sample bout and hit number, includes foliar and ground first hits
 df.baseline <- vegdf %>% 
@@ -106,7 +106,7 @@ df.baseline <- vegdf %>%
 
 View(df.baseline)
 
-write_xlsx(df.baseline, 'hits_byBaseline.xlsx')
+#write_xlsx(df.baseline, 'hits_byBaseline.xlsx')
 
 #Transect level: number of species hits by sample bout and hit number, includes foliar and ground first hits
 
@@ -137,7 +137,7 @@ View(veg_only_transect)
 
 #The Excel file exported below has both sample bouts and hit numbers one and two
 
-write_xlsx(veg_only_transect, 'Species_counts.xlsx')
+#write_xlsx(veg_only_transect, 'Species_counts.xlsx')
 
 #Foliar hits only
 #summarize species proportions at scale of whole canal, includes all sample bouts and hits
@@ -151,7 +151,7 @@ prop_species_canal <- veg_only_transect %>%
   mutate(prop = Freq/1642) %>%
   filter(prop > 0.0099) %>%
   arrange(desc(prop))
-  
+
 View(prop_species_canal)
 
 sum(prop_species_canal$Freq)
@@ -172,7 +172,7 @@ View(Common_species_canal_BothBouts)
 
 #The Excel file exported below has both sample bouts
 
-write_xlsx(Common_species_canal_BothBouts, 'Common_species_BothBouts.xlsx')
+#write_xlsx(Common_species_canal_BothBouts, 'Common_species_BothBouts.xlsx')
 
 
 #Same as above but look at only first sample bout 
@@ -181,10 +181,12 @@ veg_only_transect_FirstBout <- filter(veg_only_transect, sample.bout == "1")
 View(veg_only_transect_FirstBout)
 
 
+#AI - I changed the code so that it calculates the sum instead of having a constant
+
 prop_species_canal_FirstBout <- veg_only_transect_FirstBout %>%
   group_by(Species.Hit) %>%
   summarise(Freq = sum(Species)) %>%
-  mutate(prop = Freq/713) %>%
+  mutate(prop = Freq/sum(prop_species_canal_FirstBout$Freq)) %>%
   filter(prop > 0.0099) %>%
   arrange(desc(prop))
 
@@ -205,7 +207,7 @@ View(Common_species_canal_FirstBout)
 
 #The Excel file exported below has only first sample bout
 
-write_xlsx(Common_species_canal_FirstBout, 'Common_species_FirstBout.xlsx')
+#write_xlsx(Common_species_canal_FirstBout, 'Common_species_FirstBout.xlsx')
 
 
 #Same as above but look at only second sample bout 
@@ -304,7 +306,7 @@ sum(prop_ground$Freq)
 
 #This graph contains both sampling bouts and first and second hits
 
-WIS_baseline <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/WIS_baseline_upload.csv")
+WIS_baseline <- read.csv("./WIS_baseline_upload.csv")
 
 str(WIS_baseline)
 View(WIS_baseline)
