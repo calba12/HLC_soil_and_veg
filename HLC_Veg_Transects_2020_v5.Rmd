@@ -14,7 +14,8 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 #Bring in raw data file
 veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
 
-#Check: do we need to add Alissa's home computer location to bring in raw data file
+#Import data using a relative pathway
+veg <- read.csv("./20201204_allHitsData_postQC_prep4.csv")
 
 head(veg)
 str(veg)
@@ -64,6 +65,8 @@ df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
   select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
   
 View(df_Spp_bout1)
+
+#Export as csv
 
 ```
 

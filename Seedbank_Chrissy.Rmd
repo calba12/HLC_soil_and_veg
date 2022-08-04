@@ -1,0 +1,84 @@
+---
+title: "Chrissy_seedbank"
+author: "Christina Alba"
+date: "8/4/2022"
+output: html_document
+---
+
+```{r bring in library and data file}
+
+library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(tidytext);
+library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2); library(sjPlot); library(emmeans)
+
+
+seedbank <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/seedbank/20220802_HLC_SB_Data_Final4.csv")
+
+head(seedbank)
+str(seedbank)
+View(seedbank)
+
+#I don't know if below is necessary or not yet for any of the variables, going to keep the code in case it is useful later
+#change sample bout to a factor
+#changed veg to be veg_sp
+#veg_sp <- veg_sp %>%
+ # mutate(sample.bout = as.factor(sample.bout))%>%
+  #mutate(baseline.rep = as.factor(baseline.rep))
+#str(veg_sp)
+## Remove zero from Hit.Number
+#veg_sp <- veg_sp[veg_sp$Hit.Number != "0",]
+#View(veg_sp)
+#Rename unwieldly columns; remove unwanted columns
+# "-" means to drop that variable
+seedbankdf <- seedbank %>% select(c(-Specific.Epithet_wconservative.cf, -Org_trayID))
+#changed name of column
+seedbankdf <- seedbankdf %>% rename(c(Species_Name=SPECIFIC_EPITHET_FINAL, Germinant_ID_Number = Germinant.ID))
+#The old code: vegdf <- veg_sp %>% select(-Number.of.Points.Along.Transect_fromRick) %>%
+#rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc)
+head(seedbankdf)
+View(seedbankdf)
+#check species spellings
+##Ended here 7/24/22
+df <- seedbankdf %>% distinct(Species_Name)
+View(df)
+
+```
+
+```{r count germinants at each level of organization: canal, baseline, transect, bank location}
+
+#Summing number of germinants at each level of organization (whole canal, baselines, transects)
+#For whole canal, no need to group by anything
+
+germinants.canal <- seedbankdf %>%
+  summarise(Species.Name = n()) 
+
+View(germinants.canal)
+write_xlsx(germinants.canal, 'germinants_byCanal.xlsx')
+
+#Germinants by baseline
+
+germinants.baseline <- seedbankdf %>% 
+  group_by(Baseline) %>%
+  summarise(Species.Name = n()) 
+
+View(germinants.baseline)
+
+write_xlsx(germinants.baseline, 'germinants_byBaseline.xlsx')
+
+#Germinants by transect
+
+germinants.transect <- seedbankdf %>% 
+  group_by(Transect_ID) %>%
+  summarise(Species.Name = n()) 
+
+View(germinants.transect)
+
+write_xlsx(germinants.transect, 'germinants_bytransect.xlsx')
+
+germinants.bankloc <- seedbankdf %>%
+  group_by(Transect_ID, Bank_Location) %>%
+  summarise(Species_Name = n())
+
+View(germinants.bankloc)
+
+```
+
