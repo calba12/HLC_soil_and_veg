@@ -28,10 +28,10 @@ View(veg)
 veg_sp <- data.frame(veg)
 
 veg_sp$VegHit_SoilSurfaceHit<-veg_sp$VegHit_SoilSurfaceHit %>% 
-  str_replace_all(c('Carex$'='Carex sp.','Persicaria$'='Persicaria sp.','Rosa$'='Rosa sp.','Sagittaria$'='Sagittaria sp.', 'Bidens$'='Bidens sp.', 'Tilia$'='Tilia sp.', 'Asclepias$'='Asclepias sp.', 'Chenopodium$'='Chenopodium sp.'))
+  str_replace_all(c('Carex$'='Carex sp.','Persicaria$'='Persicaria sp.','Rosa$'='Rosa sp.','Sagittaria$'='Sagittaria sp.', 'Bidens$'='Bidens sp.', 'Tilia$'='Tilia sp.', 'Asclepias$'='Asclepias sp.', 'Chenopodium$'='Chenopodium sp.', 'Poa$'='Poa sp.'))
 
 veg_sp$Species.Hit <-veg_sp$Species.Hit %>% 
-  str_replace_all(c('Carex$'='Carex sp.','Persicaria$'='Persicaria sp.','Rosa$'='Rosa sp.','Sagittaria$'='Sagittaria sp.','Bidens$'='Bidens sp.', 'Tilia$'='Tilia sp.', 'Asclepias$'='Asclepias sp.', 'Chenopodium$'='Chenopodium sp.'))
+  str_replace_all(c('Carex$'='Carex sp.','Persicaria$'='Persicaria sp.','Rosa$'='Rosa sp.','Sagittaria$'='Sagittaria sp.','Bidens$'='Bidens sp.', 'Tilia$'='Tilia sp.', 'Asclepias$'='Asclepias sp.', 'Chenopodium$'='Chenopodium sp.', 'Poa$'='Poa sp.'))
 
 #change sample bout to a factor
 #changed veg to be veg_sp
@@ -68,6 +68,7 @@ View(df)
 
 #Pull out species names using "distinct"; arrange alphabetically using "arrange";remove 
 #unwanted entries (rock, soil, litter) using "subset"; keep desired columns using "select"
+#8/4 also removed bank location and functional group
 
 df_bout1 <- subset(vegdf,sample.bout =="1")
 View(df_bout1)
@@ -76,12 +77,27 @@ df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
   arrange(VegHit_SoilSurfaceHit)%>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
          & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
-  select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS, Nativity)
+  select(VegHit_SoilSurfaceHit, Longevity, Habit, WIS, Nativity)
   
 View(df_Spp_bout1)
 
 #Export to Excel
 #write_xlsx(df_Spp_bout1, 'Veg_SpeciesList2_AI07222022.xlsx') 
+
+#Counted species and then calculated proportion in new column
+
+Spp_count_tbl <- vegdf %>% 
+  group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS, Nativity, Cvalue) %>%
+  summarise(Freq2 = n()) %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water") %>%
+  mutate(prop = Freq2/sum(Spp_count_tbl$Freq2))
+  
+
+
+view(Spp_count_tbl)
+sum(Spp_count_tbl$Freq2)
+write_xlsx(df_Spp_bout1, 'Veg_SppList_Prop_AI08052022.xlsx') 
 
 
 ```

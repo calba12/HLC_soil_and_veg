@@ -83,7 +83,7 @@ df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
 View(df_Spp)
 
 #Export to Excel
-write_xlsx(df_Spp, 'SB_SpeciesList_V2_AI_08022022.xlsx') 
+#write_xlsx(df_Spp, 'SB_SpeciesList_V2_AI_08022022.xlsx') 
 
 
 
