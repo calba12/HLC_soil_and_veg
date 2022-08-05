@@ -282,7 +282,7 @@ ground_only_transect <- vegdf %>%
 head(ground_only_transect)
 View(ground_only_transect)
 
-write_xlsx(ground_only_transect, 'Ground_counts.xlsx')
+#write_xlsx(ground_only_transect, 'Ground_counts.xlsx')
 
 getwd()
 
@@ -329,6 +329,7 @@ WIS_baseline_long %>% ggplot(aes(x=Baseline, y=value)) +
   theme(axis.text.x=element_text(angle=90, hjust=1))
   facet_wrap(~variable)
 
+  
 #add data points w/o jitter
 #Facet by Baseline
 
@@ -371,8 +372,7 @@ df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
 
 #This csv contains first sampling bout and first hits and second hits
 
-WIS_bankLoc <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/WIS_byBankLoc_Upload.csv")
-
+WIS_bankLoc <- read.csv("./WIS_byBankLoc_Upload.csv")
 str(WIS_bankLoc)
 View(WIS_bankLoc)
 
