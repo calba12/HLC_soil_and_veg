@@ -78,7 +78,7 @@ df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
   arrange(Species_Name)%>%
   subset(Species_Name!="Unknown" & Species_Name!="Unknown forb"
          & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown grass")%>%
-  select(Species_Name, Bank_Location, Longevity_2, Habit, Functional_Group_2, Nativity, WIS)
+  select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS, C_Value)
 
 View(df_Spp)
 
@@ -86,6 +86,17 @@ View(df_Spp)
 #write_xlsx(df_Spp, 'SB_SpeciesList_V2_AI_08022022.xlsx') 
 
 
+Spp_tbl <- seedbankdf %>%
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value)%>% 
+  group_by(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value) %>%
+  summarise(Freq2 = n())
+
+Spp_prop_tbl <- Spp_tbl %>% 
+  mutate(prop = Freq2/sum(Spp_tbl$Freq2))
+
+view(Spp_prop_tbl)
+sum(Spp_tbl$Freq2)
+write_xlsx(Spp_prop_tbl, 'SB_SppList_Prop_AI08052022.xlsx')
 
 ```
 
@@ -126,8 +137,40 @@ germinants.bankloc <- seedbankdf %>%
 
 View(germinants.bankloc)
 
+
+
 ```
 
+
+```{spp presence, abundance, and proportion table}
+
+#Counted species and then calculated proportion in new column
+
+Spp_tbl <- df_Spp %>%
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value)
+
+df_Spp2 <- df_Spp %>% 
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value)
+  
+view(df_Spp)
+
+SB_Spp_count_tbl <- df_Spp %>% 
+  group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS, Nativity, Cvalue) %>%
+  summarise(Freq2 = n()) %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")
+
+
+Spp_prop_tbl <- Spp_count_tbl %>% 
+  mutate(prop = Freq2/sum(Spp_count_tbl$Freq2))
+
+view(Spp_prop_tbl)
+sum(Spp_count_tbl$Freq2)
+#write_xlsx(Spp_prop_tbl, 'Veg_SppList_Prop3_AI08052022.xlsx')
+
+
+
+```
 
 ```{r count hits (VEG) at each level of organization: canal, baseline, transect}
 

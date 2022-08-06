@@ -90,14 +90,15 @@ Spp_count_tbl <- vegdf %>%
   group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS, Nativity, Cvalue) %>%
   summarise(Freq2 = n()) %>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
-         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water") %>%
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")
+
+
+Spp_prop_tbl <- Spp_count_tbl %>% 
   mutate(prop = Freq2/sum(Spp_count_tbl$Freq2))
-  
 
-
-view(Spp_count_tbl)
+view(Spp_prop_tbl)
 sum(Spp_count_tbl$Freq2)
-write_xlsx(df_Spp_bout1, 'Veg_SppList_Prop_AI08052022.xlsx') 
+#write_xlsx(Spp_prop_tbl, 'Veg_SppList_Prop3_AI08052022.xlsx')
 
 
 ```
