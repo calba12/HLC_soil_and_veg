@@ -1,52 +1,62 @@
 <<<<<<< HEAD
 ---
-title: "HLC_Veg_Analysis"
-author: "Christina Alba"
-date: "1/14/2022"
+title: "HLC_SB_Analysis"
+author: "Alissa Iverson"
+date: "7/14/2022"
 output: html_document
 ---
 
 ```{r libraries, bring in file, some data cleaning}
-
+#using format of CA's veg code and trying to make it work for the sb, wish me luck 
 library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(tidytext);
 library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2); library(sjPlot); library(emmeans)
 
 #Bring in raw data file
-veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
 
 #Import data using a relative pathway
-veg <- read.csv("./20201204_allHitsData_postQC_prep4.csv")
 
-head(veg)
-str(veg)
+seedbank <- read.csv("./20220802_HLC_SB_Data_Final4.csv")
 
-View(veg)
 
+head(seedbank)
+str(seedbank)
+
+View(seedbank)
+
+#I don't know if below is necessary or not yet for any of the variables, going to keep the code in case it is useful later
 #change sample bout to a factor
+#changed veg to be veg_sp
 
-veg <- veg %>%
-  mutate(sample.bout = as.factor(sample.bout))%>%
-  mutate(baseline.rep = as.factor(baseline.rep))
+#veg_sp <- veg_sp %>%
+ # mutate(sample.bout = as.factor(sample.bout))%>%
+  #mutate(baseline.rep = as.factor(baseline.rep))
 
-str(veg)
+#str(veg_sp)
 
 ## Remove zero from Hit.Number
 
-veg <- veg[veg$Hit.Number != "0",]
-View(veg)
+#veg_sp <- veg_sp[veg_sp$Hit.Number != "0",]
+#View(veg_sp)
 
 #Rename unwieldly columns; remove unwanted columns
-vegdf <- veg %>% select(-Number.of.Points.Along.Transect_fromRick) %>%
-rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc)
+# "-" means to drop that variable
+seedbankdf <- seedbank %>% select(c(-Specific.Epithet_wconservative.cf, -Org_trayID))
 
-head(vegdf)
-View(vegdf)
+#changed name of column
+seedbankdf <- seedbankdf %>% rename(c(Species_Name=SPECIFIC_EPITHET_FINAL, Germinant_ID_Number = Germinant.ID))
+
+#The old code: vegdf <- veg_sp %>% select(-Number.of.Points.Along.Transect_fromRick) %>%
+#rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc)
+
+head(seedbankdf)
+View(seedbankdf)
 
 #check species spellings
 
-df <- vegdf %>% distinct(VegHit_SoilSurfaceHit)
+##Ended here 7/24/22
+df <- seedbankdf %>% distinct(Species_Name)
 View(df)
-
+#^Looks good, not sure if I should keep or remove unknowns? 
 ```
 
 
@@ -55,23 +65,125 @@ View(df)
 #Pull out species names using "distinct"; arrange alphabetically using "arrange";remove 
 #unwanted entries (rock, soil, litter) using "subset"; keep desired columns using "select"
 
-df_bout1 <- subset(vegdf,sample.bout =="1")
-View(df_bout1)
+#df_bout1 <- subset(vegdf,sample.bout =="1")
+#View(df_bout1)
 
-df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
-  arrange(VegHit_SoilSurfaceHit)%>%
-  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
-         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
-  select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
-  
-View(df_Spp_bout1)
+#Veg code: df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
+  #arrange(VegHit_SoilSurfaceHit)%>%
+  #subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+   #      & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
+  #select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
 
-#Export as csv
+df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
+  arrange(Species_Name)%>%
+  subset(Species_Name!="Unknown" & Species_Name!="Unknown forb"
+         & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown grass")%>%
+  select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS, C_Value)
+
+View(df_Spp)
+
+#Export to Excel
+#write_xlsx(df_Spp, 'SB_SpeciesList_V2_AI_08022022.xlsx') 
+
+
+Spp_tbl <- seedbankdf %>%
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value)%>% 
+  group_by(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value) %>%
+  summarise(Freq2 = n())
+
+Spp_prop_tbl <- Spp_tbl %>% 
+  mutate(prop = Freq2/sum(Spp_tbl$Freq2))
+
+view(Spp_prop_tbl)
+sum(Spp_tbl$Freq2)
+#write_xlsx(Spp_prop_tbl, 'SB_SppList_Prop_AI08052022.xlsx')
+
+#merge with veg prop data
+
+veg_prop_tbl <- read.csv("./Veg_SppList_Prop3_AI08072022.csv")
+
+merged_spp_prop <- merge(veg_prop_tbl, Spp_prop_tbl, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS", "Nativity", "Cvalue" ), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity", "C_Value"), all.x =TRUE, all.y = TRUE)
+
+view(merged_spp_prop)
+
+write_xlsx(merged_spp_prop, 'merged_SppList_Prop_AI08072022.xlsx')
+
+
+```
+
+```{r count germinants at each level of organization: canal, baseline, transect, bank location}
+
+#Summing number of germinants at each level of organization (whole canal, baselines, transects)
+#For whole canal, no need to group by anything
+
+germinants.canal <- seedbankdf %>%
+  summarise(Species.Name = n()) 
+
+View(germinants.canal)
+#write_xlsx(germinants.canal, 'germinants_byCanal.xlsx')
+
+#Germinants by baseline
+
+germinants.baseline <- seedbankdf %>% 
+  group_by(Baseline) %>%
+  summarise(Species.Name = n()) 
+
+View(germinants.baseline)
+
+#write_xlsx(germinants.baseline, 'germinants_byBaseline.xlsx')
+
+#Germinants by transect
+
+germinants.transect <- seedbankdf %>% 
+  group_by(Transect_ID) %>%
+  summarise(Species.Name = n()) 
+
+View(germinants.transect)
+
+#write_xlsx(germinants.transect, 'germinants_bytransect.xlsx')
+
+germinants.bankloc <- seedbankdf %>%
+  group_by(Transect_ID, Bank_Location) %>%
+  summarise(Species_Name = n())
+
+View(germinants.bankloc)
+
+
 
 ```
 
 
-```{r count hits at each level of organization: canal, baseline, transect}
+```{spp presence, abundance, and proportion table}
+
+#Counted species and then calculated proportion in new column
+
+Spp_tbl <- df_Spp %>%
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value)
+
+df_Spp2 <- df_Spp %>% 
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value)
+  
+view(df_Spp)
+
+SB_Spp_count_tbl <- df_Spp %>% 
+  group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS, Nativity, Cvalue) %>%
+  summarise(Freq2 = n()) %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")
+
+
+Spp_prop_tbl <- Spp_count_tbl %>% 
+  mutate(prop = Freq2/sum(Spp_count_tbl$Freq2))
+
+view(Spp_prop_tbl)
+sum(Spp_count_tbl$Freq2)
+#write_xlsx(Spp_prop_tbl, 'Veg_SppList_Prop3_AI08052022.xlsx')
+
+
+
+```
+
+```{r count hits (VEG) at each level of organization: canal, baseline, transect}
 
 #Summing number of hits at each level of organization (whole canal, baselines, transects)
 
