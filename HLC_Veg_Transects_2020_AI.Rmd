@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ---
 title: "HLC_Veg_Analysis"
 author: "Christina Alba"
