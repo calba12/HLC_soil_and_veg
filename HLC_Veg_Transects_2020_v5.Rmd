@@ -102,6 +102,23 @@ View(df.transect)
 
 write_xlsx(df.transect, 'hits_byTransect.xlsx')
 
+#Transect level: number of species hits grouped by sample bout and hit number, then remove sample bout two, then create proportion of hits by response variable; 
+
+#Still need to add in missing WIS types (add zero if particular WIS did not appear on a transect)
+#USE THIS TO GET HELP FROM MICHELLE CREATING PROPORTIONS ON 8/11
+
+df.transect.props <- vegdf %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
+  filter(sample.bout =="1") %>%
+  drop_na(Species.Hit, WIS_GP) %>%
+  summarise(Species.Hit = n()) %>%
+  group_by(baseline, WIS_GP) %>%
+  summarise(Species.Hit = sum(Species.Hit))
+
+View(df.transect.props)
+
+
+
 ```
 
 
