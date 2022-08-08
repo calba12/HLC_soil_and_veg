@@ -96,7 +96,18 @@ Spp_prop_tbl <- Spp_tbl %>%
 
 view(Spp_prop_tbl)
 sum(Spp_tbl$Freq2)
-write_xlsx(Spp_prop_tbl, 'SB_SppList_Prop_AI08052022.xlsx')
+#write_xlsx(Spp_prop_tbl, 'SB_SppList_Prop_AI08052022.xlsx')
+
+#merge with veg prop data
+
+veg_prop_tbl <- read.csv("./Veg_SppList_Prop3_AI08072022.csv")
+
+merged_spp_prop <- merge(veg_prop_tbl, Spp_prop_tbl, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS", "Nativity", "Cvalue" ), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity", "C_Value"), all.x =TRUE, all.y = TRUE)
+
+view(merged_spp_prop)
+
+write_xlsx(merged_spp_prop, 'merged_SppList_Prop_AI08072022.xlsx')
+
 
 ```
 
