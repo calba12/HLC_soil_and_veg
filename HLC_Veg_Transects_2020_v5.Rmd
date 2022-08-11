@@ -42,6 +42,7 @@ rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc)
 head(vegdf)
 View(vegdf)
 
+
 #check species spellings
 
 df <- vegdf %>% distinct(VegHit_SoilSurfaceHit)
@@ -101,22 +102,6 @@ df.transect <- vegdf %>%
 View(df.transect)
 
 write_xlsx(df.transect, 'hits_byTransect.xlsx')
-
-#Transect level: number of species hits grouped by sample bout and hit number, then remove sample bout two, then create proportion of hits by response variable; 
-
-#Still need to add in missing WIS types (add zero if particular WIS did not appear on a transect)
-#USE THIS TO GET HELP FROM MICHELLE CREATING PROPORTIONS ON 8/11
-
-df.transect.props <- vegdf %>%
-  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
-  filter(sample.bout =="1") %>%
-  drop_na(Species.Hit, WIS_GP) %>%
-  summarise(Species.Hit = n()) %>%
-  group_by(baseline, WIS_GP) %>%
-  summarise(Species.Hit = sum(Species.Hit))
-
-View(df.transect.props)
-
 
 
 ```
@@ -367,6 +352,28 @@ df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
 
 
 ```{r graph WIS by bank location then move on to statistical model}
+
+#Need to recreate WIS proportion data file for analysis b/c Chrissy used WMVC WIS rather than GP WIS
+#Number of species hits grouped by sample bout and hit number, then remove sample bout two, then create proportion of hits by response variable
+
+#USE THIS TO GET HELP FROM MICHELLE CREATING PROPORTIONS ON 8/11
+
+df.props_WIS_veg <- vegdf %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
+  filter(sample.bout =="1") %>%
+  drop_na(Species.Hit, WIS_GP) %>%
+  summarise(Species.Hit = n()) %>%
+  group_by(baseline, Bank_Location, WIS_GP) %>%
+  summarise(Species.Hit = sum(Species.Hit))
+  
+View(df.props_WIS_veg)
+
+df.props_WIS_veg_exp <- df.props_WIS_veg %>%
+  tidyr::complete(WIS_GP) %>%
+  mutate(Species.Hit = replace_na(Species.Hit, 0))
+
+View(df.props_WIS_veg_exp)
+
 
 #This csv contains first sampling bout and first hits and second hits
 

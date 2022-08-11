@@ -17,27 +17,17 @@ head(seedbank)
 str(seedbank)
 View(seedbank)
 
-#I don't know if below is necessary or not yet for any of the variables, going to keep the code in case it is useful later
-#change sample bout to a factor
-#changed veg to be veg_sp
-#veg_sp <- veg_sp %>%
- # mutate(sample.bout = as.factor(sample.bout))%>%
-  #mutate(baseline.rep = as.factor(baseline.rep))
-#str(veg_sp)
-## Remove zero from Hit.Number
-#veg_sp <- veg_sp[veg_sp$Hit.Number != "0",]
-#View(veg_sp)
-#Rename unwieldly columns; remove unwanted columns
-# "-" means to drop that variable
+#Remove unwanted columns
 seedbankdf <- seedbank %>% select(c(-Specific.Epithet_wconservative.cf, -Org_trayID))
+
 #changed name of column
 seedbankdf <- seedbankdf %>% rename(c(Species_Name=SPECIFIC_EPITHET_FINAL, Germinant_ID_Number = Germinant.ID))
-#The old code: vegdf <- veg_sp %>% select(-Number.of.Points.Along.Transect_fromRick) %>%
-#rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc)
+
 head(seedbankdf)
 View(seedbankdf)
+
 #check species spellings
-##Ended here 7/24/22
+
 df <- seedbankdf %>% distinct(Species_Name)
 View(df)
 
@@ -82,3 +72,29 @@ View(germinants.bankloc)
 
 ```
 
+
+```{r WIS}
+
+#Prepping data to compute proportions
+#By baseline and bank location
+
+#Get help from Michelle on last step of computing proportions
+
+df.props_WIS_seed <- seedbank %>%
+  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_1, Nativity) %>%
+  drop_na(SPECIFIC_EPITHET_FINAL, WIS) %>%
+  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%
+  group_by(Baseline, Bank_Location, WIS) %>%
+  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL))
+  
+View(df.props_WIS_seed)
+
+df.props_WIS_seed_exp <- df.props %>%
+  tidyr::complete(WIS) %>%
+  mutate(SPECIFIC_EPITHET_FINAL = replace_na(SPECIFIC_EPITHET_FINAL, 0))
+
+View(df.props_WIS_seed_exp)
+
+
+
+```
