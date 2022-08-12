@@ -252,35 +252,58 @@ View(distinct_species_bank)
 ```
 
 
-```{r ground hits exploration}
+```{r hit type bare soil, litter, vegetation}
 
-#Ground hits only
-#Group species counts by sample bout, hit number, transect, etc.
-#Use summarise to count hits by species, drop NA's
+#Create general categories based on whether vegetation was hit first, or pin dropped straight to bare ground, litter, water
+# To do this, if surface hit is NA, then hit type is vegetation, otherwise bare soil or litter as designated in the column
 
-ground_only_transect <- vegdf %>%
-  group_by(sample.bout, Hit.Number, Bank_Location, baseline, Transect, Num_transect_points, Transect.Point.Soil.Surface) %>%
-  summarise(Ground = n()) %>%
-  drop_na()
+vegdf$Surface.Hit <- as.character(vegdf$Surface.Hit)
 
-head(ground_only_transect)
-View(ground_only_transect)
+hit_type <- vegdf %>%
+  group_by(sample.bout, Hit.Number, Bank_Location, baseline, Transect, Num_transect_points, Surface.Hit) %>%
+  filter(sample.bout =="1") %>%
+  replace_na(list(Surface.Hit = 'Vegetation'))
 
-write_xlsx(ground_only_transect, 'Ground_counts.xlsx')
+View(hit_type)
 
-getwd()
+#Prepping data file for proportion as response variable
+#The below is not right yet; need to figure out how to count by veg/litter/bare soil in column Surface.Hit
 
-#summarize ground hit proportions at scale of whole canal, includes all sample bouts and hits
-#Used sum(prop_ground$Freq) code to count 4664 total hits
+hit_type$Surface.Hit <- as.factor(hit_type$Surface.Hit)
 
-prop_ground <- ground_only_transect %>%
-  group_by(Transect.Point.Soil.Surface) %>%
-  summarise(Freq = sum(Ground)) %>%
-  mutate(prop = Freq/4664)
-  
-View(prop_ground)
+df.prop_hit_type <- hit_type %>%
+  group_by(Hit.Number, Bank_Location, baseline, Transect) %>%
+  summarise(Surface.Hit = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Bank_Location, Surface.Hit) %>%  
+  summarise(Surface.Hit = sum(Surface.Hit)) %>% ## groups by baseline and Bank_location to sum Surface.Hit
+  mutate(prop = Surface.Hit/sum(Surface.Hit)) %>% ## mutate the df by adding prop that is each #hit type/total
+  complete(Surface.Hit, fill = list(Surface.Hit = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both Surface.Hit and prop
 
-sum(prop_ground$Freq)
+# Check it adds to one with the 5 groups  
+sum(df.prop_hit_type$prop[1:6])
+    
+View(df.prop_hit_type)
+
+
+
+hit_type$Surface.Hit <- as.factor(hit_type$Surface.Hit)
+
+df.prop_hit_type <- hit_type %>%
+  group_by(Hit.Number, Bank_Location, baseline, Transect) %>%
+  summarise(Surface.Hit = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Bank_Location, Surface.Hit) %>%  
+  summarise(Surface.Hit = sum(Surface.Hit)) %>% ## groups by baseline and Bank_location to sum Surface.Hit
+  mutate(prop = Surface.Hit/sum(Surface.Hit)) %>% ## mutate the df by adding prop that is each #hit type/total
+  complete(Surface.Hit, fill = list(Surface.Hit = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both Surface.Hit and prop
+
+# Check it adds to one with the 5 groups  
+sum(df.prop_hit_type$prop[1:6])
+    
+View(df.prop_hit_type)
+
+
+
+
 
 ```
 
@@ -353,7 +376,7 @@ df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
 
 ```{r graph WIS by bank location then move on to statistical model}
 
-#Prepping data file
+#Prepping data file for proportion as response variable
 
 vegdf$WIS_GP <- as.factor(vegdf$WIS_GP)
 
