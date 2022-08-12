@@ -372,20 +372,13 @@ sum(df.props_WIS_veg$prop[1:5])
     
 View(df.props_WIS_veg)
 
-df.props_WIS_veg_exp <- df.props_WIS_veg %>%
-  tidyr::complete(WIS_GP) %>%
-  mutate(Species.Hit = replace_na(Species.Hit, 0))
-
-View(df.props_WIS_veg_exp)
-
-#add data points w/o jitter for bank location
-#change width of boxes and add axis labels 
+#Make boxplot
 
 p <- df.props_WIS_veg_exp %>% ggplot(aes(x=factor(WIS_GP, levels = c('UPL', 'FACU', 'FAC', 'FACW', 'OBL')), y=prop))+ 
   geom_boxplot()+
   geom_point()+
 
-  labs(x = "Wetland Indicator Status", y = "Proportion")+
+  labs(x = "Wetland Indicator Status", y = "Proportion of Vegetative Cover")+
   stat_summary(fun=mean, geom="point", aes(group = WIS_GP), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
   theme_bw(base_size = 16)+
   theme(axis.text.x=element_text(angle=90, hjust=1))

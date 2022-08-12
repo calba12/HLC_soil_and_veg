@@ -78,23 +78,35 @@ View(germinants.bankloc)
 #Prepping data to compute proportions
 #By baseline and bank location
 
-#Get help from Michelle on last step of computing proportions
+seedbank$WIS <- as.factor(seedbank$WIS)
 
 df.props_WIS_seed <- seedbank %>%
   group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_1, Nativity) %>%
-  drop_na(SPECIFIC_EPITHET_FINAL, WIS) %>%
-  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%
+  drop_na(SPECIFIC_EPITHET_FINAL, WIS) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
   group_by(Baseline, Bank_Location, WIS) %>%
-  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL))
-  
+  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(WIS, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+
+# Check it adds to one with the 5 groups  
+sum(df.props_WIS_seed$prop[1:5])
+    
 View(df.props_WIS_seed)
 
-df.props_WIS_seed_exp <- df.props %>%
-  tidyr::complete(WIS) %>%
-  mutate(SPECIFIC_EPITHET_FINAL = replace_na(SPECIFIC_EPITHET_FINAL, 0))
+#Make boxplot
 
-View(df.props_WIS_seed_exp)
+p <- df.props_WIS_seed %>% ggplot(aes(x=factor(WIS, levels = c('UPL', 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp. (FACW-OBL)')), y=prop))+ 
+  geom_boxplot()+
+  geom_point()+
 
+  labs(x = "Wetland Indicator Status", y = "Proportion of Seedbank")+
+  stat_summary(fun=mean, geom="point", aes(group = WIS), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+print(p)
+
+p + facet_wrap(~Bank_Location)
 
 
 ```
