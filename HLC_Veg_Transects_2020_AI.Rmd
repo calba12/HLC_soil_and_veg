@@ -319,7 +319,7 @@ sum(prop_ground$Freq)
 #Dont use the code below b/c it contains both sampling bouts over the season; want to use
 #only the first sampling bout; leaving it here for reference though
 ```{r graph WIS by baseline}
-#original code
+#original code at top, AI code at bottom of chunk
 #This graph contains both sampling bouts and first and second hits
 
 WIS_baseline <- read.csv("./WIS_baseline_upload_WMVC.csv")
@@ -456,6 +456,14 @@ View(df_WIS_baseline_means2)
 #Now do boxplot 
 
 df_WIS_baseline_means2 %>% ggplot(aes(x=WIS_GP, y=Mean)) +
+  geom_boxplot()+
+  geom_point()+
+  theme_bw(base_size=16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+df_WIS_baseline_means2 %>% 
+  mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", "FACU", "FAC", "FACW", "OBL")) %>%
+  ggplot(aes(x=WIS_GP, y=Mean)) +
   geom_boxplot()+
   geom_point()+
   theme_bw(base_size=16)+

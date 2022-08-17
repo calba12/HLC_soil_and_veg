@@ -15,7 +15,8 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
 
 #Import data using a relative pathway
-#veg <- read.csv("./20201204_allHitsData_postQC_prep4.csv")
+
+veg <- read.csv("./20201204_allHitsData_postQC_prep4.csv")
 
 head(veg)
 str(veg)
@@ -63,7 +64,7 @@ df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
   arrange(VegHit_SoilSurfaceHit)%>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
          & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
-  select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
+  select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS_GP)
   
 View(df_Spp_bout1)
 
@@ -114,7 +115,7 @@ write_xlsx(df.transect, 'hits_byTransect.xlsx')
 #Use summarise to count hits by species, drop NA's
 
 veg_only_transect <- vegdf %>%
-  group_by(sample.bout, Hit.Number, baseline, Transect, Num_transect_points, Bank_Location, FunctionalGroup, Nativity, Cvalue, WIS, Species.Hit) %>%
+  group_by(sample.bout, Hit.Number, baseline, Transect, Num_transect_points, Bank_Location, FunctionalGroup, Nativity, Cvalue, WIS_GP, Species.Hit) %>%
   summarise(Species = n()) %>%
   drop_na()
 
@@ -236,7 +237,7 @@ sum(prop_bank$Freq)
 #REDO BELOW AFTER FIRST SELECTING FOR ONLY THE FIRST SAMPLE BOUT AND FIRST HIT
 
 prop_species_bank <- veg_only_transect %>%
-  group_by(Species.Hit, Bank_Location, FunctionalGroup, Nativity, WIS) %>%
+  group_by(Species.Hit, Bank_Location, FunctionalGroup, Nativity, WIS_GP) %>%
   summarise(Freq = sum(Species))
 
 View(prop_species_bank)
@@ -244,7 +245,7 @@ View(prop_species_bank)
 #Distinct species presence by bank location
 
 distinct_species_bank <- prop_species_bank %>%
-  distinct(Bank_Location, FunctionalGroup, Nativity, WIS)%>%
+  distinct(Bank_Location, FunctionalGroup, Nativity, WIS_GP)%>%
   arrange(desc(Bank_Location))
 
 View(distinct_species_bank)
