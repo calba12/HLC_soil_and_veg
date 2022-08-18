@@ -382,7 +382,6 @@ df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
 ```
 
 
-
 ```{r graph WIS by baseline --> AI}
 
 vegdf$WIS_GP <- as.factor(vegdf$WIS_GP)
@@ -465,7 +464,6 @@ df_WIS_baseline_means2 %>%
   theme(axis.text.x=element_text(angle=90, hjust=1))
 
 ```
-
 
 
 ```{r graph WIS by bank location then move on to statistical model}
@@ -615,11 +613,14 @@ emmeans(glm_gaus_low, pairwise ~ WIS, adjust = "tukey")
 
 ```
 
-```{AI - r graph WIS by bank location then move on to statistical model}
+
+```{r graph WIS by bank location --> AI }
+
 
 #This csv contains first sampling bout and first hits and second hits
+WIS_baseline <- read.csv("./WIS_baseline_upload_WMVC.csv")
 
-WIS_bankLoc <- read.csv("./WIS_byBankLoc_Upload.csv")
+WIS_bankLoc <- read.csv("./WIS_byBankLoc_Upload_WMVC.csv")
 str(WIS_bankLoc)
 View(WIS_bankLoc)
 
@@ -758,6 +759,7 @@ sjPlot::tab_model(glm_gaus_low, title = "WIS Proportions in Lower Bank", dv.labe
 
 emmeans(glm_gaus_low, pairwise ~ WIS, adjust = "tukey")
 ```
+
 
 ```{r graph native/intro by bank location}
 
