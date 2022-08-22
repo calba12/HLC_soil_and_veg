@@ -21,7 +21,7 @@ seedbank <- read.csv("./20220802_HLC_SB_Data_Final4.csv")
 head(seedbank)
 str(seedbank)
 
-View(seedbank)
+#View(seedbank)
 
 #I don't know if below is necessary or not yet for any of the variables, going to keep the code in case it is useful later
 #change sample bout to a factor
@@ -49,13 +49,13 @@ seedbankdf <- seedbankdf %>% rename(c(Species_Name=SPECIFIC_EPITHET_FINAL, Germi
 #rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc)
 
 head(seedbankdf)
-View(seedbankdf)
+#View(seedbankdf)
 
 #check species spellings
 
 ##Ended here 7/24/22
 df <- seedbankdf %>% distinct(Species_Name)
-View(df)
+#View(df)
 #^Looks good, not sure if I should keep or remove unknowns? 
 ```
 
@@ -78,35 +78,35 @@ df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
   arrange(Species_Name)%>%
   subset(Species_Name!="Unknown" & Species_Name!="Unknown forb"
          & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown grass")%>%
-  select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS, C_Value)
+  select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS)
 
-View(df_Spp)
+#View(df_Spp)
 
 #Export to Excel
-#write_xlsx(df_Spp, 'SB_SpeciesList_V2_AI_08022022.xlsx') 
+#write_xlsx(df_Spp, 'SB_SpeciesList_V2_AI_08202022.xlsx') 
 
 
-Spp_tbl <- seedbankdf %>%
-  select(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value)%>% 
-  group_by(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value) %>%
+SB_Spp_tbl <- seedbankdf %>%
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS)%>% 
+  group_by(Species_Name, Longevity_1, Habit, Nativity, WIS) %>%
   summarise(Freq2 = n())
 
-Spp_prop_tbl <- Spp_tbl %>% 
+SB_Spp_prop_tbl <- SB_Spp_tbl %>% 
   mutate(prop = Freq2/sum(Spp_tbl$Freq2))
 
-view(Spp_prop_tbl)
-sum(Spp_tbl$Freq2)
-#write_xlsx(Spp_prop_tbl, 'SB_SppList_Prop_AI08052022.xlsx')
+view(SB_Spp_prop_tbl)
+sum(SB_Spp_tbl$Freq2)
+#write_xlsx(SB_Spp_prop_tbl, 'SB_SppList_Prop_AI08052022.xlsx')
 
 #merge with veg prop data
 
-veg_prop_tbl <- read.csv("./Veg_SppList_Prop3_AI08072022.csv")
+veg_prop_tbl <- read.csv("./Veg_SppList_Prop4_AI08202022.csv")
 
-merged_spp_prop <- merge(veg_prop_tbl, Spp_prop_tbl, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS", "Nativity", "Cvalue" ), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity", "C_Value"), all.x =TRUE, all.y = TRUE)
+merged_spp_prop <- merge(veg_prop_tbl, SB_Spp_prop_tbl, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS_GP", "Nativity"), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity"), all.x =TRUE, all.y = TRUE)
 
 view(merged_spp_prop)
 
-write_xlsx(merged_spp_prop, 'merged_SppList_Prop_AI08072022.xlsx')
+write_xlsx(merged_spp_prop, 'merged_SppList_Prop2_AI08202022.xlsx')
 
 
 ```

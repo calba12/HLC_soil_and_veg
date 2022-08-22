@@ -88,7 +88,7 @@ df.props_WIS_seed <- seedbank %>%
   summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
   mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
   complete(WIS, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
-
+#checkout color packages, ggplot color package
 # Check it adds to one with the 5 groups  
 sum(df.props_WIS_seed$prop[1:5])
     

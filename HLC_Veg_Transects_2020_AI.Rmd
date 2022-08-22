@@ -19,7 +19,7 @@ veg <- read.csv("./20201204_allHitsData_postQC_prep4.csv")
 head(veg)
 str(veg)
 
-#View(veg)
+View(veg)
 
 #add "sp." to species names
 #$ after name makes it specific so that it isn't correcting to 'Carex sp. emoryi', for example
@@ -78,7 +78,7 @@ df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
          & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
   select(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity)
   
-#View(df_Spp_bout1)
+View(df_Spp_bout1)
 
 #Export to Excel
 #write_xlsx(df_Spp_bout1, 'Veg_SpeciesList2_AI07222022.xlsx') 
@@ -86,7 +86,7 @@ df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
 #Counted species and then calculated proportion in new column
 
 Spp_count_tbl <- vegdf %>% 
-  group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity, Cvalue) %>%
+  group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity) %>%
   summarise(Freq2 = n()) %>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
          & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")
@@ -95,9 +95,9 @@ Spp_count_tbl <- vegdf %>%
 Spp_prop_tbl <- Spp_count_tbl %>% 
   mutate(prop = Freq2/sum(Spp_count_tbl$Freq2))
 
-#view(Spp_prop_tbl)
+view(Spp_prop_tbl)
 sum(Spp_count_tbl$Freq2)
-#write_xlsx(Spp_prop_tbl, 'Veg_SppList_Prop3_AI08052022.xlsx')
+write_xlsx(Spp_prop_tbl, 'Veg_SppList_Prop4_AI08202022.xlsx')
 
 
 ```
@@ -294,7 +294,7 @@ ground_only_transect <- vegdf %>%
   drop_na()
 
 head(ground_only_transect)
-View(ground_only_transect)
+#View(ground_only_transect)
 
 #write_xlsx(ground_only_transect, 'Ground_counts.xlsx')
 
@@ -308,7 +308,7 @@ prop_ground <- ground_only_transect %>%
   summarise(Freq = sum(Ground)) %>%
   mutate(prop = Freq/4664)
   
-View(prop_ground)
+#View(prop_ground)
 
 sum(prop_ground$Freq)
 
@@ -316,8 +316,8 @@ sum(prop_ground$Freq)
 
 #Dont use the code below b/c it contains both sampling bouts over the season; want to use
 #only the first sampling bout; leaving it here for reference though
-```{r graph WIS by baseline}
-#original code at top, AI code at bottom of chunk
+```{r graph WIS by baseline, from pivot tbl - don't run}
+#This chunk is original code that used data imported from an excel pivot table, don't run
 #This graph contains both sampling bouts and first and second hits
 
 WIS_baseline <- read.csv("./WIS_baseline_upload_WMVC.csv")
@@ -391,7 +391,7 @@ df.props_WIS_veg <- vegdf %>%
   filter(sample.bout =="1") %>%
   drop_na(Species.Hit, WIS_GP) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
   summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(baseline, Bank_Location, WIS_GP) %>%  
+  group_by(baseline, Transect, Bank_Location, WIS_GP) %>%  #added transect so I can get mean (AI)
   summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
   mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
   complete(WIS_GP, fill = list(Species.Hit = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
@@ -417,7 +417,7 @@ WIS_baseline_long2 %>% ggplot(aes(x=baseline, y=prop)) +
   geom_point()+
   theme_bw(base_size=16)+
   theme(axis.text.x=element_text(angle=90, hjust=1))
-  facet_wrap(~variable)
+  facet_wrap(~WIS_GP, ncol=2)
 
   
 #add data points w/o jitter
@@ -442,7 +442,7 @@ WIS_baseline_long2 %>% ggplot(aes(x=WIS_GP, y=prop)) +
 #Need to get the means of each baseline
 
 df_WIS_baseline_means2 <- WIS_baseline_long2 %>%
-  group_by(baseline, WIS_GP) %>%
+  group_by(baseline, Bank_Location, WIS_GP) %>%
   dplyr::summarise(Mean = mean(prop))
 
 View(df_WIS_baseline_means2)
@@ -460,6 +460,9 @@ df_WIS_baseline_means2 %>%
   ggplot(aes(x=WIS_GP, y=Mean)) +
   geom_boxplot()+
   geom_point()+
+  labs(title = "Aboveground WIS proportion means")+
+  xlab("Wetland Indicator Status (WIS)")+
+  ylab("Mean Proportion")
   theme_bw(base_size=16)+
   theme(axis.text.x=element_text(angle=90, hjust=1))
 
@@ -634,50 +637,59 @@ View(WIS_bankLoc_long)
 
 names(WIS_bankLoc_long) <- c("Baseline","Transect","Location","WIS","PropWIS")
 
-View(WIS_bankLoc_long)
+#View(WIS_bankLoc_long)
 
- 
+
+#WIS_baseline_long2 should work in place of WIS_bankLoc_long, although it doesn't include transects
+#I'm going to change the code so that it works for WIS_baseline_long2
+
 #add data points w/o jitter for bank location
 #change width of boxes and add axis labels 
 #Visualize boxplots and can see that the level of replication being graphed is wrong
 #b/c it is showing all 45 transects
 
-
-p <- WIS_bankLoc_long %>% ggplot(aes(x=variable, y=value))+
+p <- WIS_baseline_long2 %>%
+  mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", "FACU", "FAC", "FACW", "OBL")) %>%
+  ggplot(aes(x=WIS_GP, y=prop))+
   geom_boxplot()+
   geom_point()+
-
   labs(x = "Wetland Indicator Status", y = "Proportion")+
   theme_bw(base_size = 16)+
   theme(axis.text.x=element_text(angle=90, hjust=1))
 print(p)
 
-p + facet_wrap(~Location)
+p + facet_wrap(~Bank_Location)
 
 #Need to get the means of each baseline
 #The above code currently graphs all 45 transects
+
+#df_WIS_baseline_means2 already has mean across transects (from above AI code chunk)
 
 df_WIS_baseline_means <- WIS_bankLoc_long %>%
   group_by(Baseline, Location, variable) %>%
   dplyr::summarise(Mean = mean(value))
 
 View(df_WIS_baseline_means)
+#AI -> I'm noticing that df_WIS_baseline_means(From pivot tbls) does not match df_WIS_baseline_means2 (from Michelle's code), why? 
+#going to proceed with michelle's code. 
 
 #Now create new boxplot with baseline means
 
-p <- df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
+p <- df_WIS_baseline_means2 %>%
+  mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", "FACU", "FAC", "FACW", "OBL")) %>%
+  ggplot(aes(x=WIS_GP, y=Mean)) +
   geom_boxplot()+
   geom_point()+
-
   labs(x = "Wetland Indicator Status", y = "Proportion Vegetation Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  stat_summary(fun=mean, geom="point", aes(group = WIS_GP), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
   theme_bw(base_size = 16)+
   theme(axis.text.x=element_text(angle=90, hjust=1))
 
 print(p)
 
-p + facet_wrap(~Location)
+p + facet_wrap(~Bank_Location)
 
+###8/20/22 AI this is where I left off
 
 #Stats model for proportion of species upper bank location; Gaussian family fixed and random effects
 
