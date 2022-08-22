@@ -15,7 +15,7 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 
 #Import data using a relative pathway
 
-seedbank <- read.csv("./20220802_HLC_SB_Data_Final4.csv")
+seedbank <- read.csv("./HLC_soil_and_veg/20220802_HLC_SB_Data_Final4.csv")
 
 
 head(seedbank)
@@ -23,24 +23,10 @@ str(seedbank)
 
 #View(seedbank)
 
-#I don't know if below is necessary or not yet for any of the variables, going to keep the code in case it is useful later
-#change sample bout to a factor
-#changed veg to be veg_sp
-
-#veg_sp <- veg_sp %>%
- # mutate(sample.bout = as.factor(sample.bout))%>%
-  #mutate(baseline.rep = as.factor(baseline.rep))
-
-#str(veg_sp)
-
-## Remove zero from Hit.Number
-
-#veg_sp <- veg_sp[veg_sp$Hit.Number != "0",]
-#View(veg_sp)
-
 #Rename unwieldly columns; remove unwanted columns
 # "-" means to drop that variable
-seedbankdf <- seedbank %>% select(c(-Specific.Epithet_wconservative.cf, -Org_trayID))
+#seedbankdf <- seedbank %>% select(c(-Specific.Epithet_wconservative.cf, -Org_trayID))
+seedbankdf <- seedbank %>% select(c(-Specific.Epithet_wconservative.cf))
 
 #changed name of column
 seedbankdf <- seedbankdf %>% rename(c(Species_Name=SPECIFIC_EPITHET_FINAL, Germinant_ID_Number = Germinant.ID))
@@ -53,7 +39,6 @@ head(seedbankdf)
 
 #check species spellings
 
-##Ended here 7/24/22
 df <- seedbankdf %>% distinct(Species_Name)
 #View(df)
 #^Looks good, not sure if I should keep or remove unknowns? 
@@ -111,6 +96,7 @@ write_xlsx(merged_spp_prop, 'merged_SppList_Prop2_AI08202022.xlsx')
 
 ```
 
+
 ```{r count germinants at each level of organization: canal, baseline, transect, bank location}
 
 #Summing number of germinants at each level of organization (whole canal, baselines, transects)
@@ -152,6 +138,78 @@ View(germinants.bankloc)
 
 ```
 
+```{r WIS}
+
+#Prepping data to compute proportions
+#By baseline and bank location
+
+seedbank$WIS <- as.factor(seedbank$WIS)
+
+
+df.props_WIS_seed1 <- seedbank %>%
+  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_1, Nativity) %>%
+  drop_na(SPECIFIC_EPITHET_FINAL, WIS) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(Baseline, Bank_Location, WIS) %>% #added transect so I can get mean
+  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(WIS, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+#checkout color packages, ggplot color package
+# Check it adds to one with the 5 groups  
+sum(df.props_WIS_seed$prop[1:5])
+    
+View(df.props_WIS_seed1)
+
+df.props_WIS_seed2 <- seedbank %>%
+  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_1, Nativity) %>%
+  drop_na(SPECIFIC_EPITHET_FINAL, WIS) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(Baseline, Transect_ID, Bank_Location, WIS) %>% #added transect so I can get mean
+  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(WIS, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+#checkout color packages, ggplot color package
+# Check it adds to one with the 5 groups  
+sum(df.props_WIS_seed$prop[1:5])
+#get the means across transect (transected is nested within baseline as replication)
+df_WIS_means <- df.props_WIS_seed2 %>%
+  group_by(Baseline, Bank_Location, WIS) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+View(df_WIS_means)
+
+#Make boxplot with means
+
+p <- df_WIS_means %>% 
+  ggplot(aes(x=factor(WIS, levels = c('UPL', 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp. (FACW-OBL)')), y=Mean, fill=WIS))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Wetland Indicator Status", y = "Proportion of Seedbank")+
+    stat_summary(fun=mean, geom="point", aes(group = WIS), position = position_dodge(.9), shape=20, size=2.5, color="blue", fill="blue")+
+    theme_bw(base_size = 10)+
+    theme(axis.text.x=element_text(angle=90, hjust=1))+
+    scale_fill_brewer(palette = "BuPu") +
+print(p)
+
+p + facet_wrap(~Bank_Location)
+
+
+#colors, reorder
+p <- df_WIS_means %>% 
+  mutate(name = fct_relevel(WIS,'UPL', 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp. (FACW-OBL)')) %>%
+  ggplot(aes(x=factor(WIS), y=Mean, fill=WIS))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Wetland Indicator Status", y = "Proportion of Seedbank")+
+    stat_summary(fun=mean, geom="point", aes(group = WIS), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=90, hjust=1))+
+    scale_fill_brewer(palette = "BuPu")
+print(p)
+
+p + facet_wrap(~Bank_Location)
+
+```
 
 ```{spp presence, abundance, and proportion table}
 
