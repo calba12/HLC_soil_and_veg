@@ -252,10 +252,10 @@ View(distinct_species_bank)
 ```
 
 
-```{r hit type bare soil, litter, vegetation}
+```{r hit type by bare soil, litter, vegetation, water, dwd}
 
 #Create general categories based on whether vegetation was hit first, or pin dropped straight to bare ground, litter, water
-# To do this, if surface hit is NA, then hit type is vegetation, otherwise bare soil or litter as designated in the column
+# To do this, if surface hit is NA, then hit type is vegetation, otherwise bare soil, litter, dwd, water as designated in the column
 
 vegdf$Surface.Hit <- as.character(vegdf$Surface.Hit)
 
@@ -264,46 +264,78 @@ hit_type <- vegdf %>%
   filter(sample.bout =="1") %>%
   replace_na(list(Surface.Hit = 'Vegetation'))
 
+n_distinct(hit_type$Surface.Hit) # check number of hit types (veg, litter, bare soil, dwd, water)
+
 View(hit_type)
 
 #Prepping data file for proportion as response variable
-#The below is not right yet; need to figure out how to count by veg/litter/bare soil in column Surface.Hit
+#This final data set is grouped by transects
 
 hit_type$Surface.Hit <- as.factor(hit_type$Surface.Hit)
 
 df.prop_hit_type <- hit_type %>%
-  group_by(Hit.Number, Bank_Location, baseline, Transect) %>%
-  summarise(Surface.Hit = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(baseline, Bank_Location, Surface.Hit) %>%  
-  summarise(Surface.Hit = sum(Surface.Hit)) %>% ## groups by baseline and Bank_location to sum Surface.Hit
-  mutate(prop = Surface.Hit/sum(Surface.Hit)) %>% ## mutate the df by adding prop that is each #hit type/total
-  complete(Surface.Hit, fill = list(Surface.Hit = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both Surface.Hit and prop
+  group_by(Hit.Number, Bank_Location, baseline, Transect, Surface.Hit) %>%
+  summarise(Count = n()) %>%
+  mutate(prop_cover_type = Count/sum(Count)) %>%
+  complete(Surface.Hit, fill = list(Count = 0, prop_cover_type = 0)) ## keep all levels of factor and replace NA with zeros for both Count and prop_cover_type
 
-# Check it adds to one with the 5 groups  
-sum(df.prop_hit_type$prop[1:6])
-    
+sum(df.prop_hit_type$prop_cover_type[1:5])
+
 View(df.prop_hit_type)
 
 
+#Make boxplot
 
-hit_type$Surface.Hit <- as.factor(hit_type$Surface.Hit)
+p <- df.prop_hit_type %>% ggplot(aes(x=Surface.Hit, y=prop_cover_type))+ 
+  geom_boxplot()+
+  geom_point()+
 
-df.prop_hit_type <- hit_type %>%
-  group_by(Hit.Number, Bank_Location, baseline, Transect) %>%
-  summarise(Surface.Hit = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(baseline, Bank_Location, Surface.Hit) %>%  
-  summarise(Surface.Hit = sum(Surface.Hit)) %>% ## groups by baseline and Bank_location to sum Surface.Hit
-  mutate(prop = Surface.Hit/sum(Surface.Hit)) %>% ## mutate the df by adding prop that is each #hit type/total
-  complete(Surface.Hit, fill = list(Surface.Hit = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both Surface.Hit and prop
+  labs(x = "Cover Type", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = Surface.Hit), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+print(p)
 
-# Check it adds to one with the 5 groups  
-sum(df.prop_hit_type$prop[1:6])
-    
-View(df.prop_hit_type)
+p + facet_wrap(~Bank_Location)
 
 
 
+#Need to get the means of each baseline
+#The above code currently graphs all 45 transects
 
+df_prop_hit_type_means <- df.prop_hit_type %>%
+  group_by(baseline, Bank_Location, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type))
+
+View(df_prop_hit_type_means)
+
+#Now create new boxplot with baseline means
+
+p <- df_prop_hit_type_means %>% ggplot(aes(x=factor(Surface.Hit, levels = c('litter', 'Vegetation', 'bare soil', 'downed woody debris', 'water')), y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Cover Type", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = Bank_Location), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+p + facet_wrap(~Bank_Location)
+
+
+#Make stacked bar graph 
+
+df_stacked <- aggregate(Mean ~ Bank_Location + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
+
+View(df_stacked)f
+
+p <- ggplot(df_stacked, aes(fill = Surface.Hit, y = Mean, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Cover Type")) +
+  theme_bw(base_size = 16) 
 
 ```
 
@@ -408,6 +440,20 @@ p <- df.props_WIS_veg_exp %>% ggplot(aes(x=factor(WIS_GP, levels = c('UPL', 'FAC
 print(p)
 
 p + facet_wrap(~Bank_Location)
+
+
+
+#Make stacked bar graph 
+
+df_stacked_WIS <- aggregate(prop ~ Bank_Location + WIS_GP, data = df.props_WIS_veg, FUN = mean)
+
+View(df_stacked)
+
+ggplot(df_stacked_WIS, aes(fill = WIS_GP, y = prop, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Wetland Indicator Status")) +
+  theme_bw(base_size = 16) 
 
 
 #Stats model for proportion of species upper bank location; Gaussian family fixed and random effects
