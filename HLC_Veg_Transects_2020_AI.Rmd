@@ -13,7 +13,7 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 #Bring in raw data file
 
 #Import data using a relative pathway
-veg <- read.csv("./20201204_allHitsData_postQC_prep4.csv")
+veg <- read.csv("./HLC_soil_and_veg/20201204_allHitsData_postQC_prep4.csv")
 
 
 head(veg)

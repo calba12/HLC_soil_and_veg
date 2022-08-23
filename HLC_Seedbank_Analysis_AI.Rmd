@@ -138,29 +138,18 @@ View(germinants.bankloc)
 
 ```
 
-```{r WIS}
+```{r WIS  _ Graph by Bank Location}
 
 #Prepping data to compute proportions
 #By baseline and bank location
+seedbank[seedbank == 'Juncus sp. (FACW-OBL)'] <- 'Juncus sp.*'
 
+view(seedbank)
 seedbank$WIS <- as.factor(seedbank$WIS)
 
-
-df.props_WIS_seed1 <- seedbank %>%
-  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_1, Nativity) %>%
-  drop_na(SPECIFIC_EPITHET_FINAL, WIS) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
-  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(Baseline, Bank_Location, WIS) %>% #added transect so I can get mean
-  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
-  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
-  complete(WIS, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
-#checkout color packages, ggplot color package
-# Check it adds to one with the 5 groups  
-sum(df.props_WIS_seed$prop[1:5])
     
-View(df.props_WIS_seed1)
 
-df.props_WIS_seed2 <- seedbank %>%
+df.props_WIS_seed <- seedbank %>%
   group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_1, Nativity) %>%
   drop_na(SPECIFIC_EPITHET_FINAL, WIS) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
   summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
@@ -172,7 +161,7 @@ df.props_WIS_seed2 <- seedbank %>%
 # Check it adds to one with the 5 groups  
 sum(df.props_WIS_seed$prop[1:5])
 #get the means across transect (transected is nested within baseline as replication)
-df_WIS_means <- df.props_WIS_seed2 %>%
+df_WIS_means <- df.props_WIS_seed %>%
   group_by(Baseline, Bank_Location, WIS) %>%
   dplyr::summarise(Mean = mean(prop))
 
@@ -180,23 +169,22 @@ View(df_WIS_means)
 
 #Make boxplot with means
 
-p <- df_WIS_means %>% 
-  ggplot(aes(x=factor(WIS, levels = c('UPL', 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp. (FACW-OBL)')), y=Mean, fill=WIS))+ 
+WIS <- df_WIS_means %>% 
+  ggplot(aes(x=factor(WIS, levels = c('UPL', 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.')), y=Mean, fill=WIS))+ 
   geom_boxplot()+
     geom_point()+
     labs(x = "Wetland Indicator Status", y = "Proportion of Seedbank")+
     stat_summary(fun=mean, geom="point", aes(group = WIS), position = position_dodge(.9), shape=20, size=2.5, color="blue", fill="blue")+
     theme_bw(base_size = 10)+
     theme(axis.text.x=element_text(angle=90, hjust=1))+
-    scale_fill_brewer(palette = "BuPu") +
-print(p)
+    scale_fill_brewer(palette = "BuPu")
+print(WIS)
 
-p + facet_wrap(~Bank_Location)
-
+WIS + facet_wrap(~Bank_Location)
 
 #colors, reorder
-p <- df_WIS_means %>% 
-  mutate(name = fct_relevel(WIS,'UPL', 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp. (FACW-OBL)')) %>%
+WIS <- df_WIS_means %>% 
+  mutate(WIS = fct_relevel(WIS, "UPL", 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.*')) %>%
   ggplot(aes(x=factor(WIS), y=Mean, fill=WIS))+ 
   geom_boxplot()+
     geom_point()+
@@ -205,9 +193,101 @@ p <- df_WIS_means %>%
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=90, hjust=1))+
     scale_fill_brewer(palette = "BuPu")
-print(p)
+print(WIS)
 
-p + facet_wrap(~Bank_Location)
+WIS + facet_wrap(~Bank_Location)
+
+```
+
+```{r Nativity  _ Graph by Bank Location}
+#Prepping data to compute proportions
+#By baseline and bank location
+
+seedbank$Functional_Group_2 <- as.factor(seedbank$Functional_Group_2)
+
+
+df.props_functionalgroup_sb <- seedbank %>%
+  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_2, Nativity) %>%
+  drop_na(SPECIFIC_EPITHET_FINAL, WIS, Nativity, Functional_Group_2) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(Baseline, Transect_ID, Bank_Location, Functional_Group_2) %>% #added transect so I can get mean - AI
+  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(Functional_Group_2, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+#checkout color packages, ggplot color package
+# Check it adds to one with the 5 groups  
+sum(df.props_functionalgroup_sb$prop[1:5])
+    
+View(df.props_functionalgroup_sb)
+
+#get the means across transect (transected is nested within baseline as replication)
+df_fg_means <- df.props_functionalgroup_sb %>%
+  group_by(Baseline, Bank_Location, Functional_Group_2) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+View(df_fg_means)
+
+#Make boxplot with means
+
+FG <- df_fg_means %>% 
+  ggplot(aes(x=Functional_Group_2, y=Mean, fill=Functional_Group_2))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Functional Group", y = "Proportion of Seedbank")+
+    stat_summary(fun=mean, geom="point", aes(group = Functional_Group_2), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=90, hjust=1))+
+    scale_fill_brewer(palette = "BuPu")
+print(FG)
+
+FG + facet_wrap(~Bank_Location)
+
+
+```
+
+```{r Functional Group _ Graph by Bank Location}
+#Prepping data to compute proportions
+#By baseline and bank location
+
+seedbank$Nativity <- as.factor(seedbank$Nativity)
+
+
+df.props_nativity_sb <- seedbank %>%
+  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_1, Nativity) %>%
+  drop_na(SPECIFIC_EPITHET_FINAL, WIS, Nativity) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(Baseline, Transect_ID, Bank_Location, Nativity) %>% #added transect so I can get mean
+  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(Nativity, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+#checkout color packages, ggplot color package
+# Check it adds to one with the 5 groups  
+sum(df.props_WIS_seed$prop[1:5])
+    
+View(df.props_nativity_sb)
+
+#get the means across transect (transected is nested within baseline as replication)
+df_nativity_means <- df.props_nativity_sb %>%
+  group_by(Baseline, Bank_Location, Nativity) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+View(df_nativity_means)
+
+#Make boxplot with means
+
+N <- df_nativity_means %>% 
+  ggplot(aes(x=Nativity, y=Mean, fill=Nativity))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Nativity", y = "Proportion of Seedbank")+
+    stat_summary(fun=mean, geom="point", aes(group = Nativity), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=90, hjust=1))+
+    scale_fill_brewer(palette = "BuPu")
+print(N)
+
+N + facet_wrap(~Bank_Location)
+
 
 ```
 
