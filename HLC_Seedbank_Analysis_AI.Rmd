@@ -15,7 +15,7 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 
 #Import data using a relative pathway
 
-seedbank <- read.csv("./HLC_soil_and_veg/20220802_HLC_SB_Data_Final4.csv")
+seedbank <- read.csv("../HLC_soil_and_veg/20220802_HLC_SB_Data_Final4.csv")
 
 
 head(seedbank)
@@ -40,6 +40,8 @@ head(seedbankdf)
 #check species spellings
 
 df <- seedbankdf %>% distinct(Species_Name)
+
+
 #View(df)
 #^Looks good, not sure if I should keep or remove unknowns? 
 ```
@@ -50,14 +52,6 @@ df <- seedbankdf %>% distinct(Species_Name)
 #Pull out species names using "distinct"; arrange alphabetically using "arrange";remove 
 #unwanted entries (rock, soil, litter) using "subset"; keep desired columns using "select"
 
-#df_bout1 <- subset(vegdf,sample.bout =="1")
-#View(df_bout1)
-
-#Veg code: df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
-  #arrange(VegHit_SoilSurfaceHit)%>%
-  #subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
-   #      & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
-  #select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
 
 df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
   arrange(Species_Name)%>%
@@ -79,7 +73,7 @@ SB_Spp_tbl <- seedbankdf %>%
 SB_Spp_prop_tbl <- SB_Spp_tbl %>% 
   mutate(prop = Freq2/sum(Spp_tbl$Freq2))
 
-view(SB_Spp_prop_tbl)
+#view(SB_Spp_prop_tbl)
 sum(SB_Spp_tbl$Freq2)
 #write_xlsx(SB_Spp_prop_tbl, 'SB_SppList_Prop_AI08052022.xlsx')
 
@@ -89,13 +83,12 @@ veg_prop_tbl <- read.csv("./Veg_SppList_Prop4_AI08202022.csv")
 
 merged_spp_prop <- merge(veg_prop_tbl, SB_Spp_prop_tbl, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS_GP", "Nativity"), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity"), all.x =TRUE, all.y = TRUE)
 
-view(merged_spp_prop)
+#view(merged_spp_prop)
 
-write_xlsx(merged_spp_prop, 'merged_SppList_Prop2_AI08202022.xlsx')
+#write_xlsx(merged_spp_prop, 'merged_SppList_Prop2_AI08202022.xlsx')
 
 
 ```
-
 
 ```{r count germinants at each level of organization: canal, baseline, transect, bank location}
 
@@ -105,7 +98,7 @@ write_xlsx(merged_spp_prop, 'merged_SppList_Prop2_AI08202022.xlsx')
 germinants.canal <- seedbankdf %>%
   summarise(Species.Name = n()) 
 
-View(germinants.canal)
+#View(germinants.canal)
 #write_xlsx(germinants.canal, 'germinants_byCanal.xlsx')
 
 #Germinants by baseline
@@ -114,7 +107,7 @@ germinants.baseline <- seedbankdf %>%
   group_by(Baseline) %>%
   summarise(Species.Name = n()) 
 
-View(germinants.baseline)
+#View(germinants.baseline)
 
 #write_xlsx(germinants.baseline, 'germinants_byBaseline.xlsx')
 
@@ -124,7 +117,7 @@ germinants.transect <- seedbankdf %>%
   group_by(Transect_ID) %>%
   summarise(Species.Name = n()) 
 
-View(germinants.transect)
+#View(germinants.transect)
 
 #write_xlsx(germinants.transect, 'germinants_bytransect.xlsx')
 
@@ -132,7 +125,7 @@ germinants.bankloc <- seedbankdf %>%
   group_by(Transect_ID, Bank_Location) %>%
   summarise(Species_Name = n())
 
-View(germinants.bankloc)
+#View(germinants.bankloc)
 
 
 
@@ -142,9 +135,9 @@ View(germinants.bankloc)
 
 #Prepping data to compute proportions
 #By baseline and bank location
-seedbank[seedbank == 'Juncus sp. (FACW-OBL)'] <- 'Juncus sp.*'
+seedbank[seedbank == 'Juncus sp. (FACW-OBL)'] <- 'Juncus sp.*' #Changing name so it looks nicer in graph
 
-view(seedbank)
+#view(seedbank)
 seedbank$WIS <- as.factor(seedbank$WIS)
 
     
@@ -199,7 +192,54 @@ WIS + facet_wrap(~Bank_Location)
 
 ```
 
-```{r Nativity  _ Graph by Bank Location}
+```{r Functional Group 2  _ Graph by Bank Location}
+
+#Prepping data to compute proportions
+#By baseline and bank location
+
+view(seedbank)
+
+seedbank$Functional_Group_2 <- as.factor(seedbank$Functional_Group_2)
+
+    
+
+df.props_FunctGroup_seed <- seedbank %>%
+  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_2, Habit, Functional_Group_2, Nativity) %>%
+  drop_na(SPECIFIC_EPITHET_FINAL, Longevity_2, Habit, Nativity, Functional_Group_2) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
+  filter(Functional_Group_2 != "Long-lived Woody") %>%
+  group_by(Baseline, Transect_ID, Bank_Location, Functional_Group_2) %>% #added transect so I can get mean
+  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) #%>% ## mutate the df by adding prop that is each #sp/total
+  #complete(Functional_Group_2, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+#checkout color packages, ggplot color package
+# Check it adds to one with the 5 groups  
+sum(df.props_FunctGroup_seed$prop[1:5])
+#get the means across transect (transected is nested within baseline as replication)
+df_FGroup_means <- df.props_FunctGroup_seed %>%
+  group_by(Baseline, Bank_Location, Functional_Group_2) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+View(df_FGroup_means)
+
+#Make boxplot with means
+#colors, reorder
+FGroup2 <- df_FGroup_means %>% 
+  ggplot(aes(x=Functional_Group_2, y=Mean, fill=Functional_Group_2))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "FG", y = "Proportion of Seed Bank")+
+    stat_summary(fun=mean, geom="point", aes(group = Functional_Group_2), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=90, hjust=1))+
+    scale_fill_brewer(palette = "BuPu")
+print(FGroup2)
+
+FGroup2 + facet_wrap(~Bank_Location)
+
+```
+
+```{r Functional Group  _ Graph by Bank Location, not working }
 #Prepping data to compute proportions
 #By baseline and bank location
 
@@ -233,7 +273,7 @@ FG <- df_fg_means %>%
   ggplot(aes(x=Functional_Group_2, y=Mean, fill=Functional_Group_2))+ 
   geom_boxplot()+
     geom_point()+
-    labs(x = "Functional Group", y = "Proportion of Seedbank")+
+    labs(x = "Functional Group", y = "Proportion of Seed Bank")+
     stat_summary(fun=mean, geom="point", aes(group = Functional_Group_2), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=90, hjust=1))+
@@ -245,7 +285,7 @@ FG + facet_wrap(~Bank_Location)
 
 ```
 
-```{r Functional Group _ Graph by Bank Location}
+```{r Nativity _ Graph by Bank Location}
 #Prepping data to compute proportions
 #By baseline and bank location
 
