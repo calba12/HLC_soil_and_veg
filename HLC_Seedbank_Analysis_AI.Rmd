@@ -21,7 +21,7 @@ seedbank <- read.csv("../HLC_soil_and_veg/20220802_HLC_SB_Data_Final4.csv")
 head(seedbank)
 str(seedbank)
 
-#View(seedbank)
+View(seedbank)
 
 #Rename unwieldly columns; remove unwanted columns
 # "-" means to drop that variable
@@ -137,7 +137,7 @@ germinants.bankloc <- seedbankdf %>%
 #By baseline and bank location
 seedbank[seedbank == 'Juncus sp. (FACW-OBL)'] <- 'Juncus sp.*' #Changing name so it looks nicer in graph
 
-#view(seedbank)
+view(seedbank)
 seedbank$WIS <- as.factor(seedbank$WIS)
 
     
@@ -151,8 +151,12 @@ df.props_WIS_seed <- seedbank %>%
   mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
   complete(WIS, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
 #checkout color packages, ggplot color package
+
+
 # Check it adds to one with the 5 groups  
 sum(df.props_WIS_seed$prop[1:5])
+
+
 #get the means across transect (transected is nested within baseline as replication)
 df_WIS_means <- df.props_WIS_seed %>%
   group_by(Baseline, Bank_Location, WIS) %>%
@@ -161,24 +165,11 @@ df_WIS_means <- df.props_WIS_seed %>%
 View(df_WIS_means)
 
 #Make boxplot with means
-
-WIS <- df_WIS_means %>% 
-  ggplot(aes(x=factor(WIS, levels = c('UPL', 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.')), y=Mean, fill=WIS))+ 
-  geom_boxplot()+
-    geom_point()+
-    labs(x = "Wetland Indicator Status", y = "Proportion of Seedbank")+
-    stat_summary(fun=mean, geom="point", aes(group = WIS), position = position_dodge(.9), shape=20, size=2.5, color="blue", fill="blue")+
-    theme_bw(base_size = 10)+
-    theme(axis.text.x=element_text(angle=90, hjust=1))+
-    scale_fill_brewer(palette = "BuPu")
-print(WIS)
-
-WIS + facet_wrap(~Bank_Location)
-
 #colors, reorder
 WIS <- df_WIS_means %>% 
   mutate(WIS = fct_relevel(WIS, "UPL", 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.*')) %>%
   ggplot(aes(x=factor(WIS), y=Mean, fill=WIS))+ 
+    ggtitle("Wetland Indicator Status Proportion by Bank Location") +
   geom_boxplot()+
     geom_point()+
     labs(x = "Wetland Indicator Status", y = "Proportion of Seedbank")+
@@ -190,6 +181,25 @@ print(WIS)
 
 WIS + facet_wrap(~Bank_Location)
 
+
+#Make stacked bar graph 
+
+df_stacked <- aggregate(Mean ~ Bank_Location + WIS , data = df_WIS_means, FUN = mean)
+
+View(df_stacked)
+
+St_WIS <- df_stacked %>%
+  mutate(WIS = fct_relevel(WIS, "UPL", 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.*')) %>%
+  ggplot(aes(fill = WIS, y = Mean, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Seed Bank") +
+  guides(fill = guide_legend("WIS")) +
+  theme_bw(base_size = 16) +
+  scale_fill_brewer(palette = "BuPu")
+
+print(St_WIS)
+
+
 ```
 
 ```{r Functional Group 2  _ Graph by Bank Location}
@@ -200,35 +210,42 @@ WIS + facet_wrap(~Bank_Location)
 view(seedbank)
 
 seedbank$Functional_Group_2 <- as.factor(seedbank$Functional_Group_2)
-
     
 
 df.props_FunctGroup_seed <- seedbank %>%
   group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_2, Habit, Functional_Group_2, Nativity) %>%
   drop_na(SPECIFIC_EPITHET_FINAL, Longevity_2, Habit, Nativity, Functional_Group_2) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
   summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
-  filter(Functional_Group_2 != "Long-lived Woody") %>%
   group_by(Baseline, Transect_ID, Bank_Location, Functional_Group_2) %>% #added transect so I can get mean
   summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
-  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) #%>% ## mutate the df by adding prop that is each #sp/total
-  #complete(Functional_Group_2, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>%## mutate the df by adding prop that is each #sp/total
+  complete(Functional_Group_2, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+ filter(Functional_Group_2 !="Long-lived Woody") %>% #removing these groups from the graph (NAs were already dropped)
+ filter(Functional_Group_2 !="NA Forb") %>%
+ filter(Functional_Group_2 !="NA NA") %>%
+ filter(Functional_Group_2 !="NA Graminoid") %>%
+ filter(Functional_Group_2 !="  Graminoid")
+
+
 #checkout color packages, ggplot color package
 # Check it adds to one with the 5 groups  
 sum(df.props_FunctGroup_seed$prop[1:5])
 #get the means across transect (transected is nested within baseline as replication)
+
 df_FGroup_means <- df.props_FunctGroup_seed %>%
   group_by(Baseline, Bank_Location, Functional_Group_2) %>%
   dplyr::summarise(Mean = mean(prop))
 
-View(df_FGroup_means)
+#View(df_FGroup_means)
 
 #Make boxplot with means
 #colors, reorder
 FGroup2 <- df_FGroup_means %>% 
   ggplot(aes(x=Functional_Group_2, y=Mean, fill=Functional_Group_2))+ 
+    ggtitle("Functional Group Proportion by Bank Location") +
   geom_boxplot()+
     geom_point()+
-    labs(x = "FG", y = "Proportion of Seed Bank")+
+    labs(x = "Functional Group", y = "Proportion of Seed Bank")+
     stat_summary(fun=mean, geom="point", aes(group = Functional_Group_2), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=90, hjust=1))+
@@ -236,6 +253,25 @@ FGroup2 <- df_FGroup_means %>%
 print(FGroup2)
 
 FGroup2 + facet_wrap(~Bank_Location)
+
+#Make stacked bar graph 
+
+FG_stacked <- aggregate(Mean ~ Bank_Location + Functional_Group_2 , data = df_FGroup_means, FUN = mean)
+
+View(FG_stacked)
+
+St_FG <- FG_stacked %>%
+  ggplot(aes(fill = Functional_Group_2, y = Mean, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Seed bank") +
+  guides(fill = guide_legend("Functional Group")) +
+  theme_bw(base_size = 16) +
+  scale_fill_brewer(palette = "BuPu")
+
+print(St_FG)
+
+
+
 
 ```
 
@@ -300,11 +336,12 @@ df.props_nativity_sb <- seedbank %>%
   summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
   mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
   complete(Nativity, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+
 #checkout color packages, ggplot color package
 # Check it adds to one with the 5 groups  
 sum(df.props_WIS_seed$prop[1:5])
     
-View(df.props_nativity_sb)
+#View(df.props_nativity_sb)
 
 #get the means across transect (transected is nested within baseline as replication)
 df_nativity_means <- df.props_nativity_sb %>%
@@ -317,6 +354,7 @@ View(df_nativity_means)
 
 N <- df_nativity_means %>% 
   ggplot(aes(x=Nativity, y=Mean, fill=Nativity))+ 
+    ggtitle("Nativity Proportion by Bank Location") +
   geom_boxplot()+
     geom_point()+
     labs(x = "Nativity", y = "Proportion of Seedbank")+
@@ -327,6 +365,23 @@ N <- df_nativity_means %>%
 print(N)
 
 N + facet_wrap(~Bank_Location)
+
+
+
+#Make stacked bar graph 
+
+Nativity_stacked <- aggregate(Mean ~ Bank_Location + Nativity , data = df_nativity_means, FUN = mean)
+
+View(Nativity_stacked)
+
+St_Nativity <- Nativity_stacked %>%
+  ggplot(aes(fill = Nativity, y = Mean, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Seed Bank") +
+  theme_bw(base_size = 16) +
+  scale_fill_brewer(palette = "BuPu")
+
+print(St_Nativity)
 
 
 ```
