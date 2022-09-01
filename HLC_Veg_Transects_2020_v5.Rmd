@@ -9,7 +9,7 @@ output: html_document
 ```{r libraries, bring in file, some data cleaning}
 
 library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(tidytext);
-library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2); library(sjPlot); library(emmeans)
+library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2); library(sjPlot); library(emmeans); library(RColorBrewer)
 
 #Bring in raw data file
 veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
@@ -294,10 +294,10 @@ p <- df.prop_hit_type %>% ggplot(aes(x=Surface.Hit, y=prop_cover_type))+
   stat_summary(fun=mean, geom="point", aes(group = Surface.Hit), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
   theme_bw(base_size = 16)+
   theme(axis.text.x=element_text(angle=90, hjust=1))
+
 print(p)
 
 p + facet_wrap(~Bank_Location)
-
 
 
 #Need to get the means of each baseline
@@ -314,94 +314,29 @@ View(df_prop_hit_type_means)
 p <- df_prop_hit_type_means %>% ggplot(aes(x=factor(Surface.Hit, levels = c('litter', 'Vegetation', 'bare soil', 'downed woody debris', 'water')), y=Mean))+
   geom_boxplot()+
   geom_point()+
-
   labs(x = "Cover Type", y = "Proportion of Cover")+
   stat_summary(fun=mean, geom="point", aes(group = Bank_Location), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
   theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
+  theme(axis.text.x=element_text(angle=90, hjust=1)) +
 
 print(p)
 
 p + facet_wrap(~Bank_Location)
 
-
 #Make stacked bar graph 
 
 df_stacked <- aggregate(Mean ~ Bank_Location + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
 
-View(df_stacked)f
+View(df_stacked)
 
 p <- ggplot(df_stacked, aes(fill = Surface.Hit, y = Mean, x = Bank_Location))+
   geom_bar(position = "stack", stat = "identity", color = "black") +
   labs(x = "Bank Location", y = "Proportion of Cover") +
   guides(fill = guide_legend("Cover Type")) +
-  theme_bw(base_size = 16) 
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "BuPu")
 
-```
-
-#Dont use the code below b/c it contains both sampling bouts over the season; want to use
-#only the first sampling bout; leaving it here for reference though
-```{r graph WIS by baseline}
-
-#This graph contains both sampling bouts and first and second hits
-
-WIS_baseline <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/WIS_baseline_upload.csv")
-
-str(WIS_baseline)
-View(WIS_baseline)
-
-#Remove unwanted columns and change to long format
-
-WIS_baseline <- select(WIS_baseline, -Total.Hits, - UPL, -FACU, -FAC, -FACW, -OBL)
-
-WIS_baseline_long <- melt(WIS_baseline, id.vars = c("Baseline","Transect"))
-
-View(WIS_baseline_long)
-
-#add data points w/o jitter 
-#Facet by WIS type
-
-WIS_baseline_long %>% ggplot(aes(x=Baseline, y=value)) +
-  geom_boxplot()+
-  geom_point()+
-  theme_bw(base_size=16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-  facet_wrap(~variable)
-
-#add data points w/o jitter
-#Facet by Baseline
-
-WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
-  geom_boxplot()+
-  geom_point()+
-  theme_bw(base_size=16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-  facet_wrap(~Baseline)
-
-#add data points w/o jitter
-#Not faceted by baseline; includes all 45 transects
-
-WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
-  geom_boxplot()+
-  geom_point()+
-  theme_bw(base_size=16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-#Need to get the means of each baseline
-
-df_WIS_baseline_means <- WIS_baseline_long %>%
-  group_by(Baseline, variable) %>%
-  dplyr::summarise(Mean = mean(value))
-
-View(df_WIS_baseline_means)
-
-#Now do boxplot 
-
-df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
-  geom_boxplot()+
-  geom_point()+
-  theme_bw(base_size=16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
+print(p)
 
 ```
 
@@ -447,13 +382,16 @@ p + facet_wrap(~Bank_Location)
 
 df_stacked_WIS <- aggregate(prop ~ Bank_Location + WIS_GP, data = df.props_WIS_veg, FUN = mean)
 
-View(df_stacked)
+View(df_stacked_WIS)
 
-ggplot(df_stacked_WIS, aes(fill = WIS_GP, y = prop, x = Bank_Location))+
+df_stacked_WIS %>%
+  mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", 'FACU', 'FAC', 'FACW', 'OBL')) %>%
+  ggplot(aes(fill = WIS_GP, y = prop, x = Bank_Location))+
   geom_bar(position = "stack", stat = "identity", color = "black") +
   labs(x = "Bank Location", y = "Proportion of Cover") +
   guides(fill = guide_legend("Wetland Indicator Status")) +
-  theme_bw(base_size = 16) 
+  theme_bw(base_size = 16)+
+  scale_fill_brewer(palette = "BuPu")
 
 
 #Stats model for proportion of species upper bank location; Gaussian family fixed and random effects
@@ -800,128 +738,81 @@ df_commonSpp_bankLoc_means %>%
 ```
 
 
-```{r graph ground cover}
-
-#This csv contains both sampling bouts
-#Based on graphing, this way of looking at it is not too informative; need to combine ground cover and foliar cover to
-#get a feel for bank locations with veg cover versus none
-
-Ground_cover <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/Ground_coverProps_upload.csv")
-
-str(Ground_cover)
-View(Ground_cover)
-
-#Remove unwanted columns and change to long format
-
-Ground_cover <- select(Ground_cover, -Total.Hits, -Hit.by.Loc, -Bare, -Litter, -WoodDebris, -Water, -Rock, -Prop.Water, -Prop.Rock)
-
-Ground_cover_long <- melt(Ground_cover, id.vars = c("Baseline","Transect", "Location"))
-
-View(Ground_cover_long)
-
-
-Ground_cover_long %>% ggplot(aes(x=variable, y=value))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Cover Type", y = "Proportion of Cover")+
-  theme_bw(base_size = 16)
-
-
-#Need to get the means of each baseline
-#The above code currently graphs all 45 transects
-
-df_GroundCover_baseline_means <- Ground_cover_long %>%
-  group_by(Baseline, Location, variable) %>%
-  dplyr::summarise(Mean = mean(value))
-
-View(df_GroundCover_baseline_means)
-
-
-#Now create new boxplot with baseline means by bank location
-
-p <- df_GroundCover_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Cover Type", y = "Proportion of Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-print(p)
-
-p + facet_wrap(~Location)
-
-```
-
-
 ```{r graph functional groups by bank location}
 
-#This csv contains first sampling bout and first hits plus second hits
+#Prepping data file for proportion as response variable
 
-FG_bankLoc <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/FunctionalGroup_byBankLoc_Upload.csv")
+vegdf$FunctionalGroup <- as.factor(vegdf$FunctionalGroup)
 
-str(FG_bankLoc)
-View(FG_bankLoc)
+df.props_FG <- vegdf %>%
+  dplyr::mutate(FunctionalGroup=recode(FunctionalGroup, 'AF' = "SLF", 'BF' = "SLF", 'VF' = "SLF")) %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
+  filter(sample.bout =="1") %>%
+  drop_na(Species.Hit, FunctionalGroup) %>%  ## drops rows with missing values NA in either Species.Hit or FunctionalGroup
+  summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Bank_Location, FunctionalGroup) %>%  
+  summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(propFG = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(FunctionalGroup, fill = list(Species.Hit = 0, propFG = 0)) ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
 
-#Remove unwanted columns, change to long format, name columns as desired
+# Check it adds to one with the 7 groups  
+sum(df.props_FG$propFG[1:5])
+    
+View(df.props_FG)
 
-FG_bankLoc <- select(FG_bankLoc, -Total.Hits, -Hit.by.loc, -PG, -PF, -AF, -VF, -BF, -W, -AG)
-
-FG_bankLoc_long <- melt(FG_bankLoc, id.vars = c("Baseline","Transect", "Location"))
-
-View(FG_bankLoc_long)
-
-names(FG_bankLoc_long) <- c("Baseline","Transect","Location","FuncGroup","PropFuncGroup")
-
-View(FG_bankLoc_long)
-
-
-#add data points w/o jitter for bank location
-#change width of boxes and add axis labels 
-#Visualize boxplots and can see that the level of replication being graphed is wrong
-#b/c it is showing all 45 transects
-
-
-p <- FG_bankLoc_long %>% ggplot(aes(x=FuncGroup, y=PropFuncGroup))+
+# This boxplot graphs all transects so need to get baseline line below
+p <- df.props_FG %>% ggplot(aes(x=FunctionalGroup, y=propFG))+
   geom_boxplot()+
   geom_point()+
-
-  labs(x = "Functional Group", y = "Proportion")+
+  labs(x = "Functional Group", y = "Proportion of Cover")+
   theme_bw(base_size = 16)
 print(p)
 
-p + facet_wrap(~Location)
+p + facet_wrap(~Bank_Location)
 
 #Need to get the means of each baseline
 #The above code currently graphs all 45 transects
 
-df_FG_baseline_means <- FG_bankLoc_long %>%
-  group_by(Baseline, Location, FuncGroup) %>%
-  dplyr::summarise(Mean = mean(PropFuncGroup))
+df.props_FG_means <- df.props_FG %>%
+  group_by(baseline, Bank_Location, FunctionalGroup) %>%
+  dplyr::summarise(Mean = mean(propFG))
 
-View(df_FG_baseline_means)
-
+View(df.props_FG_means)
 
 #Now create new boxplot with baseline means
 
-p <- df_FG_baseline_means %>% ggplot(aes(x=FuncGroup, y=Mean))+
+p <- df.props_FG_means %>% ggplot(aes(x=factor(FunctionalGroup, levels = c('PG', 'PF', 'W', 'SLF', 'AG')), y=Mean))+
   geom_boxplot()+
   geom_point()+
 
   labs(x = "Functional Group", y = "Proportion Vegetation Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = FuncGroup), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  stat_summary(fun=mean, geom="point", aes(group = FunctionalGroup), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
   theme_bw(base_size = 16)+
   theme(axis.text.x=element_text(angle=90, hjust=1))
 
 print(p)
 
-p + facet_wrap(~Location)
+p + facet_wrap(~Bank_Location)
+
+#Make stacked bar graph 
+
+df.props_FG_stacked <- aggregate(Mean ~ Bank_Location + FunctionalGroup, data = df.props_FG_means, FUN = mean)
+
+View(df.props_FG_stacked)
+
+p <- ggplot(df.props_FG_stacked, aes(fill = FunctionalGroup, y = Mean, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Functional Group Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "BuPu")
+
+print(p)
 
 
+#FOR THE BELOW STATS, NEED TO CREATE A DATAFRAME USING THE PREPPING
+#CODE ABOVE BUT KEEP TRANSECTS FOR RANDOM STATEMENT
 #Stats model for proportion of species upper bank location; Gaussian family fixed and random effects
-
 #First select out the upper bank location only
 
 df_UpperBank <- subset(FG_bankLoc_long, Location =="upper")
