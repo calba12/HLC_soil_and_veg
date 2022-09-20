@@ -15,7 +15,11 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 
 #Import data using a relative pathway
 
-seedbank <- read.csv("../HLC_soil_and_veg/20220802_HLC_SB_Data_Final4.csv")
+#Mac path
+seedbank <- read.csv("20220802_HLC_SB_Data_Final4.csv")
+getwd()
+
+#Turquoise path
 
 
 head(seedbank)
