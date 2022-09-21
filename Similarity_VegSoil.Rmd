@@ -114,7 +114,7 @@ colnames(aboveground.wide) ## Need to remove the first three columns aboveground
 ## I'm assuming that SPECIFIC_EPITHET_FINAL == Species.Hit;
 ##                   Transect_ID == Transect
 ##                   Bank_Location == Bank_Location (yay! a sensical one)
-## and that that is enough. If you want to have WIS or Functional group or others, follow the same pattern
+## and that is enough. If you want to have WIS or Functional group or others, follow the same pattern
 seedbank <- seedbank %>%
   dplyr::rename(Species.Hit = SPECIFIC_EPITHET_FINAL, ## new name = old name
          Transect = Transect_ID) %>%
@@ -140,7 +140,14 @@ species.wide <- bind_rows(seedbank[,c("Transect","Bank_Location","Species.Hit","
 
 ``` {next steps} 
 
+species.wide2 <- group_by(species.wide, Transect,  ) %>%
+  summarise_each(funs(sum))
 
+species.wide %>% group_by(Transect) %>% summarize_at(VegSoil), funs(sum())
+
+mydata2 %>% group_by(Species) %>% summarise_at(vars(Sepal.Length),funs(sum(.,na.rm=TRUE)))
+
+vegdist(species.wide, method="bray", binary=TRUE)
 
 
 
