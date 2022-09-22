@@ -140,17 +140,14 @@ species.wide <- bind_rows(seedbank[,c("Transect","Bank_Location","Species.Hit","
 
 ``` {next steps} 
 
-species.wide2 <- group_by(species.wide, Transect,  ) %>%
-  summarise_each(funs(sum))
+save(species.wide2, file = "species_wide.RData")
 
-species.wide %>% group_by(Transect) %>% summarize_at(VegSoil), funs(sum())
+species.wide2 <- species.wide[-c(1:3)]
+vspecies.wide2
 
-mydata2 %>% group_by(Species) %>% summarise_at(vars(Sepal.Length),funs(sum(.,na.rm=TRUE)))
-
-vegdist(species.wide, method="bray", binary=TRUE)
-
-
-
+vegdist <- vegdist(species.wide2, method="bray", binary=TRUE)
+matrix <- as.matrix(vegdist)
+view(matrix)
 
 
 ```

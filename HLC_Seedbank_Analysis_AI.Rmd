@@ -57,7 +57,6 @@ df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
   select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS)
 ```
 
-
 ```{r create species tables for thesis}
 
 
@@ -394,20 +393,15 @@ print(St_Nativity)
 
 #Counted species and then calculated proportion in new column
 
+
 Spp_tbl <- df_Spp %>%
-  select(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value)
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS) #"Spp_tbl lists 53 species and their traits
 
-df_Spp2 <- df_Spp %>% 
-  select(Species_Name, Longevity_1, Habit, Nativity, WIS, C_Value)
-  
-view(df_Spp)
+SB_Spp_count_tbl <- seedbankdf %>% 
+  group_by(Species_Name, Longevity_1, Habit, WIS, Nativity) %>%
+  summarise(Freq2 = n())
 
-SB_Spp_count_tbl <- df_Spp %>% 
-  group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS, Nativity, Cvalue) %>%
-  summarise(Freq2 = n()) %>%
-  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
-         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")
-
+view(SB_Spp_count_tbl)
 
 Spp_prop_tbl <- Spp_count_tbl %>% 
   mutate(prop = Freq2/sum(Spp_count_tbl$Freq2))
@@ -452,7 +446,6 @@ View(df.transect)
 write_xlsx(df.transect, 'hits_byTransect.xlsx')
 
 ```
-
 
 ```{r determine common species, cutoff point 1% cover}
 
@@ -598,42 +591,120 @@ View(distinct_species_bank)
 
 ```
 
+```{r visualize unknowns}
+``` 
 
-```{r ground hits exploration}
+```{r radar/spider charts}
+```
 
-#Ground hits only
-#Group species counts by sample bout, hit number, transect, etc.
-#Use summarise to count hits by species, drop NA's
+```{r visualize abundances} 
 
-ground_only_transect <- vegdf %>%
-  group_by(sample.bout, Hit.Number, Bank_Location, baseline, Transect, Num_transect_points, Transect.Point.Soil.Surface) %>%
-  summarise(Ground = n()) %>%
-  drop_na()
 
-head(ground_only_transect)
-View(ground_only_transect)
+SB_spp_abundances <- seedbankdf %>% 
+  group_by(Species_Name, Longevity_1, Habit, WIS, Nativity) %>%
+  summarise(Freq = n()) #shows abundances of each species
 
-write_xlsx(ground_only_transect, 'Ground_counts.xlsx')
+SB_total_abundances <- seedbankdf %>% 
+  group_by(Baseline, Transect_ID, Bank_Location) %>%
+  summarise(Freq2 = n()) #abundances of each tray/sample (all 81)
 
-getwd()
+SB_BL_mean_abundance <- SB_total_abundances %>%
+  group_by(Baseline, Bank_Location) %>%
+  summarise(mean = mean(Freq2)) #averages transects to give means for baseline and bank location (27)
 
-#summarize ground hit proportions at scale of whole canal, includes all sample bouts and hits
-#Used sum(prop_ground$Freq) code to count 4664 total hits
+#abundance by bank location
+Abundance <- SB_BL_mean_abundance %>% #box plot
+  ggplot(aes(x=Bank_Location, y=mean, fill=Bank_Location))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Bank Location", y = "Mean Abundance")+
+    stat_summary(fun=mean, geom="point", position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    scale_fill_brewer(palette = "BuPu")
+print(Abundance)
 
-prop_ground <- ground_only_transect %>%
-  group_by(Transect.Point.Soil.Surface) %>%
-  summarise(Freq = sum(Ground)) %>%
-  mutate(prop = Freq/4664)
-  
-View(prop_ground)
+Abundance_v <- SB_BL_mean_abundance %>%  # violin plot
+  ggplot(aes(x=Bank_Location, y=mean, fill=Bank_Location))+ 
+    geom_violin ()+
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=11)
+    ) +
+    xlab("Bank Location") +
+    ylab("Mean Abundance")
+print(Abundance_v)
 
-sum(prop_ground$Freq)
+#abundance by baseline
+
+SB_baseline_mean_abundance <- SB_total_abundances %>%
+  group_by(Baseline, Transect_ID) %>%
+  summarise(mean1 = mean(Freq2)) #averages transects to give means for baseline and bank location
+
+
+Abundance_baseline <- SB_baseline_mean_abundance %>% #box plot
+  ggplot(aes(x=Baseline, y=mean1, fill=Baseline))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Baseline", y = "Mean Abundance")+
+    stat_summary(fun=mean, geom="point", position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    scale_fill_brewer(palette = "BuPu")
+print(Abundance_baseline)
+
+Abundance_baseline_v <- SB_baseline_mean_abundance %>%  # violin plot
+  ggplot(aes(x=Baseline, y=mean1, fill=Baseline))+ 
+    geom_violin ()+
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=11)
+    ) +
+    xlab("Baseline") +
+    ylab("Mean Abundance")
+print(Abundance_baseline_v)
+
+
+
+
+
+
+#Summing number of hits at each level of organization (whole canal, baselines, transects)
+
+#Whole-canal level: number of species hits by sample bout and hit number, includes foliar and ground first hits
+
+SB_species <- vegdf %>% 
+  group_by(sample.bout, Hit.Number) %>%
+  summarise(Species.Hit = n()) 
+
+View(df.canal)
+write_xlsx(df.canal, 'hits_byCanal.xlsx')
+
+#Baseline level: number of species hits by sample bout and hit number, includes foliar and ground first hits
+df.baseline <- vegdf %>% 
+  group_by(sample.bout, baseline, Hit.Number) %>%
+  summarise(Species.Hit = n()) 
+
+View(df.baseline)
+
+write_xlsx(df.baseline, 'hits_byBaseline.xlsx')
+
+#Transect level: number of species hits by sample bout and hit number, includes foliar and ground first hits
+
+df.transect <- vegdf %>% 
+  group_by(sample.bout, baseline, baseline.rep, Hit.Number) %>%
+  summarise(Species.Hit = n()) 
+
+View(df.transect)
+
+write_xlsx(df.transect, 'hits_byTransect.xlsx')
+
 
 ```
 
 #Dont use the code below b/c it contains both sampling bouts over the season; want to use
 #only the first sampling bout; leaving it here for reference though
-```{r graph WIS by baseline}
+```{veg - r graph WIS by baseline}
 
 #This graph contains both sampling bouts and first and second hits
 
@@ -698,7 +769,7 @@ df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
 ```
 
 
-```{r graph WIS by bank location then move on to statistical model}
+```{ veg - r graph WIS by bank location then move on to statistical model}
 
 #This csv contains first sampling bout and first hits and second hits
 
@@ -846,7 +917,7 @@ emmeans(glm_gaus_low, pairwise ~ WIS, adjust = "tukey")
 ```
 
 
-```{r graph native/intro by bank location}
+```{veg - r graph native/intro by bank location}
 
 #This csv contains only first sampling bout and first and second hits
 
@@ -920,7 +991,7 @@ emmeans(lm_gaus_location, pairwise ~ Location, adjust = "tukey")
 ```
 
 
-```{r graph common species using both sample bouts}
+```{veg - r graph common species using both sample bouts}
 
 #This csv contains both sampling bouts and first and second hits
 
@@ -1011,7 +1082,7 @@ p + facet_wrap(~Location)
 ```
 
 
-```{r graph common species using only first sample bout}
+```{veg - r graph common species using only first sample bout}
 
 #This csv contains only first sampling bout and first and second hits
 
@@ -1106,63 +1177,7 @@ df_commonSpp_bankLoc_means %>%
 ```
 
 
-```{r graph ground cover}
-
-#This csv contains both sampling bouts
-#Based on graphing, this way of looking at it is not too informative; need to combine ground cover and foliar cover to
-#get a feel for bank locations with veg cover versus none
-
-Ground_cover <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/Ground_coverProps_upload.csv")
-
-str(Ground_cover)
-View(Ground_cover)
-
-#Remove unwanted columns and change to long format
-
-Ground_cover <- select(Ground_cover, -Total.Hits, -Hit.by.Loc, -Bare, -Litter, -WoodDebris, -Water, -Rock, -Prop.Water, -Prop.Rock)
-
-Ground_cover_long <- melt(Ground_cover, id.vars = c("Baseline","Transect", "Location"))
-
-View(Ground_cover_long)
-
-
-Ground_cover_long %>% ggplot(aes(x=variable, y=value))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Cover Type", y = "Proportion of Cover")+
-  theme_bw(base_size = 16)
-
-
-#Need to get the means of each baseline
-#The above code currently graphs all 45 transects
-
-df_GroundCover_baseline_means <- Ground_cover_long %>%
-  group_by(Baseline, Location, variable) %>%
-  dplyr::summarise(Mean = mean(value))
-
-View(df_GroundCover_baseline_means)
-
-
-#Now create new boxplot with baseline means by bank location
-
-p <- df_GroundCover_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Cover Type", y = "Proportion of Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-print(p)
-
-p + facet_wrap(~Location)
-
-```
-
-
-```{r graph functional groups by bank location}
+```{veg - r graph functional groups by bank location}
 
 #This csv contains first sampling bout and first hits plus second hits
 
