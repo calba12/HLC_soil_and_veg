@@ -7,7 +7,6 @@ output: html_document
 
 ```{r}
 
-install.packages(ggplot)
 library(vegan)
 library(dplyr)
 library(tidyr)
@@ -149,6 +148,20 @@ vegdist <- vegdist(species.wide2, method="bray", binary=TRUE)
 matrix <- as.matrix(vegdist)
 view(matrix)
 
+as.matrix(species.wide2)[df$Spe]
+
+
+
+heatmap(as.matrix(vegdist))
+
+braycurtis <- vegdist(df[,3:6])
+as.matrix(species.wide)[df$species.wi==,df$PoolNumber==4]
+as.dist(as.matrix(braycurtis)[df$PoolNumber==4,df$PoolNumber==4])
+
+#sample code https://stackoverflow.com/questions/51200770/bray-curtis-pairwise-analysis-in-r
+braycurtis <- vegdist(df[,3:6])
+as.matrix(braycurtis)[df$PoolNumber==4,df$PoolNumber==4]
+as.dist(as.matrix(braycurtis)[df$PoolNumber==4,df$PoolNumber==4])
 
 ```
 

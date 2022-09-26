@@ -53,8 +53,9 @@ df <- seedbankdf %>% distinct(Species_Name)
 df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
   arrange(Species_Name)%>%
   subset(Species_Name!="Unknown" & Species_Name!="Unknown forb"
-         & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown grass")%>%
+         & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown grass") %>%
   select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS)
+
 ```
 
 ```{r create species tables for thesis}
@@ -386,6 +387,22 @@ St_Nativity <- Nativity_stacked %>%
 
 print(St_Nativity)
 
+#Violin Plot
+Nativity_v <- df_nativity_means %>%  # violin plot
+  ggplot(aes(x=Nativity, y=Mean, fill=Nativity))+ 
+    geom_violin ()+
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=11)
+    ) +
+    xlab("Nativity") +
+    ylab("Proportion of Seed Bank")
+print(Nativity_v)
+
+#Violin by bank location
+N_BL_V <- Nativity_v + facet_wrap(~Bank_Location)
+print(N_BL_V)
+
 
 ```
 
@@ -591,14 +608,70 @@ View(distinct_species_bank)
 
 ```
 
-```{r visualize unknowns}
+```{r visualize unknowns_In progress}
+
+# take "seedbankdf" and select for unknowns and "sp."
+
+seedbank_unknowns_df <- seedbankdf %>%
+  arrange(Species_Name) %>%
+  subset(Species_Name=="Unknown" | Species_Name=="Unknown forb" | Species_Name=="Unknown graminoid" | Species_Name=="Unknown grass" | Species=="sp.") %>%
+  select(Transect_ID, Baseline, Bank_Location, Species_Name, Species)
+  
+view(seedbank_unknowns_df)
+
+#ABUNDANCES
+SB_total_unknowns <- seedbank_unknowns_df %>% 
+  group_by(Species_Name, Species, Baseline, Transect_ID, Bank_Location) %>%
+  summarise(Freq_unk = n()) #abundances of each tray/sample (all 81)
+view(SB_total_unknowns)
+
+SB_BL_mean_unk <- SB_total_unknowns %>%
+  group_by(Species_Name, Baseline, Bank_Location) %>%
+  summarise(mean_unk = mean(Freq_unk)) #averages transects to give means for baseline and bank location (27)
+view(SB_BL_mean_unk)
+
+#visualize box
+Unknowns_sp_bp <- SB_BL_mean_unk %>% #box plot
+  ggplot(aes(x=Bank_Location, y=mean_unk, fill=Bank_Location))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Bank Location", y = "Mean Abundance of Unidentified Germinants")+
+    stat_summary(fun=mean, geom="point", position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    scale_fill_brewer(palette = "BuPu")
+print(Unknowns_sp_bp)
+
+#visualize violin
+Unknowns_sp_bp_V <- SB_BL_mean_unk %>%  # violin plot
+  ggplot(aes(x=Bank_Location, y=mean_unk, fill=Bank_Location))+ 
+    geom_violin ()+
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=11)
+    ) +
+    xlab("Bank Location") +
+    ylab("Mean Abundance of Unidentified Germinants")
+print(Unknowns_sp_bp_V)
+
+# should look at proportion! use below code to figure out how to get proportion of each
+
+df.props_nativity_sb <- seedbank %>%
+  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_1, Nativity) %>%
+  drop_na(SPECIFIC_EPITHET_FINAL, WIS, Nativity) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(Baseline, Transect_ID, Bank_Location, Nativity) %>% #added transect so I can get mean
+  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(Nativity, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+
 ``` 
 
 ```{r radar/spider charts}
 ```
 
 ```{r visualize abundances} 
-
+# looking at abundance of germinants in seed bank
 
 SB_spp_abundances <- seedbankdf %>% 
   group_by(Species_Name, Longevity_1, Habit, WIS, Nativity) %>%
@@ -663,42 +736,6 @@ Abundance_baseline_v <- SB_baseline_mean_abundance %>%  # violin plot
     xlab("Baseline") +
     ylab("Mean Abundance")
 print(Abundance_baseline_v)
-
-
-
-
-
-
-#Summing number of hits at each level of organization (whole canal, baselines, transects)
-
-#Whole-canal level: number of species hits by sample bout and hit number, includes foliar and ground first hits
-
-SB_species <- vegdf %>% 
-  group_by(sample.bout, Hit.Number) %>%
-  summarise(Species.Hit = n()) 
-
-View(df.canal)
-write_xlsx(df.canal, 'hits_byCanal.xlsx')
-
-#Baseline level: number of species hits by sample bout and hit number, includes foliar and ground first hits
-df.baseline <- vegdf %>% 
-  group_by(sample.bout, baseline, Hit.Number) %>%
-  summarise(Species.Hit = n()) 
-
-View(df.baseline)
-
-write_xlsx(df.baseline, 'hits_byBaseline.xlsx')
-
-#Transect level: number of species hits by sample bout and hit number, includes foliar and ground first hits
-
-df.transect <- vegdf %>% 
-  group_by(sample.bout, baseline, baseline.rep, Hit.Number) %>%
-  summarise(Species.Hit = n()) 
-
-View(df.transect)
-
-write_xlsx(df.transect, 'hits_byTransect.xlsx')
-
 
 ```
 
