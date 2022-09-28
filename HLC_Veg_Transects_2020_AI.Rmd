@@ -38,7 +38,7 @@ veg_sp <- veg_sp %>%
   mutate(sample.bout = as.factor(sample.bout))%>%
   mutate(baseline.rep = as.factor(baseline.rep))
 
-str(veg_sp)
+#str(veg_sp)
 
 ## Remove zero from Hit.Number
 
@@ -51,7 +51,7 @@ veg_sp <- veg_sp[veg_sp$Hit.Number != "0",]
 vegdf <- veg_sp %>% select(-Number.of.Points.Along.Transect_fromRick) %>%
 rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc)
 
-head(vegdf)
+#head(vegdf)
 #View(vegdf)
 
 #check species spellings
@@ -77,7 +77,7 @@ df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
          & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
   select(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity)
   
-View(df_Spp_bout1)
+#view(df_Spp_bout1)
 
 #Export to Excel
 #write_xlsx(df_Spp_bout1, 'Veg_SpeciesList2_AI07222022.xlsx') 
@@ -94,9 +94,9 @@ Spp_count_tbl <- vegdf %>%
 Spp_prop_tbl <- Spp_count_tbl %>% 
   mutate(prop = Freq2/sum(Spp_count_tbl$Freq2))
 
-view(Spp_prop_tbl)
+#view(Spp_prop_tbl)
 sum(Spp_count_tbl$Freq2)
-write_xlsx(Spp_prop_tbl, 'Veg_SppList_Prop4_AI08202022.xlsx')
+#write_xlsx(Spp_prop_tbl, 'Veg_SppList_Prop4_AI08202022.xlsx')
 
 
 ```
@@ -147,7 +147,7 @@ veg_only_transect <- vegdf %>%
   summarise(Species = n()) %>%
   drop_na()
 
-head(veg_only_transect)
+#head(veg_only_transect)
 #View(veg_only_transect)
 
 #The Excel file exported below has both sample bouts and hit numbers one and two
@@ -321,8 +321,8 @@ sum(prop_ground$Freq)
 
 WIS_baseline <- read.csv("./WIS_baseline_upload_WMVC.csv")
 
-str(WIS_baseline)
-View(WIS_baseline)
+#str(WIS_baseline)
+#View(WIS_baseline)
 
 #Remove unwanted columns and change to long format
 

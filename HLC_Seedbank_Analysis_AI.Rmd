@@ -58,9 +58,7 @@ df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
 
 ```
 
-```{r create species tables for thesis}
-
-
+```{r create species tables}
 
 #View(df_Spp)
 
@@ -82,9 +80,9 @@ sum(SB_Spp_tbl$Freq2)
 
 #merge with veg prop data
 
-veg_prop_tbl <- read.csv("./Veg_SppList_Prop4_AI08202022.csv")
+#veg_prop_tbl <- read.csv("./Veg_SppList_Prop4_AI08202022.csv")
 
-merged_spp_prop <- merge(veg_prop_tbl, SB_Spp_prop_tbl, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS_GP", "Nativity"), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity"), all.x =TRUE, all.y = TRUE)
+#merged_spp_prop <- merge(veg_prop_tbl, SB_Spp_prop_tbl, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS_GP", "Nativity"), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity"), all.x =TRUE, all.y = TRUE)
 
 #view(merged_spp_prop)
 
@@ -138,38 +136,38 @@ germinants.bankloc <- seedbankdf %>%
 
 #Prepping data to compute proportions
 #By baseline and bank location
-seedbank[seedbank == 'Juncus sp. (FACW-OBL)'] <- 'Juncus sp.*' #Changing name so it looks nicer in graph
+seedbankdf[seedbankdf == 'Juncus sp. (FACW-OBL)'] <- 'Juncus sp.*' #Changing name so it looks nicer in graph
 
 #view(seedbank)
-seedbank$WIS <- as.factor(seedbank$WIS)
+seedbankdf$WIS <- as.factor(seedbankdf$WIS)
 
-    
-
-df.props_WIS_seed <- seedbank %>%
+df.props_WIS_seed <- seedbankdf %>%
   group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_1, Nativity) %>%
-  drop_na(SPECIFIC_EPITHET_FINAL, WIS) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
-  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
+  drop_na(Species_Name, WIS) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(Species_Name = n()) %>%  ## from the group_by groupings, count the number 
   group_by(Baseline, Transect_ID, Bank_Location, WIS) %>% #added transect so I can get mean
-  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
-  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
-  complete(WIS, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+  summarise(Species_Name = sum(Species_Name)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = Species_Name/sum(Species_Name)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(WIS, fill = list(Species_Name = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
 #checkout color packages, ggplot color package
+
+view(df.props_WIS_seed)
 
 
 # Check it adds to one with the 5 groups  
 sum(df.props_WIS_seed$prop[1:5])
-
+#view(df.props_WIS_seed)
 
 #get the means across transect (transected is nested within baseline as replication)
 df_WIS_means <- df.props_WIS_seed %>%
   group_by(Baseline, Bank_Location, WIS) %>%
   dplyr::summarise(Mean = mean(prop))
 
-#View(df_WIS_means)
+View(df_WIS_means)
 
 #Make boxplot 
 WIS <- df_WIS_means %>% 
-  mutate(WIS = fct_relevel(WIS, "UPL", 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.*')) %>%
+  mutate(WIS = fct_relevel(WIS, "UPL", 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.*')) %>% 
   ggplot(aes(x=factor(WIS), y=Mean, fill=WIS))+ 
   geom_boxplot()+
     geom_point()+
@@ -183,7 +181,7 @@ print(WIS)
 #Make boxplot with means, seperating bank location
 #colors, reorder
 
-WIS_BL <- WIS + facet_wrap(~Bank_Location)
+WIS_BL <- WIS + facet_wrap(~Bank_Location) 
 print(WIS_BL)
 
 
