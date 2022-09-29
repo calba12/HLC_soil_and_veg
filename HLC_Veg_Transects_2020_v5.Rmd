@@ -405,8 +405,7 @@ df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
 
 ```
 
-
-```{r graph WIS by bank location then move on to statistical model}
+```{r graph WIS by bank location}
 
 #Prepping data file for proportion as response variable
 
@@ -652,38 +651,44 @@ print(St_Nativ_vg)
 
 #Prepping data file for proportion as response variable
 
-vegdf$FunctionalGroup <- as.factor(vegdf$FunctionalGroup)
+vegdf$FunctionalGroup2 <- as.factor(vegdf$FunctionalGroup2)
 
 df.props_FG_veg <- vegdf %>%
-  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, WIS_GP) %>%
+     filter(FunctionalGroup2 !="NA Forb") %>% #remove before prop is calculated
+  filter(FunctionalGroup2 !="NA NA") %>% 
+  filter(FunctionalGroup2 !="Variable Forb") %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup2, Nativity, WIS_GP) %>%
   filter(sample.bout =="1") %>%
-  drop_na(Species.Hit, FunctionalGroup) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
+  drop_na(Species.Hit, FunctionalGroup2) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
   summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(baseline, Bank_Location, FunctionalGroup) %>%  
+  group_by(baseline, Bank_Location, FunctionalGroup2) %>%  
   summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
   mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
-  complete(FunctionalGroup, fill = list(Species.Hit = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  complete(FunctionalGroup2, fill = list(Species.Hit = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+   filter(FunctionalGroup2 !="NA Forb") %>%  #remove after complete function so they aren't included in graphs
+  filter(FunctionalGroup2 !="NA NA") %>% 
+  filter(FunctionalGroup2 !="Variable Forb")
 
 # Check it adds to one with the # groups of variable of interest
-sum(df.props_FG_veg$prop[1:7])
+sum(df.props_FG_veg$prop[1:5]) 
     
 #View(df.props_FG_veg)
 
 #get the means across transect (transected is nested within baseline as replication)
 df_FG_means_veg <- df.props_FG_veg %>%
-  group_by(baseline, Bank_Location, FunctionalGroup) %>%
+  group_by(baseline, Bank_Location, FunctionalGroup2) %>%
   dplyr::summarise(Mean = mean(prop))
 
-View(df_FG_means_veg)
+#View(df_FG_means_veg)
 
 
 #Make boxplot --> AI 9/27/22
 FG_veg <- df_FG_means_veg %>% 
-  ggplot(aes(x=factor(FunctionalGroup), y=Mean, fill=FunctionalGroup))+ 
+  ggplot(aes(x=factor(FunctionalGroup2), y=Mean, fill=FunctionalGroup2))+ 
   geom_boxplot()+
     geom_point()+
     labs(x = "Functional Group", y = "Proportion of Cover")+
-    stat_summary(fun=mean, geom="point", aes(group = FunctionalGroup), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    stat_summary(fun=mean, geom="point", aes(group = FunctionalGroup2), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
     scale_fill_brewer(palette = "BuGn")
@@ -691,30 +696,29 @@ print(FG_veg)
 
 #Make boxplot with means, seperating bank location
 
-Nativ_BL_Veg <- Nativ_veg + facet_wrap(~Bank_Location)
-print(Nativ_BL_Veg)
+FG_BL_Veg <- FG_veg + facet_wrap(~Bank_Location)
+print(FG_BL_Veg)
 
 #Stacked graph _ AI 9/27
 
-df_Nativ_stacked_v <- aggregate(Mean ~ Bank_Location + Nativity , data = df_Nativ_means_veg, FUN = mean)
+df_fg_stacked_v <- aggregate(Mean ~ Bank_Location + FunctionalGroup2 , data = df_FG_means_veg, FUN = mean)
 
 #View(df_Nativ_stacked_v)
 
-St_Nativ_vg <- df_Nativ_stacked_v %>%
-  ggplot(aes(fill = Nativity, y = Mean, x = Bank_Location))+
+St_FG_vg <- df_fg_stacked_v %>%
+  ggplot(aes(fill = FunctionalGroup2, y = Mean, x = Bank_Location))+
   geom_bar(position = "stack", stat = "identity", color = "black") +
   labs(x = "Bank Location", y = "Proportion of Cover") +
-  guides(fill = guide_legend("Nativity")) +
+  guides(fill = guide_legend("Functional Group")) +
   theme_bw(base_size = 16) +
   scale_fill_brewer(palette = "BuGn")
 
-print(St_Nativ_vg)
+print(St_FG_vg)
 
 
 ```
 
-
-```{r graph native/intro by bank location}
+```{r graph native/intro by bank location_NOPE}
 
 #This csv contains only first sampling bout and first and second hits
 
