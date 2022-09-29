@@ -6,12 +6,10 @@ output: html_document
 ---
 
 ```{r}
-
 library(vegan)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(dplyr)
 ```
 
 Dummy data
@@ -83,7 +81,7 @@ Convert above ground and soil seed bank data to wide for dissimilarity
 
 
 # 1. read in data that is in long format
-seedbank <- read.csv("20220802_HLC_SB_Data_Final4.csv") #mac path
+seedbank <- read.csv("20220802_HLC_SB_Data_Final4.csv") #mac path & Turquoise path
 
 aboveground <- read.csv("20201204_allHitsData_postQC_prep4.csv") #mac
 
@@ -137,31 +135,75 @@ species.wide <- bind_rows(seedbank[,c("Transect","Bank_Location","Species.Hit","
 
 ```
 
-``` {next steps} 
-
-save(species.wide2, file = "species_wide.RData")
+``` {r similarity next steps} 
 
 species.wide2 <- species.wide[-c(1:3)]
-vspecies.wide2
 
 vegdist <- vegdist(species.wide2, method="bray", binary=TRUE)
 matrix <- as.matrix(vegdist)
 view(matrix)
 
 as.matrix(species.wide2)[df$Spe]
-
-
-
 heatmap(as.matrix(vegdist))
 
-braycurtis <- vegdist(df[,3:6])
-as.matrix(species.wide)[df$species.wi==,df$PoolNumber==4]
-as.dist(as.matrix(braycurtis)[df$PoolNumber==4,df$PoolNumber==4])
+hist(vegdist)
 
-#sample code https://stackoverflow.com/questions/51200770/bray-curtis-pairwise-analysis-in-r
+
+
+
+
+
+```
+
+```{r - similarity example}
+Site = c("A", "B", "C", "D", "E", "F", "G", "H", "I", "J") 
+
+PoolNumber = c(1, 3, 4, 2, 4, 1, 2, 3, 4, 4) 
+
+Sp1 = c(3, 10, 7, 0, 12, 9, 4, 0, 4, 3) 
+
+Sp2 = c(2, 1, 17, 1, 2, 9, 3, 1, 6, 7)
+
+Sp3 = c(5, 12, 6, 10, 2, 4, 0, 1, 3, 3)
+
+Sp4 = c(9, 6, 4, 8, 13, 5, 2, 20, 13, 3)
+
+df = data.frame(Site, PoolNumber, Sp1, Sp2, Sp3, Sp4)
+
+
+matrix <- df[,3:6]
+
+braycurtis = vegdist(matrix, "bray")
+
+hist(braycurtis)
+
 braycurtis <- vegdist(df[,3:6])
 as.matrix(braycurtis)[df$PoolNumber==4,df$PoolNumber==4]
 as.dist(as.matrix(braycurtis)[df$PoolNumber==4,df$PoolNumber==4])
+
+meandist(braycurtis, df$PoolNumber)
+
+#sample code https://stackoverflow.com/questions/51200770/bray-curtis-pairwise-analysis-in-r
+
+#above wasn't helpful. another example below
+
+
+install.packages("betapart")
+library(betapart)
+comm <- read.csv(("communities.csv") ,row.names=1,sep=";")
+
+groups <- factor(c(rep(1,3), rep(2,3)), labels = c("undisturbed","disturbed"))
+
+presabs<-ifelse(comm>0,1,0)
+
+dist<-beta.pair(presabs, index.family="jaccard")
+
+bd<-betadisper(dist[[3]],groups)
+
+plot(bd)
+
+boxplot(bd)
+
 
 ```
 
