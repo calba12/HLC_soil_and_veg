@@ -718,6 +718,147 @@ print(St_FG_vg)
 
 ```
 
+```{r radar/spider charts}
+
+#get proportions of short-lived, long-lived, FAC,  FACU/UPL, FACW/OBL, forb and graminoid for both native and introduced --> of the native, what proportion (out of whole?) & vice versa
+#will need to remove any row that doesn't have all info listed (including Juncus sp.)
+vegdf$Nativity <- as.factor(vegdf$Nativity)
+vegdf$WIS_Grouped <- as.factor(seedbankdf$WIS_Grouped)
+
+#count of native and introduced
+native_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  group_by(Nativity) %>% 
+  summarise(count = n())
+
+view(native_count)
+
+#INTRODUCED
+#WIS
+introd_WIS_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  subset(Nativity == "Introduced") %>%
+  group_by(WIS_Grouped) %>% 
+  summarise(count = n())
+  
+view(native_WIS_count)
+
+#Longevity
+introd_longevity_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  subset(Nativity == "Introduced") %>%
+  group_by(Longevity_2) %>% 
+  summarise(count = n())
+  
+view(native_longevity_count)
+
+#habit
+introduced_habit_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  subset(Nativity == "Introduced") %>%
+  group_by(Habit) %>% 
+  summarise(count = n())
+  
+view(native_habit_count)
+
+#NATIVE counts
+#WIS
+native_WIS_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  subset(Nativity == "Native") %>%
+  group_by(WIS_Grouped) %>% 
+  summarise(count = n())
+  
+view(native_WIS_count)
+
+#Longevity
+native_longevity_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  subset(Nativity == "Native") %>%
+  group_by(Longevity_2) %>% 
+  summarise(count = n())
+  
+view(native_longevity_count)
+
+#Habit
+native_habit_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  subset(Nativity == "Native") %>%
+  group_by(Habit) %>% 
+  summarise(count = n())
+  
+view(native_habit_count)
+
+#build a data frame with proportions
+metric <- c("Short-lived", "Long-lived", "OBL/FACW", "FAC", "UPL/FACU", "FORB", "Graminoid")
+Introduced <- c(92, 172, 1, 52, 211, 193, 71)
+Native <- c(79, 177, 199, 18, 39, 80, 176)
+
+DF_Spider <- data.frame(metric, Introduced, Native)
+  
+#build a data frame with counts
+Nativity <- c("Native", "Introduced")
+Shortlived <- c(79, 92)
+Longlived <- c(177, 172)
+OBL_FACW <- c(199, 1)
+FAC <- c(18, 52)
+UPL_FACU <- c(39, 211)
+Forb <- c(80, 193)
+Graminoid <- c(176, 71)
+
+DF_Spider_2 <- data.frame(Nativity, Shortlived, Longlived, OBL_FACW, FAC, UPL_FACU, Forb, Graminoid)
+
+view(DF_Spider_2)
+
+#pivot and calc proportions
+t<-t(DF_Spider_2)
+t<-as.data.frame(t)
+t<-janitor::row_to_names(t,row_number=1)
+t$'1'<-1
+t$'2'<-0
+t$Native<-as.numeric(t$Native)/256
+t$Introduced<-as.numeric(t$Introduced)/264
+t <- t[, c("1", "2", "Native",'Introduced')] # leave the row index blank to keep all rows
+DF_Spider_2<-t(t)
+DF_Spider_2<-as.data.frame(DF_Spider_2)
+view(DF_Spider_2)
+
+view(radar_df)
+
+# plot with default options:
+radarchart(DF_Spider_2)
+
+# Set graphic colors
+library(RColorBrewer)
+coul <- brewer.pal(3, "BuPu")
+colors_border <- coul
+library(scales)
+colors_in <- alpha(coul,0.3)
+
+#customize
+radarchart(DF_Spider_2, axistype=1 , 
+    #custom polygon
+    pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
+    #custom the grid
+    cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,1), cglwd=0.8,
+    #custom labels
+    vlcex=0.8)
+#add legend
+legend(x=.6, y=1.4, legend = rownames(DF_Spider_2[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "black", cex=1.2, pt.cex=3)
+```
+
+
+
+
+
+
 ```{r graph native/intro by bank location_NOPE}
 
 #This csv contains only first sampling bout and first and second hits
