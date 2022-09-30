@@ -695,7 +695,7 @@ introd_WIS_count <- seedbankdf %>%
   group_by(WIS_Grouped) %>% 
   summarise(count = n())
   
-view(native_WIS_count)
+view(introd_WIS_count)
 
 #Longevity
 introd_longevity_count <- seedbankdf %>% 
@@ -705,7 +705,7 @@ introd_longevity_count <- seedbankdf %>%
   group_by(Longevity_2) %>% 
   summarise(count = n())
   
-view(native_longevity_count)
+view(introd_longevity_count)
 
 #habit
 introduced_habit_count <- seedbankdf %>% 
@@ -715,7 +715,7 @@ introduced_habit_count <- seedbankdf %>%
   group_by(Habit) %>% 
   summarise(count = n())
   
-view(native_habit_count)
+view(introd_habit_count)
 
 #NATIVE counts
 #WIS

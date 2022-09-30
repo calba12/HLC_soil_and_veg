@@ -725,125 +725,139 @@ print(St_FG_vg)
 vegdf$Nativity <- as.factor(vegdf$Nativity)
 vegdf$WIS_Grouped <- as.factor(seedbankdf$WIS_Grouped)
 
+
+#filter(sample.bout !="2") %>%
+
 #count of native and introduced
-native_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
+native_count_v <- vegdf %>% 
+  drop_na(Species.Hit, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(sample.bout =="1") %>%
+  filter(Longevity_2 !="Variable") %>%
   group_by(Nativity) %>% 
   summarise(count = n())
 
-view(native_count)
+view(native_count_v)
 
 #INTRODUCED
 #WIS
-introd_WIS_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
+introd_WIS_count_v <- vegdf %>% 
+  drop_na(Species.Hit, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(sample.bout =="1") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Introduced") %>%
   group_by(WIS_Grouped) %>% 
   summarise(count = n())
   
-view(native_WIS_count)
+view(introd_WIS_count_v)
 
 #Longevity
-introd_longevity_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
+introd_longevity_count_v <- vegdf %>% 
+  drop_na(Species.Hit, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(sample.bout =="1") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Introduced") %>%
   group_by(Longevity_2) %>% 
   summarise(count = n())
   
-view(native_longevity_count)
+view(introd_longevity_count_v)
 
 #habit
-introduced_habit_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
+introd_habit_count_v <- vegdf %>% 
+  drop_na(Species.Hit, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(sample.bout =="1") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Introduced") %>%
   group_by(Habit) %>% 
   summarise(count = n())
   
-view(native_habit_count)
+view(introd_habit_count_v)
 
 #NATIVE counts
 #WIS
-native_WIS_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
+native_WIS_count_v <- vegdf %>% 
+  drop_na(Species.Hit, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(sample.bout =="1") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Native") %>%
   group_by(WIS_Grouped) %>% 
   summarise(count = n())
   
-view(native_WIS_count)
+view(native_WIS_count_v)
 
 #Longevity
-native_longevity_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
+native_longevity_count_v <- vegdf %>% 
+  drop_na(Species.Hit, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(sample.bout =="1") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Native") %>%
   group_by(Longevity_2) %>% 
   summarise(count = n())
   
-view(native_longevity_count)
+view(native_longevity_count_v)
 
 #Habit
-native_habit_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
+native_habit_count_v <- vegdf %>% 
+  drop_na(Species.Hit, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(sample.bout =="1") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Native") %>%
   group_by(Habit) %>% 
   summarise(count = n())
   
-view(native_habit_count)
+view(native_habit_count_v)
 
-#build a data frame with proportions
-metric <- c("Short-lived", "Long-lived", "OBL/FACW", "FAC", "UPL/FACU", "FORB", "Graminoid")
-Introduced <- c(92, 172, 1, 52, 211, 193, 71)
-Native <- c(79, 177, 199, 18, 39, 80, 176)
+#build a data frame
 
-DF_Spider <- data.frame(metric, Introduced, Native)
+#not this one :/
+metric <- c("Short_lived", "Long_lived", "OBL_FACW", "FAC", "UPL_FACU", "FORB", "Graminoid", "Woody")
+Introduced <- c(12, 96, 9, 6, 93, 51, 21, 36)
+Native <- c(19, 216, 167, 42, 26, 51, 138, 46)
+
+DF_Spider_v <- data.frame(metric, Introduced, Native)
   
 #build a data frame with counts
-Nativity <- c("Native", "Introduced")
-Shortlived <- c(79, 92)
-Longlived <- c(177, 172)
-OBL_FACW <- c(199, 1)
-FAC <- c(18, 52)
-UPL_FACU <- c(39, 211)
-Forb <- c(80, 193)
-Graminoid <- c(176, 71)
+#this one
+Nativity_v <- c("Native", "Introduced")
+Short_lived_v <- c(19, 12)
+Long_lived_v <- c(216, 96)
+OBL_FACW_v <- c(167, 9)
+FAC_v <- c(42, 6)
+UPL_FACU_v <- c(26, 93)
+Forb_v <- c(51, 51)
+Graminoid_v <- c(138, 21)
+Woody_v <- c(46, 36)
 
-DF_Spider_2 <- data.frame(Nativity, Shortlived, Longlived, OBL_FACW, FAC, UPL_FACU, Forb, Graminoid)
+DF_Spider_2v <- data.frame(Nativity_v, Short_lived_v, Long_lived_v, OBL_FACW_v, FAC_v, UPL_FACU_v, Forb_v, Graminoid_v, Woody_v)
 
-view(DF_Spider_2)
+view(DF_Spider_2v)
 
 #pivot and calc proportions
-t<-t(DF_Spider_2)
-t<-as.data.frame(t)
-t<-janitor::row_to_names(t,row_number=1)
-t$'1'<-1
-t$'2'<-0
-t$Native<-as.numeric(t$Native)/256
-t$Introduced<-as.numeric(t$Introduced)/264
-t <- t[, c("1", "2", "Native",'Introduced')] # leave the row index blank to keep all rows
-DF_Spider_2<-t(t)
-DF_Spider_2<-as.data.frame(DF_Spider_2)
-view(DF_Spider_2)
+tv<-t(DF_Spider_2v)
+tv<-as.data.frame(tv)
+tv<-janitor::row_to_names(tv,row_number=1)
+tv$'1'<-1
+tv$'2'<-0
+tv$Native<-as.numeric(tv$Native)/235
+tv$Introduced<-as.numeric(tv$Introduced)/108
+tv <- tv[, c("1", "2", "Native",'Introduced')] # leave the row index blank to keep all rows
+DF_Spider_2v<-t(tv)
+DF_Spider_2v<-as.data.frame(DF_Spider_2v)
+view(DF_Spider_2v)
 
-view(radar_df)
+view(DF_Spider_2v)
 
 # plot with default options:
-radarchart(DF_Spider_2)
+radarchart(DF_Spider_2v)
 
 # Set graphic colors
 library(RColorBrewer)
-coul <- brewer.pal(3, "BuPu")
+coul <- brewer.pal(3, "BuGn")
 colors_border <- coul
 library(scales)
 colors_in <- alpha(coul,0.3)
 
 #customize
-radarchart(DF_Spider_2, axistype=1 , 
+radarchart(DF_Spider_2v, axistype=1 , 
     #custom polygon
     pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
     #custom the grid
