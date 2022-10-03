@@ -817,17 +817,17 @@ DF_Spider_v <- data.frame(metric, Introduced, Native)
   
 #build a data frame with counts
 #this one
-Nativity_v <- c("Native", "Introduced")
-Short_lived_v <- c(19, 12)
-Long_lived_v <- c(216, 96)
-OBL_FACW_v <- c(167, 9)
-FAC_v <- c(42, 6)
-UPL_FACU_v <- c(26, 93)
-Forb_v <- c(51, 51)
-Graminoid_v <- c(138, 21)
-Woody_v <- c(46, 36)
+Nativity <- c("Native", "Introduced")
+Shortlived <- c(19, 12)
+Longlived <- c(216, 96)
+OBL_FACW <- c(167, 9)
+FAC <- c(42, 6)
+UPL_FACU <- c(26, 93)
+Forb <- c(51, 51)
+Graminoid <- c(138, 21)
+Woody <- c(46, 36)
 
-DF_Spider_2v <- data.frame(Nativity_v, Short_lived_v, Long_lived_v, OBL_FACW_v, FAC_v, UPL_FACU_v, Forb_v, Graminoid_v, Woody_v)
+DF_Spider_2v <- data.frame(Nativity, Shortlived, Longlived, OBL_FACW, FAC, UPL_FACU, Forb, Graminoid, Woody)
 
 view(DF_Spider_2v)
 
@@ -851,25 +851,81 @@ radarchart(DF_Spider_2v)
 
 # Set graphic colors
 library(RColorBrewer)
-coul <- brewer.pal(3, "BuGn")
+coul <- brewer.pal(3, "Dark2")
 colors_border <- coul
 library(scales)
 colors_in <- alpha(coul,0.3)
 
 #customize
 radarchart(DF_Spider_2v, axistype=1 , 
+    title = "Vegetation",
     #custom polygon
     pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
     #custom the grid
-    cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,1), cglwd=0.8,
+    cglcol="darkgrey", cglty=1, axislabcol="darkgrey", caxislabels=seq(0,1), cglwd=0.8,
     #custom labels
-    vlcex=0.8)
+    vlcex=1)
+
 #add legend
-legend(x=.6, y=1.4, legend = rownames(DF_Spider_2[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "black", cex=1.2, pt.cex=3)
+legend(x=.6, y=1.4, legend = rownames(DF_Spider_2[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "darkgrey", cex=1.2, pt.cex=3)
+
+
+
+
+#example
+# Construct the data set (Data from Marvel.com)
+data <- data.frame(Strength = c(7, 0, 6),
+                   Speed = c(7, 0, 5),
+                   Intelligence = c(7, 0, 6),
+                   Fighting_Skills = c(7, 0, 4),
+                   Energy = c(7, 0, 6),
+                   Durability = c(7, 0, 6))
+
+radarchart(data, 
+           seg = 7,  # Number of axis segments
+           title = "Iron Man Radar Chart",
+           pfcol = scales::alpha("gray", 0.3),
+           plwd = 2)
+
+
+# Radar chart with multiple overlapping individuals
+
+# Construct the data set
+data ＜- data.frame(Strength = c(7, 0, 6, 7, 4, 3),
+                   Speed = c(7, 0, 5, 7, 3, 2),
+                   Intelligence = c(7, 0, 6, 2, 4, 3),
+                   Fighting_Skills = c(7, 0, 4, 4, 4, 6),
+                   Energy = c(7, 0, 6, 6, 1, 1),
+                   Durability = c(7, 0, 6, 6, 3, 3),
+                   row.names = c("max", "min", "Iron Man", "Thor", 
+                                 "Spiderman", "Captain America"))
+
+# Define fill colors
+colors_fill ＜- c(scales::alpha("gray", 0.1),
+                 scales::alpha("gold", 0.1),
+                 scales::alpha("tomato", 0.2),
+                 scales::alpha("skyblue", 0.2))
+
+# Define line colors
+colors_line ＜- c(scales::alpha("darkgray", 0.9),
+                scales::alpha("gold", 0.9),
+                scales::alpha("tomato", 0.9),
+                scales::alpha("royalblue", 0.9))
+
+# Create plot
+radarchart(data, 
+           seg = 7,  # Number of axis segments
+           title = "Avengers Radar Chart",
+           pcol = colors_line,
+           pfcol = colors_fill,
+           plwd = 4)
+
+# Add a legend
+legend(x=0.6, 
+       y=1.35, 
+       legend = rownames(data[-c(1,2),]), 
+       bty = "n", pch=20 , col = colors_line, cex = 1.05, pt.cex = 3)
 ```
-
-
-
 
 
 

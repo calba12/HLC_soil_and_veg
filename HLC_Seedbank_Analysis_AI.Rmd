@@ -767,7 +767,6 @@ Graminoid <- c(176, 71)
 
 DF_Spider_2 <- data.frame(Nativity, Shortlived, Longlived, OBL_FACW, FAC, UPL_FACU, Forb, Graminoid)
 
-view(DF_Spider_2)
 
 #pivot and calc proportions
 t<-t(DF_Spider_2)
@@ -789,21 +788,22 @@ radarchart(DF_Spider_2)
 
 # Set graphic colors
 library(RColorBrewer)
-coul <- brewer.pal(3, "BuPu")
+coul <- brewer.pal(3, "Dark2")
 colors_border <- coul
 library(scales)
 colors_in <- alpha(coul,0.3)
 
 #customize
 radarchart(DF_Spider_2, axistype=1 , 
+    title = "Seed Bank",
     #custom polygon
     pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
     #custom the grid
-    cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,1), cglwd=0.8,
+    cglcol="darkgrey", cglty=1, axislabcol="darkgrey", caxislabels=seq(0,1), cglwd=0.8,
     #custom labels
-    vlcex=0.8)
+    vlcex=1)
 #add legend
-legend(x=.6, y=1.4, legend = rownames(DF_Spider_2[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "black", cex=1.2, pt.cex=3)
+legend(x=.6, y=1.4, legend = rownames(DF_Spider_2[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "darkgrey", cex=1.2, pt.cex=3)
 
 
 #EXAMPLE radar

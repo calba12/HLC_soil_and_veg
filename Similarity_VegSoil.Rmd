@@ -74,11 +74,17 @@ ad1
 
 ```
 
-
 Convert above ground and soil seed bank data to wide for dissimilarity 
-```{r}
+```{r - michelle's code for data wrangling with some edits}
 
+#seperating transects
+SB_transects <- distinct(seedbank, Full_TrayID , .keep_all = TRUE) %>%
+  arrange(Full_TrayID) #81 or 27 if you change it to Transects
+view(SB_transects)
 
+VEG_transects <- distinct(aboveground, Transect, .keep_all = TRUE) %>%
+  arrange(Transect) #45
+view(VEG_transects)
 
 # 1. read in data that is in long format
 seedbank <- read.csv("20220802_HLC_SB_Data_Final4.csv") #mac path & Turquoise path
@@ -100,11 +106,31 @@ colnames(seedbank.wide) ## the first column (because only one id_cols) needs to 
 aboveground.wide <- aboveground %>%
   filter(sample.bout == 1,  # you only wanted the first sampling bout
          !is.na(Species.Hit)) %>% # you can add to filter if you don't want the just genus ones 
+  filter(Transect !="B10-12.5") %>% #filters to remove transects that were taken for veg but not sb
+  filter(Transect !="B10-37.5") %>%
+  filter(Transect !="B13-12.5") %>%
+  filter(Transect !="B13-35.5") %>%
+  filter(Transect !="B14-12.5") %>%
+  filter(Transect !="B14-36.5") %>%
+  filter(Transect !="B15-14") %>%
+  filter(Transect !="B15-37.5") %>%
+  filter(Transect !="B17-12.5") %>%
+  filter(Transect !="B17-37.5") %>%
+  filter(Transect !="B18-12.5") %>%
+  filter(Transect !="B18-37.5") %>%
+  filter(Transect !="B3-10") %>%
+  filter(Transect !="B3-29") %>%
+  filter(Transect !="B5-12.5") %>%
+  filter(Transect !="B5-37.5") %>%
+  filter(Transect !="B7-12.5") %>%
+  filter(Transect !="B7-37.5") %>%
   pivot_wider(id_cols = c("Transect","baseline.rep","Bank_Location"), # Can add or remove from all the columns that unique identify a transect
               names_from = "Species.Hit",
               values_from = "Species.Hit",
               values_fn = function(x) sum(!is.na(x)), values_fill = 0)
 colnames(aboveground.wide) ## Need to remove the first three columns aboveground.wide[,-c(1:3)]
+
+
 
 # want all combined and want columns for all the species (or genera) across both
 ## i. need to make synonomous columns have the same column name 
@@ -133,37 +159,103 @@ species.wide <- bind_rows(seedbank[,c("Transect","Bank_Location","Species.Hit","
 
 ## adjust as needed for whatever analysis you're doing. Keep the first three columns as a data.frame (or tibble) because you'll need them for group arguments
 
+
+
+```
+
+```{r similarity data wrangling}
+# 1.  READ 
+
+# read in data that is in long format
+seedbank <- read.csv("20220802_HLC_SB_Data_Final4.csv") #mac path & Turquoise path
+
+aboveground <- read.csv("20201204_allHitsData_postQC_prep4.csv") #mac
+
+
+#2. APPLY FILTERS
+
+seedbank.sim <- seedbank %>%
+  # If you want to remove not (!) when name contains sp., Unknown, or (|) cf. or if NA
+  filter(!grepl("sp.|Unknown|cf.|NA",seedbank$SPECIFIC_EPITHET_FINAL), 
+         !is.na(SPECIFIC_EPITHET_FINAL)) 
+
+aboveground.sim <- aboveground %>%
+  filter(sample.bout == 1,  # you only wanted the first sampling bout
+         !is.na(Species.Hit)) %>% # you can add to filter if you don't want the just genus ones 
+  filter(Transect !="B10-12.5") %>% #filters to remove transects that were taken for veg but not sb
+  filter(Transect !="B10-37.5") %>%
+  filter(Transect !="B13-12.5") %>%
+  filter(Transect !="B13-35.5") %>%
+  filter(Transect !="B14-12.5") %>%
+  filter(Transect !="B14-36.5") %>%
+  filter(Transect !="B15-14") %>%
+  filter(Transect !="B15-37.5") %>%
+  filter(Transect !="B17-12.5") %>%
+  filter(Transect !="B17-37.5") %>%
+  filter(Transect !="B18-12.5") %>%
+  filter(Transect !="B18-37.5") %>%
+  filter(Transect !="B3-10") %>%
+  filter(Transect !="B3-29") %>%
+  filter(Transect !="B5-12.5") %>%
+  filter(Transect !="B5-37.5") %>%
+  filter(Transect !="B7-12.5") %>%
+  filter(Transect !="B7-37.5")
+
+view(seedbank.sim)
+view(aboveground.sim)
+#  3. RENAME SO COLUMNS MATCH
+seedbank.sim <- seedbank.sim %>%
+  dplyr::rename(Species.Hit = SPECIFIC_EPITHET_FINAL, ## new name = old name
+         Transect = Transect_ID) %>%
+  dplyr::mutate(VegSoil = "Soil")
+
+aboveground.sim <- aboveground.sim %>%
+  filter(sample.bout == 1,  # you only wanted the first sampling bout
+         !is.na(Species.Hit)) %>% # you can add to filter if you don't want the just genus ones 
+  dplyr::mutate(VegSoil = "Veg")
+
+# 4. BIND & PIVOT
+
+sim.matrix <- bind_rows(seedbank.sim[,c("Transect","Bank_Location","Species.Hit","VegSoil")],
+                          aboveground.sim[,c("Transect","Bank_Location","Species.Hit","VegSoil")]) %>%
+  # filter(Transect %in% c(...list the transects you want for a specific comparison...), VegSoil = "Veg") %>% ## for whatever subsets you want for any given analysis
+  pivot_wider(id_cols = c("Transect","VegSoil","Bank_Location"), # Can add or remove from all the columns that unique identify a transect
+              names_from = "Species.Hit",
+              values_from = "Species.Hit",
+              values_fn = function(x) sum(!is.na(x)), values_fill = 0)
+## need to remove the first three for vegdist(species.wide[,-c(1:3)]) 
+
+## adjust as needed for whatever analysis you're doing. Keep the first three columns as a data.frame (or tibble) because you'll need them for group arguments
+
+view(sim.matrix)
+
 ```
 
 ``` {r similarity next steps} 
 
-species.wide2 <- species.wide[-c(1:3)]
-species.wide2 <- as.matrix(species.wide2)
-head(species.wide2)
+#reformatting
+sim.matrix$UniqueID <- paste(sim.matrix$Transect, sim.matrix$VegSoil, sim.matrix$Bank_Location, sep = "-") #pasting columns together
 
-vegdist.out <- vegdist(species.wide2, method="bray", binary=TRUE)
-matrix.out <- as.matrix(vegdist.out)
+sim.matrix <- sim.matrix[,c(72,1:71)] #move uniqueID column to front
+
+sim.matrix <- sim.matrix[order(sim.matrix$UniqueID),] #put in order
+
+sim.matrix <- as.data.frame(sim.matrix)
+
+rownames(sim.matrix) <- sim.matrix$UniqueID
+
+sim.matrix2 <- sim.matrix[-c(1:4)] #removing columns with text so that I can analyze
+
+sim.matrix2 <- as.matrix(sim.matrix2)
+head(sim.matrix2)
+
+
+#Running similarity
+vegdist.out <- vegdist(sim.matrix2, method="bray", binary=TRUE) #Jaccard dissimilarity 
+matrix.out <- as.matrix(vegdist.out) #put into matrix 
 view(matrix.out)
 
-species.wide$UniqueID <- paste(species.wide$Transect, species.wide$VegSoil, species.wide$Bank_Location, sep = "-") #pasting columns together
-
-species.wide <- species.wide[,c(101,1:100)] #move uniqueID column to front
-
-species.wide <- species.wide[order(species.wide$UniqueID),] #put in order
-
-species.wide <- as.data.frame(species.wide)
-
-rownames(species.wide) <- species.wide$UniqueID
-
-species.wide2 <- species.wide[-c(1:4)]
-
-species.wide2 <- as.matrix(species.wide2)
-head(species.wide2)
-
-vegdist.out <- vegdist(species.wide2, method="bray", binary=TRUE)
-matrix.out <- as.matrix(vegdist.out)
-view(matrix.out)
-
+#grabbing the meaningful numbers from the matrix
 DistVals <- data.frame(PlotID =NULL, Value = NULL) ## creating new dataframe to store outputs of plot dissimilarity 
 for(i in 4:nrow(matrix.out)){ 
   wantRow <- row.names(matrix.out)[i] 
@@ -175,22 +267,10 @@ for(i in 4:nrow(matrix.out)){
 
 view(DistVals)
 
-length(unique(DistVals$PlotID))
+length(unique(DistVals$PlotID)) #should be 81
 
-
-
-
-
-
-str(species.wide)
-
-as.matrix(species.wide2)[df$Spe]
-heatmap(as.matrix(vegdist))
-
-hist(vegdist)
-
-
-
+#ideas -- could do some manual work --> pull numbers of interest out of matrix 
+          # could filter one transect at a time (I think that's what michelle had in mind?)
 
 
 
