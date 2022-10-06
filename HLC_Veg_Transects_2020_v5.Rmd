@@ -46,8 +46,13 @@ head(vegdf)
 #check species spellings
 
 df <- vegdf %>% distinct(VegHit_SoilSurfaceHit)
-#View(df)
+View(df)
 
+
+df_Spp_v <- distinct(vegdf, Species.Hit, .keep_all = TRUE) %>%
+  arrange(Species.Hit)
+
+view(df_Spp_v)
 ```
 
 
@@ -101,7 +106,15 @@ df.transect <- vegdf %>%
 
 View(df.transect)
 
-write_xlsx(df.transect, 'hits_byTransect.xlsx')
+#write_xlsx(df.transect, 'hits_byTransect.xlsx')
+
+VEG_families <- vegdf %>% 
+  group_by(Family) %>%
+  summarise(Species.Name = n()) 
+
+view(SB_families)
+
+write_xlsx(SB_families, 'sb_fam_counts.xlsx')
 
 
 ```

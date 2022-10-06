@@ -56,6 +56,7 @@ df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
          & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown grass") %>%
   select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS)
 
+view(df_Spp)
 ```
 
 ```{r create species tables}
@@ -98,7 +99,7 @@ sum(SB_Spp_tbl$Freq2)
 
 germinants.canal <- seedbankdf %>%
   summarise(Species.Name = n()) 
-
+view(germinants.canal)
 #View(germinants.canal)
 #write_xlsx(germinants.canal, 'germinants_byCanal.xlsx')
 
@@ -109,6 +110,17 @@ germinants.baseline <- seedbankdf %>%
   summarise(Species.Name = n()) 
 
 #View(germinants.baseline)
+
+#families counted
+SB_families <- seedbankdf %>% 
+  group_by(Family) %>%
+  summarise(Species.Name = n()) 
+
+view(SB_families)
+
+#write_xlsx(SB_families, 'sb_fam_counts.xlsx')
+
+
 
 #write_xlsx(germinants.baseline, 'germinants_byBaseline.xlsx')
 
