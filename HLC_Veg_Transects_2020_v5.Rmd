@@ -578,19 +578,23 @@ emmeans(lmer_gaus_low2, pairwise ~ WIS_GP, adjust = "tukey")
 ```{r stats for WIS with WIS and bank location interaction}
 
 lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
-lmer_gaus1 <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) 
-lmer_gaus2 <- lmer(prop ~ WIS_GP + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) 
-lmer_gaus3 <- lmer(prop ~ WIS_GP + Bank_Location + WIS_GP*Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg)
-lmer_gaus4 <- lmer(prop ~ WIS_GP + Bank_Location + WIS_GP*Bank_Location + (1|baseline), data = df.props_WIS_veg)
+lmer_gaus1 <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #add in variation explained by WIS
+lmer_gaus2 <- lmer(prop ~ WIS_GP + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #add in variation explained by bank location
+lmer_gaus3 <- lmer(prop ~ WIS_GP + Bank_Location + WIS_GP*Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #add in interaction term
+lmer_gaus4 <- lmer(prop ~ WIS_GP + Bank_Location + WIS_GP*Bank_Location + (1|baseline), data = df.props_WIS_veg) #Remove random effect of transect within baseline
 
-AIC(lmer_gaus_null, lmer_gaus1,lmer_gaus2,lmer_gaus3, lmer_gaus4)
+AIC(lmer_gaus_null, lmer_gaus1,lmer_gaus2,lmer_gaus3, lmer_gaus4) #code to run AIC; lowest number is best fit; typically considered that difference should be at least 2 to be considered a meaningful improvement of fit
 
-summary(lmer_gaus1)
-summary(lmer_gaus2)
-summary(lmer_gaus3)
-summary(lmer_gaus4)
+summary(lmer_gaus1) #Get model output
+summary(lmer_gaus2) #Get model output
+summary(lmer_gaus3) #Get model output
+summary(lmer_gaus4) #Get model output
 
-#Different ways to visualize the distribution of the data
+
+#Different ways to visualize the distribution of the data; the raw data (distribution of y) is not normally distributed but the model fit
+#(with y conditional on x) looks decent (although still violates normality) based on qqplot and distribution of fitted versus residuals
+
+#Can also get the output for lines 599-603 below using sjPlot code 
 
 proportion_WIS_gauss <- df.props_WIS_veg$prop #Histogram showing lots of zeroes, positive skew 
 hist(proportion_WIS_gauss)
