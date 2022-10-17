@@ -8,8 +8,8 @@ output: html_document
 
 ```{r libraries, bring in file, some data cleaning}
 
-library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(tidytext);
-library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2); library(sjPlot); library(emmeans); library(RColorBrewer)
+library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(tidytext); library(glmmTMB)
+library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2); library(sjPlot); library(emmeans); library(RColorBrewer); library(gamlss); library(lmerTest)
 
 #Bring in raw data file
 veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
@@ -341,9 +341,9 @@ print(p)
 ```
 
 
-```{r graph WIS by bank location then move on to statistical model}
+```{r graph WIS by bank location}
 
-#Prepping data file for proportion as response variable
+#Prepping data file for proportion WIS as response variable
 
 vegdf$WIS_GP <- as.factor(vegdf$WIS_GP)
 
@@ -352,30 +352,40 @@ df.props_WIS_veg <- vegdf %>%
   filter(sample.bout =="1") %>%
   drop_na(Species.Hit, WIS_GP) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
   summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(baseline, Bank_Location, WIS_GP) %>%  
+  group_by(baseline, Transect, Bank_Location, WIS_GP) %>%  
   summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
   mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
-  complete(WIS_GP, fill = list(Species.Hit = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
-
+  complete(WIS_GP, fill = list(Species.Hit = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  mutate(prop_log = log(prop+1))
+  
 # Check it adds to one with the 5 groups  
 sum(df.props_WIS_veg$prop[1:5])
     
 View(df.props_WIS_veg)
 
+#Need to get the means of each baseline
+
+df_prop_WIS_means <- df.props_WIS_veg %>%
+  group_by(baseline, Bank_Location, WIS_GP) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+View(df_prop_WIS_means)
+
+
 #Make boxplot
 
-p <- df.props_WIS_veg_exp %>% ggplot(aes(x=factor(WIS_GP, levels = c('UPL', 'FACU', 'FAC', 'FACW', 'OBL')), y=prop))+ 
+p <- df_prop_WIS_means %>% ggplot(aes(x=factor(WIS_GP, levels = c('UPL', 'FACU', 'FAC', 'FACW', 'OBL')), y=Mean, fill=WIS_GP))+ 
   geom_boxplot()+
   geom_point()+
 
   labs(x = "Wetland Indicator Status", y = "Proportion of Vegetative Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = WIS_GP), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  stat_summary(fun=mean, geom="point", aes(group = WIS_GP), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
   theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+scale_fill_brewer(palette = "BuGn")
 print(p)
 
 p + facet_wrap(~Bank_Location)
-
 
 
 #Make stacked bar graph 
@@ -391,163 +401,400 @@ df_stacked_WIS %>%
   labs(x = "Bank Location", y = "Proportion of Cover") +
   guides(fill = guide_legend("Wetland Indicator Status")) +
   theme_bw(base_size = 16)+
-  scale_fill_brewer(palette = "BuPu")
+  scale_fill_brewer(palette = "BuGn")
+```
 
 
-#Stats model for proportion of species upper bank location; Gaussian family fixed and random effects
+```{r stats for WIS upper bank location gaussian and log transformed}
 
+#Stats model for proportion of species upper bank location
 #First select out the upper bank location only
 
-df_UpperBank <- subset(WIS_bankLoc_long, Location =="upper")
+df_UpperBank <- subset(df.props_WIS_veg, Bank_Location =="upper")
 View(df_UpperBank)
 
-lm_gaus_null <- lm(PropWIS ~ 1, data = df_UpperBank )
-lm_gaus_upper <- lm(PropWIS ~ WIS, data = df_UpperBank ) 
+#Now create mixed models with an intercept only, intercept + WIS then do AIC
+#to confirm that WIS explains enough variation to substantially increase model fit
+#Fit a gaussian distribution (no transformation)
 
-AIC(lm_gaus_null,lm_gaus_upper)
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df_UpperBank) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_gaus_upper <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df_UpperBank) #WIS added
+lmer_gaus_upper2 <- lmer(prop ~ WIS_GP + (1|baseline), data = df_UpperBank) #removing transect nested within baseline b/c it does not explain any additional variation
 
-glm_gaus_upper <- lmer(PropWIS ~ WIS + (1|Transect:Baseline),data = df_UpperBank)
+summary(lmer_gaus_null) #see what model output looks like
+summary(lmer_gaus_upper) #see what model output looks like
+summary(lmer_gaus_upper2) #see what model output looks like
 
-qqnorm(resid(glm_gaus_upper))
-qqline(resid(glm_gaus_upper))
+AIC(lmer_gaus_null,lmer_gaus_upper, lmer_gaus_upper2) #Compare with model is more informative; smaller numbers are better; including WIS greatly improves model
 
-effectsize::standardize(glm_gaus_upper) %>% summary()
-plot_residuals(glm_gaus_upper)
-plot_model(glm_gaus_upper, type = "diag")
-sjPlot::plot_model(glm_gaus_upper, type = "est", show.values = T)
+qqnorm(resid(lmer_gaus_upper2)) #Use to visualize whether normally distributed
 
-sjPlot::tab_model(glm_gaus_upper, title = "WIS Proportions in Upper Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_upper, pairwise ~ WIS, adjust = "tukey")
+proportion_wis_gauss <- df_UpperBank$prop #Histogram showing lots of zeroes, positive skew 
+hist(proportion_wis_gauss)
 
 
-#Stats model for proportion of species middle bank location; Gaussian family fixed and random effects
+#Choose lmer_gaus_upper2 based on AIC and run diagnostics, output, pairwise comparisons
 
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus_upper2)
+plot_model(lmer_gaus_upper2, type = "diag")
+sjPlot::plot_model(lmer_gaus_upper2, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_upper2, df.method = "satterthwaite", title = "WIS Proportions in Upper Bank", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_upper2, df.method = "satterthwaite", pairwise ~ WIS_GP, adjust = "tukey")
+
+#Not normally distributed: Try log transformed response variable and visualize fit; log transformation did not improve
+
+lm_gaus_log_upper <- lmer(prop_log ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df_UpperBank)
+summary(lm_gaus_log_upper)
+
+qqnorm(resid(lm_gaus_log_upper)) #Use to visualize whether normally distributed
+qqline(resid(lm_gaus_log_upper)) #Use to visualize whether normally distributed
+
+proportion_wis_log <- df_UpperBank$prop_log
+hist(proportion_wis_log)
+
+
+effectsize::standardize(lm_gaus_log_upper) %>% summary()
+plot_residuals(lm_gaus_log_upper)
+plot_model(lm_gaus_log_upper, type = "diag")
+sjPlot::plot_model(lm_gaus_log_upper, type = "est", show.values = T)
+
+sjPlot::tab_model(lm_gaus_log_upper, title = "WIS Proportions in Upper Bank", dv.labels = "Proportion Cover")
+
+emmeans(lm_gaus_log_upper, pairwise ~ WIS_GP, adjust = "tukey")
+
+```
+
+
+```{r stats for WIS middle bank location gaussian and log transformed}
+
+#Stats model for proportion of species upper bank location
 #First select out the upper bank location only
 
-df_MidBank <- subset(WIS_bankLoc_long, Location =="middle")
+df_MidBank <- subset(df.props_WIS_veg, Bank_Location =="middle")
 View(df_MidBank)
 
-lm_gaus_null <- lm(PropWIS ~ 1, data = df_MidBank )
-lm_gaus_mid <- lm(PropWIS ~ WIS, data = df_MidBank ) 
+#Now create mixed models with an intercept only, intercept + WIS then do AIC
+#to confirm that WIS explains enough variation to substantially increase model fit
+#Fit a gaussian distribution (no transformation)
 
-AIC(lm_gaus_null,lm_gaus_mid)
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df_MidBank ) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_gaus_mid <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df_MidBank ) #WIS added
+lmer_gaus_mid2 <- lmer(prop ~ WIS_GP + (1|baseline), data = df_MidBank ) #removing transect nested within baseline b/c it does not explain any additional variation
 
-glm_gaus_mid <- lmer(PropWIS ~ WIS + (1|Transect:Baseline),data = df_MidBank)
-
-qqnorm(resid(glm_gaus_mid))
-qqline(resid(glm_gaus_mid))
-
-effectsize::standardize(glm_gaus_mid) %>% summary()
-plot_residuals(glm_gaus_mid)
-plot_model(glm_gaus_mid, type = "diag")
-sjPlot::plot_model(glm_gaus_mid, type = "est", show.values = T)
-
-sjPlot::tab_model(glm_gaus_mid, title = "WIS Proportions in Middle Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_mid, pairwise ~ WIS, adjust = "tukey")
+summary(lmer_gaus_null) #see what model output looks like
+summary(lmer_gaus_mid) #see what model output looks like
+summary(lmer_gaus_mid2) #see what model output looks like
 
 
-#Stats model for proportion of species lower bank location; Gaussian family fixed and random effects
+AIC(lmer_gaus_null,lmer_gaus_mid, lmer_gaus_mid2) #Compare with model is more informative; smaller numbers are better; including WIS greatly improves model
 
-#First select out the lower bank location only
+qqnorm(resid(lmer_gaus_mid2)) #Use to visualize whether normally distributed
 
-df_LowerBank <- subset(WIS_bankLoc_long, Location =="lower")
-View(df_LowerBank)
+proportion_wis_gauss <- df_MidBank$prop
+hist(proportion_wis_gauss)
 
-lm_gaus_null <- lm(PropWIS ~ 1, data = df_LowerBank )
-lm_gaus_low <- lm(PropWIS ~ WIS, data = df_LowerBank ) 
+proportion_wis_log <- df_MidBank$prop_log
+hist(proportion_wis_log)
 
-AIC(lm_gaus_null,lm_gaus_low)
+#Choose lmer_gaus_upper2 based on AIC and run diagnostics, output, pairwise comparisons
 
-glm_gaus_low <- lmer(PropWIS ~ WIS + (1|Transect:Baseline),data = df_LowerBank)
+#effectsize::standardize(lmer_gaus_mid2) %>% summary()
+plot_residuals(lmer_gaus_mid2)
+plot_model(lmer_gaus_mid2, type = "diag")
+sjPlot::plot_model(lmer_gaus_mid2, type = "est", show.values = T)
 
-qqnorm(resid(glm_gaus_low))
-qqline(resid(glm_gaus_low))
+sjPlot::tab_model(lmer_gaus_mid2, title = "WIS Proportions in Middle Bank", dv.labels = "Proportion Cover")
 
-effectsize::standardize(glm_gaus_low) %>% summary()
-plot_residuals(glm_gaus_low)
-plot_model(glm_gaus_low, type = "diag")
-sjPlot::plot_model(glm_gaus_low, type = "est", show.values = T)
+emmeans(lmer_gaus_mid2, pairwise ~ WIS_GP, adjust = "tukey")
 
-sjPlot::tab_model(glm_gaus_low, title = "WIS Proportions in Lower Bank", dv.labels = "Proportion Cover")
+#Not normally distributed: Try log transformed response variable and visualize fit; log transformation did not improve
 
-emmeans(glm_gaus_low, pairwise ~ WIS, adjust = "tukey")
+lm_gaus_log_mid <- lmer(prop_log ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df_MidBank )
+summary(lm_gaus_log_mid)
 
+qqnorm(resid(lm_gaus_log_mid)) #Use to visualize whether normally distributed
+qqline(resid(lm_gaus_log_mid)) #Use to visualize whether normally distributed
+
+effectsize::standardize(lm_gaus_log_mid) %>% summary()
+plot_residuals(lm_gaus_log_mid)
+plot_model(lm_gaus_log_mid, type = "diag")
+sjPlot::plot_model(lm_gaus_log_mid, type = "est", show.values = T)
+
+sjPlot::tab_model(lm_gaus_log_mid, title = "WIS Proportions in Middle Bank", dv.labels = "Proportion Cover")
+
+emmeans(lm_gaus_log_mid, pairwise ~ WIS_GP, adjust = "tukey")
+
+```
+
+
+```{r stats for WIS lower bank location gaussian }
+
+#Stats model for proportion of species lower bank location
+#First select out the upper bank location only
+
+df_LowBank <- subset(df.props_WIS_veg, Bank_Location =="lower")
+View(df_LowBank)
+
+#Now create mixed models with an intercept only, intercept + WIS then do AIC
+#to confirm that WIS explains enough variation to substantially increase model fit
+#Fit a gaussian distribution (no transformation)
+
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df_LowBank) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_gaus_low <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df_LowBank) #WIS added
+lmer_gaus_low2 <- lmer(prop ~ WIS_GP + (1|baseline), data = df_LowBank) #removing transect nested within baseline b/c it does not explain any additional variation
+
+summary(lmer_gaus_null) #see what model output looks like
+summary(lmer_gaus_low) #see what model output looks like
+summary(lmer_gaus_low2) #see what model output looks like
+
+
+AIC(lmer_gaus_null,lmer_gaus_low, lmer_gaus_low2) #Compare with model is more informative; smaller numbers are better; including WIS greatly improves model
+
+qqnorm(resid(lmer_gaus_low2)) #Use to visualize whether normally distributed
+
+proportion_wis_gauss <- df_LowBank$prop
+hist(proportion_wis_gauss)
+
+proportion_wis_log <- df_LowBank$prop_log
+hist(proportion_wis_log)
+
+#Choose lmer_gaus_upper2 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_low2) %>% summary()
+plot_residuals(lmer_gaus_low2)
+plot_model(lmer_gaus_low2, type = "diag")
+sjPlot::plot_model(lmer_gaus_low2, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_low2, title = "WIS Proportions in Lower Bank", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_low2, pairwise ~ WIS_GP, adjust = "tukey")
+
+```
+
+
+```{r stats for WIS with WIS and bank location interaction}
+
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_gaus1 <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) 
+lmer_gaus2 <- lmer(prop ~ WIS_GP + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) 
+lmer_gaus3 <- lmer(prop ~ WIS_GP + Bank_Location + WIS_GP*Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg)
+lmer_gaus4 <- lmer(prop ~ WIS_GP + Bank_Location + WIS_GP*Bank_Location + (1|baseline), data = df.props_WIS_veg)
+
+AIC(lmer_gaus_null, lmer_gaus1,lmer_gaus2,lmer_gaus3, lmer_gaus4)
+
+summary(lmer_gaus1)
+summary(lmer_gaus2)
+summary(lmer_gaus3)
+summary(lmer_gaus4)
+
+#Different ways to visualize the distribution of the data
+
+proportion_WIS_gauss <- df.props_WIS_veg$prop #Histogram showing lots of zeroes, positive skew 
+hist(proportion_WIS_gauss)
+qqnorm(df.props_WIS_veg$prop) #use to visualize whether raw data are normally distributed
+qqnorm(resid(lmer_gaus4))     #Use to visualize whether model residuals vs predicted are normally distributed
+plot(lmer_gaus4)              #Use to visualize whether model residuals vs predicted are normally distributed
+
+
+#Choose lmer_gaus_upper4 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus4)
+plot_model(lmer_gaus4, type = "diag")
+sjPlot::plot_model(lmer_gaus4, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus4, df.method = "satterthwaite", title = "Proportion WIS in Vegetation", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus4, df.method = "satterthwaite", pairwise ~ WIS_GP | Bank_Location, adjust = "tukey")
+emmip(lmer_gaus4, WIS_GP ~ Bank_Location)
+
+```
+
+
+```{r stats for WIS upper bank location trying quasibinomial and gamlss with zero inflation}
+
+
+#glm with logit <https://www.andrewheiss.com/blog/2021/11/08/beta-regression-guide/> family = quasibinomial() gets rid of the warning that you don't have a binary outcome variable
+
+m1 <- glm(prop ~ WIS_GP, 
+           family = quasibinomial(link = "logit"),
+           data = df_UpperBank)
+
+summary(m1)
+tab_model(m1, transform = NULL)
+confint(m1)
+
+## Are the treatment effects real?
+emmeans(m1, "WIS_GP", type = "response")
+
+effectsize::standardize(m1) %>% summary()
+plot_residuals(m1)
+plot_model(m1, type = "diag")
+sjPlot::plot_model(m1, type = "est", show.values = T)
+
+sjPlot::tab_model(m1, title = "WIS Proportions in Upper Bank", dv.labels = "Proportion Cover")
+
+emmeans(m1, pairwise ~ WIS_GP, adjust = "tukey")
+
+
+#gamlss with zero inflation (just pulled from fire code, not worked through for this data)  
+
+gam.bezi <- gamlss(prop ~ WIS_GP, 
+           family =BEZI, data = df_UpperBank, trace = FALSE)
+summary(gam.bezi)
+
+means_m1 <- lpred(gam.bezi, type = 'response', what='mu', se.fit = TRUE)
+df_fit <- data.frame(Treatment = shgrin$Treatment,
+                     M = means_m1$fit, SE = means_m1$se.fit)
+
+ggplot(df_fit, aes(Treatment, M))+
+  geom_pointrange(aes(ymin = M-SE, ymax = M+SE))+
+  labs(x="Treatment", y="Vegetation cover")+
+  scale_y_continuous(labels = scales::percent)
 
 ```
 
 
 ```{r graph native/intro by bank location}
 
-#This csv contains only first sampling bout and first and second hits
+#Prepping data file for proportion WIS as response variable
 
-NatIntro_bankLoc <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/NativeIntro_byBankLoc_Upload.csv")
+vegdf$Nativity <- as.factor(vegdf$Nativity)
 
-str(NatIntro_bankLoc)
-View(NatIntro_bankLoc)
+df.props_Nativity_veg <- vegdf %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
+  filter(sample.bout =="1") %>%
+  drop_na(Species.Hit, Nativity) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
+  summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Transect, Bank_Location, Nativity) %>%  
+  summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(Nativity, fill = list(Species.Hit = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  mutate(prop_log = log(prop+1))
+  
+# Check it adds to one with the 5 groups  
+sum(df.props_Nativity_veg$prop[1:2])
+    
+View(df.props_Nativity_veg)
 
-#Remove unwanted columns 
 
-NatIntro_bankLoc <- select(NatIntro_bankLoc, -Total.Hits, -Hits.by.Loc, - Native, -Introduced)
+#get the means across transect (transected is nested within baseline as replication)
+df_nativity_means <- df.props_Nativity_veg %>%
+  group_by(baseline, Bank_Location, Nativity) %>%
+  dplyr::summarise(Mean = mean(prop))
 
-View(NatIntro_bankLoc)
+View(df_nativity_means)
 
-#add data points w/o jitter for bank location
-#change width of boxes and add axis labels 
-#Visualize boxplots and can see that the level of replication being graphed is wrong
-#b/c it is showing all 45 transects
+#Make boxplot with means
 
-
-NatIntro_bankLoc %>% ggplot(aes(x=Location, y=Prop.native))+
+N <- df_nativity_means %>% 
+  ggplot(aes(x=Nativity, y=Mean, fill=Nativity))+ 
+    ggtitle("Nativity Proportion by Bank Location") +
   geom_boxplot()+
-  geom_point()+
+    geom_point()+
+    labs(x = "Nativity", y = "Proportion of Seedbank")+
+    stat_summary(fun=mean, geom="point", aes(group = Nativity), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=90, hjust=1))+
+    scale_fill_brewer(palette = "BuGn")
+print(N)
 
-  labs(x = "Location", y = "Proportion Native Cover")+
-  theme_bw(base_size = 16)
-
-
-#Need to get the means of each baseline
-#The above code currently graphs all 45 transects
-
-df_NatIntro_bankLoc_means <- NatIntro_bankLoc %>%
-  group_by(Baseline, Location) %>%
-  dplyr::summarise(Mean = mean(Prop.native))
-
-View(df_NatIntro_bankLoc_means)
-
-#Now create new boxplot with baseline means
-
-df_NatIntro_bankLoc_means %>% ggplot(aes(x=Location, y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Location", y = "Proportion Native Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = Location), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)
+N + facet_wrap(~Bank_Location)
 
 
-#Stats model for proportion of native/intro spp by bank loc; Gaussian family fixed and random effects
+#Make stacked bar graph 
+
+df_stacked_Nativity <- aggregate(prop ~ Bank_Location + Nativity, data = df.props_Nativity_veg, FUN = mean)
+
+View(df_stacked_Nativity)
+
+df_stacked_Nativity %>%
+  mutate(Nativity = fct_relevel(Nativity, "Introduced", 'Native')) %>%
+  ggplot(aes(fill = Nativity, y = prop, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Nativity")) +
+  theme_bw(base_size = 16)+
+  scale_fill_brewer(palette = "BuGn")
+
+```
 
 
-lm_gaus_null <- lm(Prop.native ~ 1, data = NatIntro_bankLoc)
-lm_gaus_location <- lm(Prop.native ~ Location, data = NatIntro_bankLoc) 
+```{r stats for Nativity upper bank location gaussian and log transformed}
 
-AIC(lm_gaus_null,lm_gaus_location)
+#Stats model for proportion of species upper bank location
+#First select out the upper bank location only
 
-lm_gaus_location <- lmer(Prop.native ~ Location + (1|Transect:Baseline),data = NatIntro_bankLoc)
+df_UpperBank <- subset(df.props_Nativity_veg, Bank_Location =="upper")
+View(df_UpperBank)
 
-qqnorm(resid(lm_gaus_location))
-qqline(resid(lm_gaus_location))
+#Now create mixed models with an intercept only, intercept + WIS then do AIC
+#to confirm that WIS explains enough variation to substantially increase model fit
+#Fit a gaussian distribution (no transformation)
 
-effectsize::standardize(lm_gaus_location) %>% summary()
-plot_residuals(lm_gaus_location)
-plot_model(lm_gaus_location, type = "diag")
-sjPlot::plot_model(lm_gaus_location, type = "est", show.values = T)
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df_UpperBank) #intercept only, just models variation across baselines and transects, no accounting for variation explained by Nativity
+lmer_gaus_upper <- lmer(prop ~ Nativity + (1|baseline) + (1|Transect:baseline), data = df_UpperBank) #Nativity added
+lmer_gaus_upper2 <- lmer(prop ~ Nativity + (1|baseline), data = df_UpperBank) #removing transect nested within baseline b/c it does not explain any additional variation
 
-sjPlot::tab_model(lm_gaus_location, title = "Native Introduced Proportions by Bank Location", dv.labels = "Proportion Cover")
+summary(lmer_gaus_null) #see what model output looks like
+summary(lmer_gaus_upper) #see what model output looks like
+summary(lmer_gaus_upper2) #see what model output looks like
 
-emmeans(lm_gaus_location, pairwise ~ Location, adjust = "tukey")
+AIC(lmer_gaus_null,lmer_gaus_upper, lmer_gaus_upper2) #Compare with model is more informative; smaller numbers are better; including WIS greatly improves model
+
+qqnorm(resid(lmer_gaus_upper2)) #Use to visualize whether normally distributed
+
+proportion_wis_gauss <- df_UpperBank$prop #Histogram showing lots of zeroes, positive skew 
+hist(proportion_wis_gauss)
+
+
+#Choose lmer_gaus_upper2 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus_upper2)
+plot_model(lmer_gaus_upper2, type = "diag")
+sjPlot::plot_model(lmer_gaus_upper2, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_upper2, df.method = "satterthwaite", title = "WIS Proportions in Upper Bank", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_upper2, df.method = "satterthwaite", pairwise ~ WIS_GP, adjust = "tukey")
+
+```
+
+
+```{r nativity stats with nativity and bank location interaction}
+
+lmer_gaus_native_1 <- lmer(prop ~ Nativity + (1|baseline) + (1|Transect:baseline), data = df.props_Nativity_veg)
+lmer_gaus_native_2 <- lmer(prop ~ Nativity + (1|baseline) + (1|Transect:baseline), data = df.props_Nativity_veg) 
+lmer_gaus_native_3 <- lmer(prop ~ Nativity + Bank_Location + Nativity*Bank_Location + (1|Transect:baseline) + (1|Transect:baseline), data = df.props_Nativity_veg)
+
+AIC(lmer_gaus_native_1, lmer_gaus_native_2, lmer_gaus_native_3)
+
+summary(lmer_gaus_native_1)
+summary(lmer_gaus_native_2)
+summary(lmer_gaus_native_3)
+
+qqnorm(resid(lmer_gaus_native_3)) #Use to visualize whether normally distributed
+plot(lmer_gaus_native_3)
+
+proportion_Native_gauss <- df.props_Nativity_veg$prop #Histogram showing lots of zeroes, positive skew 
+hist(proportion_Native_gauss)
+
+
+#Choose lmer_gaus_upper1 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus_native_3)
+plot_model(lmer_gaus_native_3, type = "diag")
+sjPlot::plot_model(lmer_gaus_native_3, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_native_3, df.method = "satterthwaite", title = "Proportion Native and Introduced in Vegetation", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_native_3, df.method = "satterthwaite", pairwise ~ Nativity | Bank_Location, adjust = "tukey")
+emmip(lmer_gaus_native_3, Nativity~ Bank_Location)
 
 ```
 
@@ -642,7 +889,7 @@ p + facet_wrap(~Location)
 
 ```
 
-
+Want to redo common species using proper prepping steps within R
 ```{r graph common species using only first sample bout}
 
 #This csv contains only first sampling bout and first and second hits
@@ -681,14 +928,17 @@ View(df_commonSpp_baseline_means)
 
 #Now create new boxplot with baseline means
 
-df_commonSpp_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
+p <- df_commonSpp_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
   geom_boxplot()+
   geom_point()+
 
   labs(x = "Species", y = "Proportion of Cover")+
   stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
   theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+  scale_fill_brewer(palette = "BuGn")
+
+print(p)
 
 
 #Now get the means of each species by bank location
@@ -750,7 +1000,7 @@ df.props_FG <- vegdf %>%
   filter(sample.bout =="1") %>%
   drop_na(Species.Hit, FunctionalGroup) %>%  ## drops rows with missing values NA in either Species.Hit or FunctionalGroup
   summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(baseline, Bank_Location, FunctionalGroup) %>%  
+  group_by(baseline, Transect, Bank_Location, FunctionalGroup) %>%  
   summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
   mutate(propFG = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
   complete(FunctionalGroup, fill = list(Species.Hit = 0, propFG = 0)) ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
@@ -805,91 +1055,42 @@ p <- ggplot(df.props_FG_stacked, aes(fill = FunctionalGroup, y = Mean, x = Bank_
   labs(x = "Bank Location", y = "Proportion of Cover") +
   guides(fill = guide_legend("Functional Group Type")) +
   theme_bw(base_size = 16) + 
-  scale_fill_brewer(palette = "BuPu")
+  scale_fill_brewer(palette = "BuGn")
 
 print(p)
 
-
-#FOR THE BELOW STATS, NEED TO CREATE A DATAFRAME USING THE PREPPING
-#CODE ABOVE BUT KEEP TRANSECTS FOR RANDOM STATEMENT
-#Stats model for proportion of species upper bank location; Gaussian family fixed and random effects
-#First select out the upper bank location only
-
-df_UpperBank <- subset(FG_bankLoc_long, Location =="upper")
-View(df_UpperBank)
-
-lm_gaus_null <- lm(PropFuncGroup ~ 1, data = df_UpperBank )
-lm_gaus_upper <- lm(PropFuncGroup ~ FuncGroup, data = df_UpperBank ) 
-
-AIC(lm_gaus_null,lm_gaus_upper)
-
-glm_gaus_upper <- lmer(PropFuncGroup ~ FuncGroup + (1|Transect:Baseline),data = df_UpperBank)
-
-qqnorm(resid(glm_gaus_upper))
-qqline(resid(glm_gaus_upper))
-
-effectsize::standardize(glm_gaus_upper) %>% summary()
-plot_residuals(glm_gaus_upper)
-plot_model(glm_gaus_upper, type = "diag")
-sjPlot::plot_model(glm_gaus_upper, type = "est", show.values = T)
-
-sjPlot::tab_model(glm_gaus_upper, title = "Functional Group Proportions in Upper Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_upper, pairwise ~ FuncGroup, adjust = "tukey")
+```
 
 
-#Stats model for proportion of species middle bank location; Gaussian family fixed and random effects
+```{r stats for functional group by bank location interaction}
 
-#First select out the middle bank location only
+lmer_gaus_fg_1 <- lmer(propFG ~ FunctionalGroup + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
+lmer_gaus_fg_2 <- lmer(propFG ~ FunctionalGroup + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
+lmer_gaus_fg_3 <- lmer(propFG ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|Transect:baseline) + (1|Transect:baseline), data = df.props_FG)
 
-df_MidBank <- subset(FG_bankLoc_long, Location =="middle")
-View(df_MidBank)
+AIC(lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3)
 
-lm_gaus_null <- lm(PropFuncGroup ~ 1, data = df_MidBank)
-lm_gaus_middle <- lm(PropFuncGroup ~ FuncGroup, data = df_MidBank) 
+summary(lmer_gaus_fg_1)
+summary(lmer_gaus_fg_2)
+summary(lmer_gaus_fg_3)
 
-AIC(lm_gaus_null,lm_gaus_middle)
+qqnorm(resid(lmer_gaus_fg_1)) #Use to visualize whether normally distributed
+plot(lmer_gaus_fg_1)
 
-glm_gaus_middle <- lmer(PropFuncGroup ~ FuncGroup + (1|Transect:Baseline),data = df_MidBank)
-
-qqnorm(resid(glm_gaus_middle))
-qqline(resid(glm_gaus_middle))
-
-effectsize::standardize(glm_gaus_middle) %>% summary()
-plot_residuals(glm_gaus_middle)
-plot_model(glm_gaus_middle, type = "diag")
-sjPlot::plot_model(glm_gaus_middle, type = "est", show.values = T)
-
-sjPlot::tab_model(glm_gaus_middle, title = "Functional Group Proportions in Middle Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_middle, pairwise ~ FuncGroup, adjust = "tukey")
+proportion_FunctionalGroup_gauss <- df.props_FG$prop #Histogram showing lots of zeroes, positive skew 
+hist(proportion_Native_gauss)
 
 
-#Stats model for proportion of species lower bank location; Gaussian family fixed and random effects
+#Choose lmer_gaus_upper1 based on AIC and run diagnostics, output, pairwise comparisons
 
-#First select out the lower bank location only
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus_fg_1)
+plot_model(lmer_gaus_fg_1, type = "diag")
+sjPlot::plot_model(lmer_gaus_fg_1, type = "est", show.values = T)
 
-df_LowBank <- subset(FG_bankLoc_long, Location =="lower")
-View(df_LowBank)
+sjPlot::tab_model(lmer_gaus_fg_1, df.method = "satterthwaite", title = "Proportion of Functional Groups in Vegetation", dv.labels = "Proportion Cover")
 
-lm_gaus_null <- lm(PropFuncGroup ~ 1, data = df_LowBank)
-lm_gaus_lower <- lm(PropFuncGroup ~ FuncGroup, data = df_LowBank) 
-
-AIC(lm_gaus_null,lm_gaus_lower)
-
-glm_gaus_lower <- lmer(PropFuncGroup ~ FuncGroup + (1|Transect:Baseline),data = df_LowBank)
-
-qqnorm(resid(glm_gaus_lower))
-qqline(resid(glm_gaus_lower))
-
-effectsize::standardize(glm_gaus_lower) %>% summary()
-plot_residuals(glm_gaus_lower)
-plot_model(glm_gaus_lower, type = "diag")
-sjPlot::plot_model(glm_gaus_lower, type = "est", show.values = T)
-
-sjPlot::tab_model(glm_gaus_lower, title = "Functional Group Proportions in Lower Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_lower, pairwise ~ FuncGroup, adjust = "tukey")
+emmeans(lmer_gaus_fg_1, df.method = "satterthwaite", pairwise ~ FunctionalGroup, adjust = "tukey")
 
 
 ```
