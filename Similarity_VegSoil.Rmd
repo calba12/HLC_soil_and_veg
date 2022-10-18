@@ -12,7 +12,7 @@ library(tidyr)
 library(ggplot2)
 ```
 
-Dummy data
+Dummy data (don't use)
 ```{r}
 Trans <- 1:9
 bank <- c("low","mid","upp")
@@ -74,7 +74,7 @@ ad1
 
 ```
 
-Convert above ground and soil seed bank data to wide for dissimilarity 
+Convert above ground and soil seed bank data to wide for dissimilarity / also don't use
 ```{r - michelle's code for data wrangling with some edits}
 
 #seperating transects
@@ -181,8 +181,8 @@ seedbank.sim <- seedbank %>%
          !is.na(SPECIFIC_EPITHET_FINAL)) 
 
 aboveground.sim <- aboveground %>%
-  filter(sample.bout == 1,  # you only wanted the first sampling bout
-         !is.na(Species.Hit)) %>% # you can add to filter if you don't want the just genus ones 
+  filter(sample.bout == 1,  # only want the first sampling bout
+         !is.na(Species.Hit)) %>% #  can add to filter if i don't want the just genus ones 
   filter(Transect !="B10-12.5") %>% #filters to remove transects that were taken for veg but not sb
   filter(Transect !="B10-37.5") %>%
   filter(Transect !="B13-12.5") %>%
@@ -204,6 +204,7 @@ aboveground.sim <- aboveground %>%
 
 view(seedbank.sim)
 view(aboveground.sim)
+
 #  3. RENAME SO COLUMNS MATCH
 seedbank.sim <- seedbank.sim %>%
   dplyr::rename(Species.Hit = SPECIFIC_EPITHET_FINAL, ## new name = old name
@@ -211,15 +212,15 @@ seedbank.sim <- seedbank.sim %>%
   dplyr::mutate(VegSoil = "Soil")
 
 aboveground.sim <- aboveground.sim %>%
-  filter(sample.bout == 1,  # you only wanted the first sampling bout
-         !is.na(Species.Hit)) %>% # you can add to filter if you don't want the just genus ones 
+  filter(sample.bout == 1,  # only want the first sampling bout
+         !is.na(Species.Hit)) %>% #  can add to filter if i don't want the just genus ones 
   dplyr::mutate(VegSoil = "Veg")
 
 # 4. BIND & PIVOT
 
 sim.matrix <- bind_rows(seedbank.sim[,c("Transect","Bank_Location","Species.Hit","VegSoil")],
                           aboveground.sim[,c("Transect","Bank_Location","Species.Hit","VegSoil")]) %>%
-  # filter(Transect %in% c(...list the transects you want for a specific comparison...), VegSoil = "Veg") %>% ## for whatever subsets you want for any given analysis
+  # filter(Transect %in% c(...list the transects you want for a specific comparison...), VegSoil = "Veg") %>% ## for whatever subsets you want for any given analysis #<- that is note is from michelle. I feel like this would be helpful, but not sure how to go about it. 
   pivot_wider(id_cols = c("Transect","VegSoil","Bank_Location"), # Can add or remove from all the columns that unique identify a transect
               names_from = "Species.Hit",
               values_from = "Species.Hit",
@@ -228,8 +229,7 @@ sim.matrix <- bind_rows(seedbank.sim[,c("Transect","Bank_Location","Species.Hit"
 
 ## adjust as needed for whatever analysis you're doing. Keep the first three columns as a data.frame (or tibble) because you'll need them for group arguments
 
-view(sim.matrix)
-
+view(sim.matrix) #why 133 rows? should be 162? 81*2
 ```
 
 ``` {r similarity next steps} 
@@ -241,7 +241,7 @@ sim.matrix <- sim.matrix[,c(72,1:71)] #move uniqueID column to front
 
 sim.matrix <- sim.matrix[order(sim.matrix$UniqueID),] #put in order
 
-sim.matrix <- as.data.frame(sim.matrix)
+sim.matrix <- as.data.frame(sim.matrix) 
 
 rownames(sim.matrix) <- sim.matrix$UniqueID
 
@@ -252,9 +252,9 @@ head(sim.matrix2)
 
 
 #Running similarity
-vegdist.out <- vegdist(sim.matrix2, method="bray", binary=TRUE) #Jaccard dissimilarity 
+vegdist.out <- vegdist(sim.matrix2, method="bray", binary=TRUE) #Jaccard dissimilarity, presence/abs
 matrix.out <- as.matrix(vegdist.out) #put into matrix 
-view(matrix.out)
+view(matrix.out) #this is comparing all samples to each other
 
 #grabbing the meaningful numbers from the matrix
 DistVals <- data.frame(PlotID =NULL, Value = NULL) ## creating new dataframe to store outputs of plot dissimilarity 

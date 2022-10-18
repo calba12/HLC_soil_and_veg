@@ -418,7 +418,7 @@ df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
 
 ```
 
-```{r graph WIS by bank location}
+```{r graph WIS by bank location_use}
 
 #Prepping data file for proportion as response variable
 
@@ -510,7 +510,7 @@ ggplot(df_stacked_WIS, aes(fill = WIS_GP, y = prop, x = Bank_Location))+
 
 ```
 
-```{MODELING WIS}
+```{MODELING WIS_old}
 #Stats model for proportion of species upper bank location; Gaussian family fixed and random effects
 
 #First select out the upper bank location only
@@ -940,8 +940,6 @@ legend(x=0.6,
        bty = "n", pch=20 , col = colors_line, cex = 1.05, pt.cex = 3)
 ```
 
-
-
 ```{r graph native/intro by bank location_NOPE}
 
 #This csv contains only first sampling bout and first and second hits
@@ -1258,7 +1256,7 @@ p + facet_wrap(~Location)
 ```
 
 
-```{r graph functional groups by bank location}
+```{r graph functional groups by bank location_no}
 
 #This csv contains first sampling bout and first hits plus second hits
 
