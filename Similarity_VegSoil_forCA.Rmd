@@ -169,8 +169,25 @@ Chrissy start here to play with code
 
 # read in data that is in long format
 seedbank <- read.csv("20220802_HLC_SB_Data_Final4.csv") #mac path & Turquoise path
+View(seedbank)
+
+#Check for missing/mis-labeled levels of data that might be throwing off matrix
+df <- seedbank %>% distinct(Org_trayID, Full_TrayID, Transect_ID, Bank_Location)
+View(df)
+#Missing B15-0 middle
+#B3-20 is labeled as tray 1 and tray 2
+#Missing tray 46
+
 
 aboveground <- read.csv("20201204_allHitsData_postQC_prep4.csv") #mac
+View(aboveground)
+
+#Check for missing/mis-labeled levels of data that might be throwing off matrix
+df <- aboveground %>% filter(sample.bout == "1") %>%
+  distinct(Transect, Bank_Location, Species.Hit)
+View(df)
+#B17-50 is missing the lower bank
+#Chrissy went back to original data source and tracked down issue and fixed
 
 
 #2. APPLY FILTERS
@@ -202,8 +219,8 @@ aboveground.sim <- aboveground %>%
   filter(Transect !="B7-12.5") %>%
   filter(Transect !="B7-37.5")
 
-view(seedbank.sim)
-view(aboveground.sim)
+View(seedbank.sim)
+View(aboveground.sim)
 
 #  3. RENAME SO COLUMNS MATCH
 seedbank.sim <- seedbank.sim %>%
@@ -229,7 +246,7 @@ sim.matrix <- bind_rows(seedbank.sim[,c("Transect","Bank_Location","Species.Hit"
 
 ## adjust as needed for whatever analysis you're doing. Keep the first three columns as a data.frame (or tibble) because you'll need them for group arguments
 
-view(sim.matrix) #why 133 rows? should be 162? 81*2
+View(sim.matrix) #why 133 rows? should be 162? 81*2
 ```
 
 ``` {r similarity next steps} 

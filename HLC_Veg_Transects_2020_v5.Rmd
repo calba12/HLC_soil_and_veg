@@ -48,6 +48,11 @@ View(vegdf)
 df <- vegdf %>% distinct(VegHit_SoilSurfaceHit)
 View(df)
 
+#Check that all levels of data are present
+check.df <- vegdf %>% filter(sample.bout == "1") %>%
+  distinct(Transect, Bank_Location)
+View(check.df)
+
 ```
 
 
@@ -337,6 +342,13 @@ p <- ggplot(df_stacked, aes(fill = Surface.Hit, y = Mean, x = Bank_Location))+
   scale_fill_brewer(palette = "Spectral")
 
 print(p)
+
+```
+
+
+```{r stats for bare soil, litter, veg}
+
+#Remove water and dwd from df.prop_hit_type before doing stats
 
 ```
 
