@@ -10,6 +10,7 @@ library(vegan)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(writexl)
 ```
 
 Dummy data (don't use)
@@ -165,7 +166,7 @@ species.wide <- bind_rows(seedbank[,c("Transect","Bank_Location","Species.Hit","
 
 Chrissy start here to play with code
 ```{r similarity data wrangling}
-# 1.  READ 
+# 1.  READ AND CHECK FOR ANY ISSUES
 
 # read in data that is in long format
 seedbank <- read.csv("20220802_HLC_SB_Data_Final4.csv") #mac path & Turquoise path
@@ -178,9 +179,10 @@ View(df)
 #B3-20 is labeled as tray 1 and tray 2
 #Missing tray 46
 
-
+#Original line to pull in veg file
 aboveground <- read.csv("20201204_allHitsData_postQC_prep4.csv") #mac
 View(aboveground)
+
 
 #Check for missing/mis-labeled levels of data that might be throwing off matrix
 df <- aboveground %>% filter(sample.bout == "1") %>%
@@ -189,6 +191,10 @@ View(df)
 #B17-50 is missing the lower bank
 #Chrissy went back to original data source and tracked down issue and fixed
 
+
+#Updated line to pull in veg file after Chrissy updated to fix mistake
+aboveground <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
+View(aboveground)
 
 #2. APPLY FILTERS
 
@@ -246,13 +252,24 @@ sim.matrix <- bind_rows(seedbank.sim[,c("Transect","Bank_Location","Species.Hit"
 
 ## adjust as needed for whatever analysis you're doing. Keep the first three columns as a data.frame (or tibble) because you'll need them for group arguments
 
-View(sim.matrix) #why 133 rows? should be 162? 81*2
+View(sim.matrix) #why 133 rows? should be 162? 81*2; 
+                  #several seedbank rows missing
+                  #also there is a column for null hits that should be removed
+                  #also Asclepias speciosa does not show up here but is in veg dataset and shows up
+                  #again in next code chunk but improperly split out from rest of matrix
+                 
+str(sim.matrix)
+
+
+write_xlsx(sim.matrix, 'sim_matrix.xlsx')
+
 ```
 
 ``` {r similarity next steps} 
 
 #reformatting
 sim.matrix$UniqueID <- paste(sim.matrix$Transect, sim.matrix$VegSoil, sim.matrix$Bank_Location, sep = "-") #pasting columns together
+View(sim.matrix)
 
 sim.matrix <- sim.matrix[,c(72,1:71)] #move uniqueID column to front
 
