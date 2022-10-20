@@ -316,19 +316,20 @@ View(df_prop_hit_type_means)
 
 #Now create new boxplot with baseline means
 
-p <- df_prop_hit_type_means %>% ggplot(aes(x=factor(Surface.Hit, levels = c('litter', 'Vegetation', 'bare soil', 'downed woody debris', 'water')), y=Mean))+
+p <- df_prop_hit_type_means %>% ggplot(aes(x=factor(Surface.Hit, levels = c('litter', 'Vegetation', 'bare soil', 'downed woody debris', 'water')), y=Mean, fill = Surface.Hit))+
   geom_boxplot()+
   geom_point()+
   labs(x = "Cover Type", y = "Proportion of Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = Bank_Location), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  stat_summary(fun=mean, geom="point", aes(group = Bank_Location), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="red")+
   theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1)) +
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+  scale_fill_brewer(palette = "Spectral")
 
 print(p)
 
 p + facet_wrap(~Bank_Location)
 
-#Make stacked bar graph 
+#Make stacked bar graph by bank location
 
 df_stacked <- aggregate(Mean ~ Bank_Location + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
 
@@ -343,12 +344,71 @@ p <- ggplot(df_stacked, aes(fill = Surface.Hit, y = Mean, x = Bank_Location))+
 
 print(p)
 
+
+#Make stacked bar graph by baseline
+
+df_stacked_baseline <- aggregate(Mean ~ baseline + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
+
+View(df_stacked_baseline)
+
+p <- ggplot(df_stacked_baseline, aes(fill = Surface.Hit, y = Mean, x = baseline))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Cover Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "Spectral")
+
+print(p)
+
 ```
 
 
 ```{r stats for bare soil, litter, veg}
 
 #Remove water and dwd from df.prop_hit_type before doing stats
+df.stats <- df.prop_hit_type %>% filter(Surface.Hit == "bare soil" | Surface.Hit == "litter" | Surface.Hit == "Vegetation")
+View(df.stats)
+
+#Create competing models
+
+lmer_gaus_null <- lmer(prop_cover_type ~ 1 + (1|baseline) + (1|Transect:baseline), data = df.stats) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_gaus1 <- lmer(prop_cover_type ~ Surface.Hit + (1|baseline) + (1|Transect:baseline), data = df.stats) #add in variation explained by surface hit type
+lmer_gaus2 <- lmer(prop_cover_type ~ Surface.Hit + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.stats) #add in variation explained by bank location
+lmer_gaus3 <- lmer(prop_cover_type ~ Surface.Hit + Bank_Location + Surface.Hit*Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.stats) #add in interaction term
+lmer_gaus4 <- lmer(prop_cover_type ~ Surface.Hit + Bank_Location + Surface.Hit*Bank_Location + (1|baseline), data = df.stats ) #Remove random effect of transect within baseline
+
+AIC(lmer_gaus_null, lmer_gaus1,lmer_gaus2,lmer_gaus3, lmer_gaus4) #code to run AIC; lowest number is best fit; typically considered that difference should be at least 2 to be considered a meaningful improvement of fit
+
+summary(lmer_gaus1) #Get model output
+summary(lmer_gaus2) #Get model output
+summary(lmer_gaus3) #Get model output
+summary(lmer_gaus4) #Get model output
+
+
+#Different ways to visualize the distribution of the data; the raw data (distribution of y) is not normally distributed but the model fit
+#(with y conditional on x) looks decent (although still violates normality) based on qqplot and distribution of fitted versus residuals
+
+#Can also get the output for lines 599-603 below using sjPlot code 
+
+proportion_hit_gauss <- df.stats$prop_cover_type #Histogram showing lots of zeroes, positive skew 
+hist(proportion_hit_gauss)
+qqnorm(df.stats$prop_cover_type) #use to visualize whether raw data are normally distributed
+qqnorm(resid(lmer_gaus4))     #Use to visualize whether model residuals vs predicted are normally distributed
+plot(lmer_gaus4)              #Use to visualize whether model residuals vs predicted are normally distributed
+
+
+#Choose lmer_gaus_upper4 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus4)
+plot_model(lmer_gaus4, type = "diag")
+sjPlot::plot_model(lmer_gaus4, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus4, df.method = "satterthwaite", title = "Proportion by Cover Type", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus4, df.method = "satterthwaite", pairwise ~ Surface.Hit | Bank_Location, adjust = "tukey")
+emmip(lmer_gaus4, Surface.Hit ~ Bank_Location, CIs = TRUE)
+
 
 ```
 
@@ -414,6 +474,23 @@ df_stacked_WIS %>%
   guides(fill = guide_legend("Wetland Indicator Status")) +
   theme_bw(base_size = 16)+
   scale_fill_brewer(palette = "BuGn")
+
+
+#Make stacked bar graph by baseline
+
+df_stacked_WIS_baseline <- aggregate(prop ~ baseline + WIS_GP, data = df.props_WIS_veg, FUN = mean)
+
+View(df_stacked_WIS_baseline)
+
+df_stacked_WIS_baseline %>%
+  mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", 'FACU', 'FAC', 'FACW', 'OBL')) %>%
+  ggplot(aes(fill = WIS_GP, y = prop, x = baseline))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Baseline", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Wetland Indicator Status")) +
+  theme_bw(base_size = 16)+
+  scale_fill_brewer(palette = "BuGn")
+
 ```
 
 
@@ -736,6 +813,21 @@ df_stacked_Nativity %>%
   ggplot(aes(fill = Nativity, y = prop, x = Bank_Location))+
   geom_bar(position = "stack", stat = "identity", color = "black") +
   labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Nativity")) +
+  theme_bw(base_size = 16)+
+  scale_fill_brewer(palette = "BuGn")
+
+#Make stacked bar graph by baseline
+
+df_stacked_Nativity_baseline <- aggregate(prop ~ baseline + Nativity, data = df.props_Nativity_veg, FUN = mean)
+
+df_stacked_Nativity_baseline
+
+df_stacked_Nativity_baseline %>%
+  mutate(Nativity = fct_relevel(Nativity, "Introduced", 'Native')) %>%
+  ggplot(aes(fill = Nativity, y = prop, x = baseline))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "baseline", y = "Proportion of Cover") +
   guides(fill = guide_legend("Nativity")) +
   theme_bw(base_size = 16)+
   scale_fill_brewer(palette = "BuGn")
@@ -1086,6 +1178,21 @@ View(df.props_FG_stacked)
 p <- ggplot(df.props_FG_stacked, aes(fill = FunctionalGroup, y = Mean, x = Bank_Location))+
   geom_bar(position = "stack", stat = "identity", color = "black") +
   labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Functional Group Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "BuGn")
+
+print(p)
+
+#Make stacked bar graph of baselines 
+
+df.props_FG_stacked_baseline <- aggregate(Mean ~ baseline + FunctionalGroup, data = df.props_FG_means, FUN = mean)
+
+View(df.props_FG_stacked_baseline)
+
+p <- ggplot(df.props_FG_stacked_baseline, aes(fill = FunctionalGroup, y = Mean, x = baseline))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Baseline", y = "Proportion of Cover") +
   guides(fill = guide_legend("Functional Group Type")) +
   theme_bw(base_size = 16) + 
   scale_fill_brewer(palette = "BuGn")
