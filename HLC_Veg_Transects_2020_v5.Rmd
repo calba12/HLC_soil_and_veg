@@ -1110,6 +1110,52 @@ df_commonSpp_bankLoc_means %>%
   theme(axis.text.x=element_text(angle=90, hjust=1))
 
 
+#Make stacked bar graph by baseline
+
+df_stacked_Abundant_spp <- aggregate(Mean ~ variable, data = df_commonSpp_baseline_means, FUN = mean)
+
+View(df_stacked_Abundant_spp)
+
+p <- df_stacked_Abundant_spp %>%
+  ggplot(aes(fill = variable, y = Mean, x = reorder(variable, -Mean)))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Species", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Species")) +
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+#revisit coloring on this; what do I want to highlight
+
+p + scale_fill_manual(values = c("antiquewhite4", "aquamarine4", "bisque3", "blue1", "antiquewhite4",
+                                 "cadetblue", "chocolate", "cadetblue", "deepskyblue1", "darkseagreen",
+                                 "darkolivegreen2","darkorchid2", "darkorchid2", "cadetblue", "aliceblue", "darkseagreen"))
+
+
+```
+
+
+```{r graph common species using only first sample bout data wrangle properly}
+
+#Not working, keep playing
+
+vegdf$Species.Hit <- as.factor(vegdf$Species.Hit)
+
+df.top_percent_veg <- vegdf %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
+  filter(sample.bout =="1") %>%
+  drop_na(Species.Hit) %>% ## drops rows with missing values NA in Species.Hit 
+  summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Transect, Bank_Location) %>%  
+  summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(prop = Species.Hit/sum(Species.Hit))%>% ## mutate the df by adding prop that is each #sp/total
+  complete(Nativity, fill = list(Species.Hit = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  mutate(prop_log = log(prop+1))
+  
+# Check it adds to one with the 5 groups  
+sum(df.top_percent_veg$prop[1:2])
+    
+View(df.top_percent_veg)
+
 ```
 
 
