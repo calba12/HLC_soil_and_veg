@@ -13,7 +13,7 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 #Bring in raw data file
 
 #Import data using a relative pathway
-veg <- read.csv("20201204_allHitsData_postQC_prep4.csv") #mac
+veg <- read.csv("20201204_allHitsData_postQC_5.csv") #mac
 
 
 #head(veg)
@@ -68,23 +68,23 @@ df <- vegdf %>% distinct(VegHit_SoilSurfaceHit)
 #unwanted entries (rock, soil, litter) using "subset"; keep desired columns using "select"
 #8/4 also removed bank location and functional group
 
-df_bout1 <- subset(vegdf,sample.bout =="1")
+vegdf_bout1 <- subset(vegdf,sample.bout =="1")
 #View(df_bout1)
 
-df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
+df_Spp_bout1 <- distinct(vegdf_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
   arrange(VegHit_SoilSurfaceHit)%>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
          & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
-  select(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity)
+  select(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity) #spp richness = 58
   
 #view(df_Spp_bout1)
 
 #Export to Excel
-#write_xlsx(df_Spp_bout1, 'Veg_SpeciesList2_AI07222022.xlsx') 
+#write_xlsx(df_Spp_bout1, 'AG_SpeciesList.xlsx') 
 
 #Counted species and then calculated proportion in new column
 
-Spp_count_tbl <- vegdf %>% 
+Spp_count_tbl <- vegdf_bout1 %>% 
   group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity) %>%
   summarise(Freq2 = n()) %>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
@@ -95,8 +95,8 @@ Spp_prop_tbl <- Spp_count_tbl %>%
   mutate(prop = Freq2/sum(Spp_count_tbl$Freq2))
 
 #view(Spp_prop_tbl)
-sum(Spp_count_tbl$Freq2)
-#write_xlsx(Spp_prop_tbl, 'Veg_SppList_Prop4_AI08202022.xlsx')
+sum(Spp_count_tbl$Freq2) #doubled checked proportions--they are correct
+#write_xlsx(Spp_prop_tbl, 'AG_SppList_proportions.xlsx')
 
 
 ```
@@ -107,7 +107,7 @@ sum(Spp_count_tbl$Freq2)
 #Summing number of hits at each level of organization (whole canal, baselines, transects)
 
 #Whole-canal level: number of species hits by sample bout and hit number, includes foliar and ground first hits
-df.canal <- vegdf %>% 
+df.canal <- vegdf_bout1 %>% 
   group_by(sample.bout, Hit.Number) %>%
   summarise(Species.Hit = n()) 
 
@@ -115,7 +115,7 @@ df.canal <- vegdf %>%
 #write_xlsx(df.canal, 'hits_byCanal.xlsx')
 
 #Baseline level: number of species hits by sample bout and hit number, includes foliar and ground first hits
-df.baseline <- vegdf %>% 
+df.baseline <- vegdf_bout1 %>% 
   group_by(sample.bout, baseline, Hit.Number) %>%
   summarise(Species.Hit = n()) 
 
@@ -125,7 +125,7 @@ df.baseline <- vegdf %>%
 
 #Transect level: number of species hits by sample bout and hit number, includes foliar and ground first hits
 
-df.transect <- vegdf %>% 
+df.transect <- vegdf_bout1 %>% 
   group_by(sample.bout, baseline, baseline.rep, Hit.Number) %>%
   summarise(Species.Hit = n()) 
 
@@ -143,12 +143,12 @@ df.transect <- vegdf %>%
 #Use summarise to count hits by species, drop NA's
 
 veg_only_transect <- vegdf %>%
-  group_by(sample.bout, Hit.Number, baseline, Transect, Num_transect_points, Bank_Location, FunctionalGroup, Nativity, Cvalue, WIS_GP, Species.Hit) %>%
+  group_by(sample.bout, Hit.Number, baseline, Transect, Num_transect_points, Bank_Location, FunctionalGroup, Nativity, Cvalue, WIS, Species.Hit) %>%
   summarise(Species = n()) %>%
   drop_na()
 
-#head(veg_only_transect)
-#View(veg_only_transect)
+head(veg_only_transect)
+View(veg_only_transect)
 
 #The Excel file exported below has both sample bouts and hit numbers one and two
 
@@ -163,11 +163,11 @@ veg_only_transect <- vegdf %>%
 prop_species_canal <- veg_only_transect %>%
   group_by(Species.Hit) %>%
   summarise(Freq = sum(Species)) %>%
-  mutate(prop = Freq/1659) %>%
+  mutate(prop = Freq/1642) %>%
   filter(prop > 0.0099) %>%
   arrange(desc(prop))
-
-#View(prop_species_canal)
+  
+View(prop_species_canal)
 
 sum(prop_species_canal$Freq)
 
@@ -183,11 +183,14 @@ Common_species_canal_BothBouts <- veg_only_transect %>%
          | Species.Hit == "Ulmus pumila" | Species.Hit == "Bromus tectorum" | Species.Hit == "Prunus virginiana") 
   
   
-#View(Common_species_canal_BothBouts)
+View(Common_species_canal_BothBouts)
 
 #The Excel file exported below has both sample bouts
 
 #write_xlsx(Common_species_canal_BothBouts, 'Common_species_BothBouts.xlsx')
+
+
+
 
 
 #Same as above but look at only first sample bout 
@@ -199,11 +202,11 @@ veg_only_transect_FirstBout <- filter(veg_only_transect, sample.bout == "1")
 prop_species_canal_FirstBout <- veg_only_transect_FirstBout %>%
   group_by(Species.Hit) %>%
   summarise(Freq = sum(Species)) %>%
-  mutate(prop = Freq/sum(713)) %>%
+  mutate(prop = Freq/sum(838)) %>% #changed to 838 based on frequency count
   filter(prop > 0.0099) %>%
   arrange(desc(prop))
 
-#View(prop_species_canal_FirstBout)
+View(prop_species_canal_FirstBout)
 
 sum(prop_species_canal_FirstBout$Freq)
 
@@ -297,8 +300,6 @@ head(ground_only_transect)
 
 #write_xlsx(ground_only_transect, 'Ground_counts.xlsx')
 
-getwd()
-
 #summarize ground hit proportions at scale of whole canal, includes all sample bouts and hits
 #Used sum(prop_ground$Freq) code to count 4664 total hits
 
@@ -310,6 +311,29 @@ prop_ground <- ground_only_transect %>%
 #View(prop_ground)
 
 sum(prop_ground$Freq)
+
+                #Only Bout 1
+ground_only_transect_bout1 <- vegdf_bout1 %>%
+  group_by(sample.bout, Hit.Number, Bank_Location, baseline, Transect, Num_transect_points, Transect.Point.Soil.Surface) %>%
+  summarise(Ground = n()) %>%
+  drop_na()
+
+head(ground_only_transect_bout1)
+#View(ground_only_transect_bout1)
+
+#write_xlsx(ground_only_transect, 'Ground_counts.xlsx')
+
+#summarize ground hit proportions at scale of whole canal, includes all sample bouts and hits
+#Used sum(prop_ground$Freq) code to count 4664 total hits
+
+prop_ground_bout1 <- ground_only_transect_bout1 %>%
+  group_by(Transect.Point.Soil.Surface) %>%
+  summarise(Freq = sum(Ground)) %>%
+  mutate(prop = Freq/2080) #changed to 2080 to reflect Bout1 
+  
+View(prop_ground_bout1)
+
+sum(prop_ground_bout1$Freq)
 
 ```
 
@@ -381,13 +405,13 @@ df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
 ```
 
 
-```{r graph WIS by baseline --> AI}
+```{r graph WIS by baseline --> old}
 
 vegdf$WIS_GP <- as.factor(vegdf$WIS_GP)
 
 df.props_WIS_veg <- vegdf %>%
   group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
-  filter(sample.bout =="1") %>%
+  filter(sample.bout =="1") %>% #only uses bout1
   drop_na(Species.Hit, WIS_GP) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
   summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
   group_by(baseline, Transect, Bank_Location, WIS_GP) %>%  #added transect so I can get mean (AI)

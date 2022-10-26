@@ -1115,7 +1115,7 @@ date,sample.bout,Transect,baseline,baseline.rep,Number of Points Along Transect_
 6/30/2020,2,B10-25,B10,3,41,37,9,3.25,upper,1,Oleaceae,Fraxinus pennsylvanica,NULL,litter,Fraxinus pennsylvanica,Perennial,Long-lived,Woody,W,Long-lived Woody,Native,0,FAC,FAC,FAC
 6/30/2020,2,B10-25,B10,3,41,37,9,3.75,middle,1,Oleaceae,Fraxinus pennsylvanica,NULL,litter,Fraxinus pennsylvanica,Perennial,Long-lived,Woody,W,Long-lived Woody,Native,0,FAC,FAC,FAC
 6/30/2020,2,B10-25,B10,3,41,37,9,4.5,middle,1,Oleaceae,Fraxinus pennsylvanica,NULL,bare soil,Fraxinus pennsylvanica,Perennial,Long-lived,Woody,W,Long-lived Woody,Native,0,FAC,FAC,FAC
-7/2/2020,2,B18-12.5,B18,2,24,37,9,3,upper,1,,Fraxinus pennsylvanica,NULL,litter,Glycyrrhiza lepidota,Perennial,Long-lived,Forb,PF,Long-lived Forb,Native,3,FAC,FAC,FAC
+7/2/2020,2,B18-12.5,B18,2,24,37,9,3,upper,1,Fabaceae,Glycyrrhiza lepidota,NULL,litter,Glycyrrhiza lepidota,Perennial,Long-lived,Forb,PF,Long-lived Forb,Native,3,FAC,FAC,FACU-UPL
 6/1/2020,1,B18-50,B18,5,20,20,4.75,2.75,middle,1,Fabaceae,Glycyrrhiza lepidota,NULL,litter,Glycyrrhiza lepidota,Perennial,Long-lived,Forb,PF,Long-lived Forb,Native,3,FAC,FACU,FACU-UPL
 7/2/2020,2,B18-0,B18,1,28,35,8.5,0,upper,1,Fabaceae,Glycyrrhiza lepidota,NULL,litter,Glycyrrhiza lepidota,Perennial,Long-lived,Forb,PF,Long-lived Forb,Native,3,FAC,FACU,FACU-UPL
 7/2/2020,2,B18-12.5,B18,2,24,37,9,1.25,upper,1,Fabaceae,Glycyrrhiza lepidota,NULL,litter,Glycyrrhiza lepidota,Perennial,Long-lived,Forb,PF,Long-lived Forb,Native,3,FAC,FACU,FACU-UPL

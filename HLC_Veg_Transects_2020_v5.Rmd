@@ -14,13 +14,24 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 #Bring in raw data file
 #veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
 
-veg <- read.csv("20201204_allHitsData_postQC_prep4.csv") #mac
+veg <- read.csv("20201204_allHitsData_postQC_5.csv") #mac
 
 
 head(veg)
 str(veg)
 
 #View(veg)
+
+
+#add "sp." to species names
+#$ after name makes it specific so that it isn't correcting to 'Carex sp. emoryi', for example
+veg_sp <- data.frame(veg)
+
+veg_sp$VegHit_SoilSurfaceHit<-veg_sp$VegHit_SoilSurfaceHit %>% 
+  str_replace_all(c('Carex$'='Carex sp.','Persicaria$'='Persicaria sp.','Rosa$'='Rosa sp.','Sagittaria$'='Sagittaria sp.', 'Bidens$'='Bidens sp.', 'Tilia$'='Tilia sp.', 'Asclepias$'='Asclepias sp.', 'Chenopodium$'='Chenopodium sp.', 'Poa$'='Poa sp.'))
+
+veg_sp$Species.Hit <-veg_sp$Species.Hit %>% 
+  str_replace_all(c('Carex$'='Carex sp.','Persicaria$'='Persicaria sp.','Rosa$'='Rosa sp.','Sagittaria$'='Sagittaria sp.','Bidens$'='Bidens sp.', 'Tilia$'='Tilia sp.', 'Asclepias$'='Asclepias sp.', 'Chenopodium$'='Chenopodium sp.', 'Poa$'='Poa sp.'))
 
 #change sample bout to a factor
 
@@ -58,31 +69,50 @@ view(df_Spp_v)
 
 ```{r create species tables for thesis}
 
+
 #Pull out species names using "distinct"; arrange alphabetically using "arrange";remove 
 #unwanted entries (rock, soil, litter) using "subset"; keep desired columns using "select"
+#8/4 also removed bank location and functional group
 
-df_bout1 <- subset(vegdf,sample.bout =="1")
-View(df_bout1)
+vegdf_bout1 <- subset(vegdf,sample.bout =="1")
+#View(df_bout1)
 
-df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
+df_Spp_bout1 <- distinct(vegdf_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
   arrange(VegHit_SoilSurfaceHit)%>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
          & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
-  select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
+  select(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity) #spp richness = 58
   
-View(df_Spp_bout1)
+#view(df_Spp_bout1)
 
-#Export as csv
+#Export to Excel
+#write_xlsx(df_Spp_bout1, 'AG_SpeciesList.xlsx') 
+
+#Counted species and then calculated proportion in new column
+
+Spp_count_tbl <- vegdf_bout1 %>% 
+  group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity) %>%
+  summarise(Freq2 = n()) %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")
+
+
+Spp_prop_tbl <- Spp_count_tbl %>% 
+  mutate(prop = Freq2/sum(Spp_count_tbl$Freq2))
+
+#view(Spp_prop_tbl)
+sum(Spp_count_tbl$Freq2) #doubled checked proportions--they are correct
+#write_xlsx(Spp_prop_tbl, 'AG_SppList_proportions.xlsx')
 
 ```
 
 
-```{r count hits at each level of organization: canal, baseline, transect}
+```{r count hits at each level of organization: canal, baseline, transect; counting veg families}
 
 #Summing number of hits at each level of organization (whole canal, baselines, transects)
 
 #Whole-canal level: number of species hits by sample bout and hit number, includes foliar and ground first hits
-df.canal <- vegdf %>% 
+df.canal <- vegdf_bout1 %>% 
   group_by(sample.bout, Hit.Number) %>%
   summarise(Species.Hit = n()) 
 
@@ -90,7 +120,7 @@ View(df.canal)
 write_xlsx(df.canal, 'hits_byCanal.xlsx')
 
 #Baseline level: number of species hits by sample bout and hit number, includes foliar and ground first hits
-df.baseline <- vegdf %>% 
+df.baseline <- vegdf_bout1 %>% 
   group_by(sample.bout, baseline, Hit.Number) %>%
   summarise(Species.Hit = n()) 
 
@@ -100,7 +130,7 @@ write_xlsx(df.baseline, 'hits_byBaseline.xlsx')
 
 #Transect level: number of species hits by sample bout and hit number, includes foliar and ground first hits
 
-df.transect <- vegdf %>% 
+df.transect <- vegdf_bout1 %>% 
   group_by(sample.bout, baseline, baseline.rep, Hit.Number) %>%
   summarise(Species.Hit = n()) 
 
@@ -108,13 +138,13 @@ View(df.transect)
 
 #write_xlsx(df.transect, 'hits_byTransect.xlsx')
 
-VEG_families <- vegdf %>% 
+VEG_families <- vegdf_bout1 %>% 
   group_by(Family) %>%
   summarise(Species.Name = n()) 
 
-view(SB_families)
+view(VEG_families)
 
-write_xlsx(SB_families, 'sb_fam_counts.xlsx')
+#write_xlsx(VEG_families, 'VEG_fam_counts.xlsx')
 
 
 ```
@@ -183,7 +213,7 @@ View(veg_only_transect_FirstBout)
 prop_species_canal_FirstBout <- veg_only_transect_FirstBout %>%
   group_by(Species.Hit) %>%
   summarise(Freq = sum(Species)) %>%
-  mutate(prop = Freq/713) %>%
+  mutate(prop = Freq/(838)) %>% #changed to 838 based on frequency count
   filter(prop > 0.0099) %>%
   arrange(desc(prop))
 
@@ -342,18 +372,18 @@ p + facet_wrap(~Bank_Location)
 
 df_stacked <- aggregate(Mean ~ Bank_Location + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
 
-View(df_stacked)f
+View(df_stacked)
 
-p <- ggplot(df_stacked, aes(fill = Surface.Hit, y = Mean, x = Bank_Location))+
+stacked_p <- ggplot(df_stacked, aes(fill = Surface.Hit, y = Mean, x = Bank_Location))+
   geom_bar(position = "stack", stat = "identity", color = "black") +
   labs(x = "Bank Location", y = "Proportion of Cover") +
   guides(fill = guide_legend("Cover Type")) +
   theme_bw(base_size = 16) 
 
+print(stacked_p)
+
 ```
 
-#Dont use the code below b/c it contains both sampling bouts over the season; want to use
-#only the first sampling bout; leaving it here for reference though
 ```{r graph WIS by baseline ---> don't use :) }
 
 #This graph contains both sampling bouts and first and second hits
@@ -444,11 +474,17 @@ df_WIS_means_veg <- df.props_WIS_veg %>%
   group_by(baseline, Bank_Location, WIS_GP) %>%
   dplyr::summarise(Mean = mean(prop))
 
-#View(df_WIS_means_veg)
+View(df_WIS_means_veg)
 
+#get the means again but average bank location as well
+df_WIS_means_veg2 <- df.props_WIS_veg %>%
+  group_by(baseline, WIS_GP) %>%
+  dplyr::summarise(Mean = mean(prop))
 
-#Make boxplot --> AI 9/27/22
-WIS_veg <- df_WIS_means_veg %>% 
+View(df_WIS_means_veg2)
+
+#boxplot without bank location
+WIS_veg1 <- df_WIS_means_veg2 %>% 
   mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", 'FACU', 'FAC', 'FACW', 'OBL')) %>% 
   ggplot(aes(x=factor(WIS_GP), y=Mean, fill=WIS_GP))+ 
   geom_boxplot()+
@@ -458,11 +494,20 @@ WIS_veg <- df_WIS_means_veg %>%
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
     scale_fill_brewer(palette = "BuGn")
-print(WIS_veg)
+print(WIS_veg1)
 
-#Make boxplot with means, seperating bank location
-
-WIS_BL_Veg <- WIS_veg + facet_wrap(~Bank_Location)
+#box plot for bank location
+WIS_vegBL <- df_WIS_means_veg %>% 
+  mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", 'FACU', 'FAC', 'FACW', 'OBL')) %>% 
+  ggplot(aes(x=factor(WIS_GP), y=Mean, fill=WIS_GP))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Wetland Indicator Status", y = "Proportion of Cover")+
+    stat_summary(fun=mean, geom="point", aes(group = WIS_GP), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    scale_fill_brewer(palette = "BuGn")
+WIS_BL_Veg <- WIS_vegBL + facet_wrap(~Bank_Location)
 print(WIS_BL_Veg)
 
 #Stacked graph _ AI 9/27
@@ -624,7 +669,27 @@ df_Nativ_means_veg <- df.props_Nativity_veg %>%
 View(df_Nativ_means_veg)
 
 
-#Make boxplot --> AI 9/27/22
+#get the means again but average bank location as well
+df_nativ_means_veg2 <- df.props_Nativity_veg %>%
+  group_by(baseline, Nativity) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+View(df_nativ_means_veg2)
+
+#boxplot without bank location
+
+Nativ_veg1 <- df_nativ_means_veg2 %>% 
+  ggplot(aes(x=factor(Nativity), y=Mean, fill=Nativity))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Nativity", y = "Proportion of Cover")+
+    stat_summary(fun=mean, geom="point", aes(group = Nativity), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    scale_fill_brewer(palette = "BuGn")
+print(Nativ_veg1)
+
+#bank location
 Nativ_veg <- df_Nativ_means_veg %>% 
   ggplot(aes(x=factor(Nativity), y=Mean, fill=Nativity))+ 
   geom_boxplot()+
@@ -635,8 +700,6 @@ Nativ_veg <- df_Nativ_means_veg %>%
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
     scale_fill_brewer(palette = "BuGn")
 print(Nativ_veg)
-
-#Make boxplot with means, seperating bank location
 
 Nativ_BL_Veg <- Nativ_veg + facet_wrap(~Bank_Location)
 print(Nativ_BL_Veg)
@@ -694,8 +757,26 @@ df_FG_means_veg <- df.props_FG_veg %>%
 
 #View(df_FG_means_veg)
 
+#get the means again but average bank location as well
+df_FG_means_veg2 <- df.props_FG_veg %>%
+  group_by(baseline, FunctionalGroup2) %>%
+  dplyr::summarise(Mean = mean(prop))
 
-#Make boxplot --> AI 9/27/22
+View(df_FG_means_veg2)
+
+#boxplot without bank location
+FG_veg1 <- df_FG_means_veg2 %>% 
+  ggplot(aes(x=factor(FunctionalGroup2), y=Mean, fill=FunctionalGroup2))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Functional Group", y = "Proportion of Cover")+
+    stat_summary(fun=mean, geom="point", aes(group = FunctionalGroup2), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    scale_fill_brewer(palette = "BuGn")
+print(FG_veg1)
+
+#Seperate by Bank location
 FG_veg <- df_FG_means_veg %>% 
   ggplot(aes(x=factor(FunctionalGroup2), y=Mean, fill=FunctionalGroup2))+ 
   geom_boxplot()+
@@ -706,8 +787,6 @@ FG_veg <- df_FG_means_veg %>%
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
     scale_fill_brewer(palette = "BuGn")
 print(FG_veg)
-
-#Make boxplot with means, seperating bank location
 
 FG_BL_Veg <- FG_veg + facet_wrap(~Bank_Location)
 print(FG_BL_Veg)
@@ -831,14 +910,14 @@ DF_Spider_v <- data.frame(metric, Introduced, Native)
 #build a data frame with counts
 #this one
 Nativity <- c("Native", "Introduced")
-Shortlived <- c(19, 12)
-Longlived <- c(216, 96)
-OBL_FACW <- c(167, 9)
-FAC <- c(42, 6)
-UPL_FACU <- c(26, 93)
-Forb <- c(51, 51)
-Graminoid <- c(138, 21)
-Woody <- c(46, 36)
+Shortlived <- c(5, 26)
+Longlived <- c(243, 531)
+OBL_FACW <- c(179, 3)
+FAC <- c(38, 11)
+UPL_FACU <- c(31, 543)
+Forb <- c(54, 157)
+Graminoid <- c(142, 367)
+Woody <- c(52, 33)
 
 DF_Spider_2v <- data.frame(Nativity, Shortlived, Longlived, OBL_FACW, FAC, UPL_FACU, Forb, Graminoid, Woody)
 
@@ -850,8 +929,8 @@ tv<-as.data.frame(tv)
 tv<-janitor::row_to_names(tv,row_number=1)
 tv$'1'<-1
 tv$'2'<-0
-tv$Native<-as.numeric(tv$Native)/235
-tv$Introduced<-as.numeric(tv$Introduced)/108
+tv$Native<-as.numeric(tv$Native)/248
+tv$Introduced<-as.numeric(tv$Introduced)/557
 tv <- tv[, c("1", "2", "Native",'Introduced')] # leave the row index blank to keep all rows
 DF_Spider_2v<-t(tv)
 DF_Spider_2v<-as.data.frame(DF_Spider_2v)
