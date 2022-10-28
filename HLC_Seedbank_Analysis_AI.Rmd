@@ -16,7 +16,7 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 #Import data using a relative pathway
 
 
-seedbank <- read.csv("20220802_HLC_SB_Data_Final4.csv") #mac path
+seedbank <- read.csv("20220802_HLC_SB_Data_Final5.csv") #mac path
 
 #Turquoise path
 
@@ -42,9 +42,9 @@ seedbankdf <- seedbankdf %>% rename(c(Species_Name=SPECIFIC_EPITHET_FINAL, Germi
 
 #check species spellings
 
-df <- seedbankdf %>% distinct(Species_Name)
+df_sb <- seedbankdf %>% distinct(Species_Name)
 
-#View(df)
+View(df_sb)
 #^Looks good, not sure if I should keep or remove unknowns? 
 
 
@@ -53,10 +53,13 @@ df <- seedbankdf %>% distinct(Species_Name)
 df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
   arrange(Species_Name)%>%
   subset(Species_Name!="Unknown" & Species_Name!="Unknown forb"
-         & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown grass") %>%
+         & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown Poaceae") %>%
   select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS)
 
 view(df_Spp)
+write_xlsx(df_Spp, 'SB_SppList.xlsx')
+
+
 ```
 
 ```{r create species tables}
@@ -72,22 +75,24 @@ SB_Spp_tbl <- seedbankdf %>%
   group_by(Species_Name, Longevity_1, Habit, Nativity, WIS) %>%
   summarise(Freq2 = n())
 
-SB_Spp_prop_tbl <- SB_Spp_tbl %>% 
-  mutate(prop = Freq2/sum(Spp_tbl$Freq2))
+SB_Spp_prop_tbl <- SB_Spp_tbl %>%
+  drop_na(Species_Name) %>%
+  mutate(prop = Freq2/sum(SB_Spp_tbl$Freq2))
 
-#view(SB_Spp_prop_tbl)
-sum(SB_Spp_tbl$Freq2)
-#write_xlsx(SB_Spp_prop_tbl, 'SB_SppList_Prop_AI08052022.xlsx')
+view(SB_Spp_prop_tbl)
+sum(SB_Spp_prop_tbl$Freq2)
+#write_xlsx(SB_Spp_prop_tbl, 'SB_SppList_Proportions.xlsx')
 
 #merge with veg prop data
 
 #veg_prop_tbl <- read.csv("./Veg_SppList_Prop4_AI08202022.csv")
+veg_prop_tbl <- read.csv("./AG_SppList_proportions.csv")
 
-#merged_spp_prop <- merge(veg_prop_tbl, SB_Spp_prop_tbl, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS_GP", "Nativity"), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity"), all.x =TRUE, all.y = TRUE)
+merged_spp_prop <- merge(veg_prop_tbl, SB_Spp_prop_tbl, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS_GP", "Nativity"), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity"), all.x =TRUE, all.y = TRUE)
 
-#view(merged_spp_prop)
+view(merged_spp_prop)
 
-#write_xlsx(merged_spp_prop, 'merged_SppList_Prop2_AI08202022.xlsx')
+#write_xlsx(merged_spp_prop, 'merged_SppList_Prop.xlsx')
 
 
 ```
@@ -171,14 +176,23 @@ sum(df.props_WIS_seed$prop[1:5])
 #view(df.props_WIS_seed)
 
 #get the means across transect (transected is nested within baseline as replication)
-df_WIS_means <- df.props_WIS_seed %>%
+df_WIS_means_sb <- df.props_WIS_seed %>%
   group_by(Baseline, Bank_Location, WIS) %>%
   dplyr::summarise(Mean = mean(prop))
 
-View(df_WIS_means)
+View(df_WIS_means_sb)
 
-#Make boxplot 
-WIS <- df_WIS_means %>% 
+#get the means again but average bank location as well
+df_WIS_means_sb2 <- df.props_WIS_seed %>%
+  group_by(Baseline, WIS) %>%
+  dplyr::summarise(Mean = mean(prop))
+View(df_WIS_means_sb2)
+
+
+#Make boxplot
+
+#boxplot without bank location
+WIS <- df_WIS_means_sb2 %>% 
   mutate(WIS = fct_relevel(WIS, "UPL", 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.*')) %>% 
   ggplot(aes(x=factor(WIS), y=Mean, fill=WIS))+ 
   geom_boxplot()+
@@ -190,16 +204,27 @@ WIS <- df_WIS_means %>%
     scale_fill_brewer(palette = "BuPu")
 print(WIS)
 
-#Make boxplot with means, seperating bank location
-#colors, reorder
 
-WIS_BL <- WIS + facet_wrap(~Bank_Location) 
+
+WIS_BL <- df_WIS_means_sb %>% 
+  mutate(WIS = fct_relevel(WIS, "UPL", 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.*')) %>% 
+  ggplot(aes(x=factor(WIS), y=Mean, fill=WIS))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Wetland Indicator Status", y = "Proportion of Seedbank")+
+    stat_summary(fun=mean, geom="point", aes(group = WIS), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    scale_fill_brewer(palette = "BuPu")
+print(WIS_BL)
+
+WIS_BL <- WIS_BL + facet_wrap(~Bank_Location) 
 print(WIS_BL)
 
 
 #Make stacked bar graph 
 
-df_stacked <- aggregate(Mean ~ Bank_Location + WIS , data = df_WIS_means, FUN = mean)
+df_stacked <- aggregate(Mean ~ Bank_Location + WIS , data = df_WIS_means_sb, FUN = mean)
 
 #View(df_stacked)
 
@@ -233,6 +258,7 @@ df.props_FunctGroup_seed <- seedbank %>%
  filter(Functional_Group_2 !="NA NA") %>%
  filter(Functional_Group_2 !="NA Graminoid") %>%
  filter(Functional_Group_2 !="  Graminoid") %>%
+ filter(Functional_Group_2 !="Variable Forb") %>%
   group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_2, Habit, Functional_Group_2, Nativity) %>%
   drop_na(SPECIFIC_EPITHET_FINAL, Longevity_2, Habit, Nativity, Functional_Group_2) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
   summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
@@ -244,7 +270,8 @@ df.props_FunctGroup_seed <- seedbank %>%
  filter(Functional_Group_2 !="NA Forb") %>%
  filter(Functional_Group_2 !="NA NA") %>%
  filter(Functional_Group_2 !="NA Graminoid") %>%
- filter(Functional_Group_2 !="  Graminoid") # have to filter these out twice, due to complete function
+ filter(Functional_Group_2 !="  Graminoid") %>%
+ filter(Functional_Group_2 !="Variable Forb") # have to filter these out twice, due to complete function
 
 #view(df.props_FunctGroup_seed)
 #checkout color packages, ggplot color package
@@ -258,8 +285,26 @@ df_FGroup_means <- df.props_FunctGroup_seed %>%
 
 #View(df_FGroup_means)
 
-#Make boxplot with means
-#colors, reorder
+#get the means again but average bank location as well
+df_FGroup_means_sb2 <- df.props_FunctGroup_seed %>%
+  group_by(Baseline, Functional_Group_2) %>%
+  dplyr::summarise(Mean = mean(prop))
+View(df_FGroup_means_sb2)
+
+#boxplot without bank location
+FGroup1 <- df_FGroup_means_sb2 %>% 
+  ggplot(aes(x=Functional_Group_2, y=Mean, fill=Functional_Group_2))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Functional Group", y = "Proportion of Seed Bank")+
+    stat_summary(fun=mean, geom="point", aes(group = Functional_Group_2), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    scale_fill_brewer(palette = "BuPu")
+print(FGroup1)
+
+
+#Make boxplot with means, look at bank location
 FGroup2 <- df_FGroup_means %>% 
   ggplot(aes(x=Functional_Group_2, y=Mean, fill=Functional_Group_2))+ 
   geom_boxplot()+
@@ -270,10 +315,10 @@ FGroup2 <- df_FGroup_means %>%
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
     scale_fill_brewer(palette = "BuPu")
 print(FGroup2)
-
-#Sepate by bank location
 FGroup2_BL <- FGroup2 + facet_wrap(~Bank_Location)
 print(FGroup2_BL)
+
+
 #Make stacked bar graph 
 
 FG_stacked <- aggregate(Mean ~ Bank_Location + Functional_Group_2 , data = df_FGroup_means, FUN = mean)
@@ -359,7 +404,7 @@ df.props_nativity_sb <- seedbank %>%
 
 #checkout color packages, ggplot color package
 # Check it adds to one with the 5 groups  
-sum(df.props_WIS_seed$prop[1:5])
+sum(df.props_nativity_sb$prop[1:2])
     
 #View(df.props_nativity_sb)
 
@@ -367,12 +412,19 @@ sum(df.props_WIS_seed$prop[1:5])
 df_nativity_means <- df.props_nativity_sb %>%
   group_by(Baseline, Bank_Location, Nativity) %>%
   dplyr::summarise(Mean = mean(prop))
-
 #View(df_nativity_means)
+
+#get the means again but average bank location as well
+df_nativity_means1 <- df.props_nativity_sb %>%
+  group_by(Baseline, Nativity) %>%
+  dplyr::summarise(Mean = mean(prop))
+View(df_nativity_means1)
+
 
 #Make boxplot with means
 
-N <- df_nativity_means %>% 
+#boxplot without bank location
+N <- df_nativity_means1 %>% 
   ggplot(aes(x=Nativity, y=Mean, fill=Nativity))+ 
   geom_boxplot()+
     geom_point()+
@@ -383,7 +435,18 @@ N <- df_nativity_means %>%
     scale_fill_brewer(palette = "BuPu")
 print(N)
 
+
 #seperate by bank location
+N <- df_nativity_means %>% 
+  ggplot(aes(x=Nativity, y=Mean, fill=Nativity))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Nativity", y = "Proportion of Seedbank")+
+    stat_summary(fun=mean, geom="point", aes(group = Nativity), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    scale_fill_brewer(palette = "BuPu")
+print(N)
 N_BL <- N + facet_wrap(~Bank_Location)
 print(N_BL)
 
@@ -693,6 +756,7 @@ seedbankdf$WIS_Grouped <- as.factor(seedbankdf$WIS_Grouped)
 native_count <- seedbankdf %>% 
   drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
   filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
   group_by(Nativity) %>% 
   summarise(count = n())
 
@@ -703,6 +767,7 @@ view(native_count)
 introd_WIS_count <- seedbankdf %>% 
   drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
   filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Introduced") %>%
   group_by(WIS_Grouped) %>% 
   summarise(count = n())
@@ -713,6 +778,7 @@ view(introd_WIS_count)
 introd_longevity_count <- seedbankdf %>% 
   drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
   filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Introduced") %>%
   group_by(Longevity_2) %>% 
   summarise(count = n())
@@ -723,17 +789,19 @@ view(introd_longevity_count)
 introduced_habit_count <- seedbankdf %>% 
   drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
   filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Introduced") %>%
   group_by(Habit) %>% 
   summarise(count = n())
   
-view(introd_habit_count)
+view(introduced_habit_count)
 
 #NATIVE counts
 #WIS
 native_WIS_count <- seedbankdf %>% 
   drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
   filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Native") %>%
   group_by(WIS_Grouped) %>% 
   summarise(count = n())
@@ -744,6 +812,7 @@ view(native_WIS_count)
 native_longevity_count <- seedbankdf %>% 
   drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
   filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Native") %>%
   group_by(Longevity_2) %>% 
   summarise(count = n())
@@ -754,6 +823,7 @@ view(native_longevity_count)
 native_habit_count <- seedbankdf %>% 
   drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
   filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
   subset(Nativity == "Native") %>%
   group_by(Habit) %>% 
   summarise(count = n())
@@ -770,10 +840,10 @@ DF_Spider <- data.frame(metric, Introduced, Native)
 #build a data frame with counts
 Nativity <- c("Native", "Introduced")
 Shortlived <- c(79, 92)
-Longlived <- c(177, 172)
+Longlived <- c(177, 171)
 OBL_FACW <- c(199, 1)
 FAC <- c(18, 52)
-UPL_FACU <- c(39, 211)
+UPL_FACU <- c(39, 210)
 Forb <- c(80, 193)
 Graminoid <- c(176, 71)
 
@@ -787,7 +857,7 @@ t<-janitor::row_to_names(t,row_number=1)
 t$'1'<-1
 t$'2'<-0
 t$Native<-as.numeric(t$Native)/256
-t$Introduced<-as.numeric(t$Introduced)/264
+t$Introduced<-as.numeric(t$Introduced)/263
 t <- t[, c("1", "2", "Native",'Introduced')] # leave the row index blank to keep all rows
 DF_Spider_2<-t(t)
 DF_Spider_2<-as.data.frame(DF_Spider_2)

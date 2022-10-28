@@ -459,7 +459,7 @@ df.props_WIS_veg <- vegdf %>%
   filter(sample.bout =="1") %>%
   drop_na(Species.Hit, WIS_GP) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
   summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(baseline, Bank_Location, WIS_GP) %>%  
+  group_by(baseline, Transect, Bank_Location, WIS_GP) %>%  
   summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
   mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
   complete(WIS_GP, fill = list(Species.Hit = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
@@ -651,7 +651,7 @@ df.props_Nativity_veg <- vegdf %>%
   filter(sample.bout =="1") %>%
   drop_na(Species.Hit, Nativity) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
   summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(baseline, Bank_Location, Nativity) %>%  
+  group_by(baseline, Transect, Bank_Location, Nativity) %>%  
   summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
   mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
   complete(Nativity, fill = list(Species.Hit = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
@@ -737,7 +737,7 @@ df.props_FG_veg <- vegdf %>%
   filter(sample.bout =="1") %>%
   drop_na(Species.Hit, FunctionalGroup2) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
   summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(baseline, Bank_Location, FunctionalGroup2) %>%  
+  group_by(baseline, Transect, Bank_Location, FunctionalGroup2) %>%  
   summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
   mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
   complete(FunctionalGroup2, fill = list(Species.Hit = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
