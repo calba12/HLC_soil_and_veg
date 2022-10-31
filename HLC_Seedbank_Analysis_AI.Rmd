@@ -149,7 +149,10 @@ germinants.bankloc <- seedbankdf %>%
 
 ```
 
-```{r WIS  _ Graph by Bank Location}
+
+
+
+```{r WIS Graph}
 
 #Prepping data to compute proportions
 #By baseline and bank location
@@ -242,7 +245,7 @@ print(St_WIS)
 
 ```
 
-```{r Functional Group 2  _ Graph by Bank Location}
+```{r Functional Group Graph}
 
 #Prepping data to compute proportions
 #By baseline and bank location
@@ -340,53 +343,7 @@ print(St_FG)
 
 ```
 
-```{r Functional Group  _ Graph by Bank Location, not working }
-#Prepping data to compute proportions
-#By baseline and bank location
-
-seedbank$Functional_Group_2 <- as.factor(seedbank$Functional_Group_2)
-
-
-df.props_functionalgroup_sb <- seedbank %>%
-  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_2, Nativity) %>%
-  drop_na(SPECIFIC_EPITHET_FINAL, WIS, Nativity, Functional_Group_2) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
-  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(Baseline, Transect_ID, Bank_Location, Functional_Group_2) %>% #added transect so I can get mean - AI
-  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
-  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
-  complete(Functional_Group_2, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
-#checkout color packages, ggplot color package
-# Check it adds to one with the 5 groups  
-sum(df.props_functionalgroup_sb$prop[1:5])
-    
-View(df.props_functionalgroup_sb)
-
-#get the means across transect (transected is nested within baseline as replication)
-df_fg_means <- df.props_functionalgroup_sb %>%
-  group_by(Baseline, Bank_Location, Functional_Group_2) %>%
-  dplyr::summarise(Mean = mean(prop))
-
-View(df_fg_means)
-
-#Make boxplot with means
-
-FG <- df_fg_means %>% 
-  ggplot(aes(x=Functional_Group_2, y=Mean, fill=Functional_Group_2))+ 
-  geom_boxplot()+
-    geom_point()+
-    labs(x = "Functional Group", y = "Proportion of Seed Bank")+
-    stat_summary(fun=mean, geom="point", aes(group = Functional_Group_2), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
-    theme_bw(base_size = 10)+
-    theme(legend.position = "none", axis.text.x=element_text(angle=90, hjust=1))+
-    scale_fill_brewer(palette = "BuPu")
-print(FG)
-
-FG + facet_wrap(~Bank_Location)
-
-
-```
-
-```{r Nativity _ Graph by Bank Location}
+```{r Nativity Graph}
 #Prepping data to compute proportions
 #By baseline and bank location
 
@@ -483,6 +440,336 @@ print(N_BL_V)
 
 
 ```
+
+```{r radar/spider charts}
+
+#get proportions of short-lived, long-lived, FAC,  FACU/UPL, FACW/OBL, forb and graminoid for both native and introduced --> of the native, what proportion (out of whole?) & vice versa
+#will need to remove any row that doesn't have all info listed (including Juncus sp.)
+seedbankdf$Nativity <- as.factor(seedbankdf$Nativity)
+seedbankdf$WIS_Grouped <- as.factor(seedbankdf$WIS_Grouped)
+
+#count of native and introduced
+native_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
+  group_by(Nativity) %>% 
+  summarise(count = n())
+
+view(native_count)
+
+#INTRODUCED
+#WIS
+introd_WIS_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
+  subset(Nativity == "Introduced") %>%
+  group_by(WIS_Grouped) %>% 
+  summarise(count = n())
+  
+view(introd_WIS_count)
+
+#Longevity
+introd_longevity_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
+  subset(Nativity == "Introduced") %>%
+  group_by(Longevity_2) %>% 
+  summarise(count = n())
+  
+view(introd_longevity_count)
+
+#habit
+introduced_habit_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
+  subset(Nativity == "Introduced") %>%
+  group_by(Habit) %>% 
+  summarise(count = n())
+  
+view(introduced_habit_count)
+
+#NATIVE counts
+#WIS
+native_WIS_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
+  subset(Nativity == "Native") %>%
+  group_by(WIS_Grouped) %>% 
+  summarise(count = n())
+  
+view(native_WIS_count)
+
+#Longevity
+native_longevity_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
+  subset(Nativity == "Native") %>%
+  group_by(Longevity_2) %>% 
+  summarise(count = n())
+  
+view(native_longevity_count)
+
+#Habit
+native_habit_count <- seedbankdf %>% 
+  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
+  filter(Habit !="Woody") %>%
+  filter(Longevity_2 !="Variable") %>%
+  subset(Nativity == "Native") %>%
+  group_by(Habit) %>% 
+  summarise(count = n())
+  
+view(native_habit_count)
+
+#build a data frame with proportions
+metric <- c("Short-lived", "Long-lived", "OBL/FACW", "FAC", "UPL/FACU", "FORB", "Graminoid")
+Introduced <- c(92, 172, 1, 52, 211, 193, 71)
+Native <- c(79, 177, 199, 18, 39, 80, 176)
+
+DF_Spider <- data.frame(metric, Introduced, Native)
+  
+#build a data frame with counts
+Nativity <- c("Native", "Introduced")
+Shortlived <- c(79, 92)
+Longlived <- c(177, 171)
+OBL_FACW <- c(199, 1)
+FAC <- c(18, 52)
+UPL_FACU <- c(39, 210)
+Forb <- c(80, 193)
+Graminoid <- c(176, 71)
+
+DF_Spider_2 <- data.frame(Nativity, Shortlived, Longlived, OBL_FACW, FAC, UPL_FACU, Forb, Graminoid)
+
+
+#pivot and calc proportions
+t<-t(DF_Spider_2)
+t<-as.data.frame(t)
+t<-janitor::row_to_names(t,row_number=1)
+t$'1'<-1
+t$'2'<-0
+t$Native<-as.numeric(t$Native)/256
+t$Introduced<-as.numeric(t$Introduced)/263
+t <- t[, c("1", "2", "Native",'Introduced')] # leave the row index blank to keep all rows
+DF_Spider_2<-t(t)
+DF_Spider_2<-as.data.frame(DF_Spider_2)
+view(DF_Spider_2)
+
+view(radar_df)
+
+# plot with default options:
+radarchart(DF_Spider_2)
+
+# Set graphic colors
+library(RColorBrewer)
+coul <- brewer.pal(3, "Dark2")
+colors_border <- coul
+library(scales)
+colors_in <- alpha(coul,0.3)
+
+#customize
+radarchart(DF_Spider_2, axistype=1 , 
+    title = "Seed Bank",
+    #custom polygon
+    pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
+    #custom the grid
+    cglcol="darkgrey", cglty=1, axislabcol="darkgrey", caxislabels=seq(0,1), cglwd=0.8,
+    #custom labels
+    vlcex=1)
+#add legend
+legend(x=.6, y=1.4, legend = rownames(DF_Spider_2[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "darkgrey", cex=1.2, pt.cex=3)
+
+
+#EXAMPLE radar
+# Library
+library(fmsb)
+
+# Create data: note in High school for several students
+set.seed(99)
+data <- as.data.frame(matrix( sample( 0:20 , 15 , replace=F) , ncol=5))
+colnames(data) <- c("math" , "english" , "biology" , "music" , "R-coding" )
+rownames(data) <- paste("mister" , letters[1:3] , sep="-")
+
+view(data)
+# To use the fmsb package, I have to add 2 lines to the dataframe: the max and min of each variable to show on the plot!
+data <- rbind(rep(20,5) , rep(0,5) , data)
+ 
+# plot with default options:
+radarchart(data)
+
+#variable
+# Set graphic colors
+library(RColorBrewer)
+coul <- brewer.pal(3, "BuPu")
+colors_border <- coul
+library(scales)
+colors_in <- alpha(coul,0.3)
+
+radarchart( data  , axistype=1 , 
+    #custom polygon
+    pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
+    #custom the grid
+    cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.8,
+    #custom labels
+    vlcex=0.8 
+    )
+
+```
+
+
+
+
+#copied 10/31 from CA veg --> work to apply to SB; use g and Poisson distribution
+```{r stats for WIS with WIS and bank location interaction}
+#10/31/22 I'm working on converting this code from the veg to work for the seed bank, which means renaming things, running a glmer rather than and lmer, and adding the poisson distribution. 
+#Need to run code in chunk above named "r graph WIS by bank location" that creates the data file df.props_WIS_seed
+#Create competing models
+
+warnings()
+
+glmer_pois_null <- glmer(prop ~ 1 + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+glmer_pois1 <- glmer(prop ~ WIS + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #add in variation explained by WIS
+glmer_pois2 <- glmer(prop ~ WIS + Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #add in variation explained by bank location
+glmer_pois3 <- glmer(prop ~ WIS + Bank_Location + WIS*Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #add in interaction term
+glmer_pois4 <- glmer(prop ~ WIS + Bank_Location + WIS*Bank_Location + (1|Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #Remove random effect of transect within baseline
+
+AIC(lmer_gaus_null, lmer_gaus1,lmer_gaus2,lmer_gaus3, lmer_gaus4) #code to run AIC; lowest number is best fit; typically considered that difference should be at least 2 to be considered a meaningful improvement of fit
+
+summary(glmer_pois1) #Get model output
+summary(glmer_pois2) #Get model output
+summary(glmer_pois3) #Get model output
+summary(glmer_pois4) #Get model output
+
+
+#Different ways to visualize the distribution of the data; the raw data (distribution of y) is not normally distributed but the model fit
+#(with y conditional on x) looks decent (although still violates normality) based on qqplot and distribution of fitted versus residuals
+
+#Can also get the output for lines 599-603 below using sjPlot code 
+
+proportion_WIS_pois <- df.props_WIS_seed$prop #Histogram showing lots of zeroes, positive skew 
+hist(proportion_WIS_pois)
+qqnorm(df.props_WIS_seed$prop) #use to visualize whether raw data are normally distributed
+qqnorm(resid(glmer_pois4))     #Use to visualize whether model residuals vs predicted are normally distributed
+plot(glmer_pois4)              #Use to visualize whether model residuals vs predicted are normally distributed
+
+
+#Choose lmer_gaus_upper4 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+#Diagnostics
+plot_residuals(glmer_pois4)
+plot_model(glmer_pois4, type = "diag")
+sjPlot::plot_model(glmer_pois4, type = "est", show.values = T)
+
+#creates table; information from the ANOVA
+sjPlot::tab_model(glmer_pois4, df.method = "satterthwaite", title = "Proportion WIS in Vegetation", dv.labels = "Proportion Cover")
+
+#post hoc: tukey/ familywise error rate
+emmeans(glmer_pois4, df.method = "satterthwaite", pairwise ~ WIS | Bank_Location, adjust = "tukey")
+emmip(glmer_pois4, WIS ~ Bank_Location, CIs = TRUE)
+emmip(glmer_pois4, WIS ~ Bank_Location)
+
+```
+
+```{r nativity stats with nativity and bank location interaction}
+
+#Need to run code in chunk above named "r graph native/intro by bank location" that creates the data file df.props_Nativity_veg 
+
+#Create competing models
+
+lmer_gaus_null <- glmer(prop ~ 1 + (1|Baseline) + (1|Transect:Baseline), data = df.props_nativity_sb) #intercept only, just models variation across baselines and transects, no accounting for variation explained by nativity
+lmer_gaus_native_1 <- glmer(prop ~ Nativity + (1|Baseline) + (1|Transect:Baseline), data = df.props_nativity_sb) #add in variation explained by nativity
+lmer_gaus_native_2 <- glmer(prop ~ Nativity + Bank_Location + (1|Baseline) + (1|Transect:Baseline), data = df.props_nativity_sb) #add in variation explained by bank location
+lmer_gaus_native_3 <- glmer(prop ~ Nativity + Bank_Location + Nativity*Bank_Location + (1|Transect:Baseline) + (1|Transect:baseline), data = df.props_nativity_sb) #add in interaction term
+lmer_gaus_native_4 <- glmer(prop ~ Nativity + Bank_Location + Nativity*Bank_Location + (1|Transect:Baseline), data = df.props_nativity_sb) #Remove random effect of transect within baseline
+
+AIC(lmer_gaus_native_1, lmer_gaus_native_2, lmer_gaus_native_3, lmer_gaus_native_4)
+
+summary(lmer_gaus_native_1)
+summary(lmer_gaus_native_2)
+summary(lmer_gaus_native_3)
+summary(lmer_gaus_native_4)
+
+
+#Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
+
+proportion_Nativity_gauss <- df.props_Nativity_veg$prop #Histogram showing lots of zeroes and ones 
+hist(proportion_Nativity_gauss)
+qqnorm(df.props_Nativity_veg$prop) #use to visualize whether raw data are normally distributed
+qqnorm(resid(lmer_gaus_native_4))     #Use to visualize whether model residuals vs predicted are normally distributed
+plot(lmer_gaus_native_4)              #Use to visualize whether model residuals vs predicted are normally distributed
+
+qqnorm(resid(lmer_gaus_native_4)) #Use to visualize whether normally distributed
+plot(lmer_gaus_native_4)
+
+
+#Choose lmer_gaus_native_4 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus_native_4)
+plot_model(lmer_gaus_native_4, type = "diag")
+sjPlot::plot_model(lmer_gaus_native_4, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_native_4, df.method = "satterthwaite", title = "Proportion Native and Introduced in Vegetation", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_native_4, df.method = "satterthwaite", pairwise ~ Nativity | Bank_Location, adjust = "tukey")
+emmip(lmer_gaus_native_4, Nativity~ Bank_Location, CIs = TRUE)
+
+```
+
+```{r stats for functional group by bank location interaction}
+
+#Need to run code in chunk above named "r graph functional groups by bank location" that creates the data file df.props_FG
+
+#Create competing models
+
+lmer_gaus_null <- lmer(propFG ~ 1 + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
+lmer_gaus_fg_1 <- lmer(propFG ~ FunctionalGroup + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
+lmer_gaus_fg_2 <- lmer(propFG ~ FunctionalGroup + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
+lmer_gaus_fg_3 <- lmer(propFG ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|Transect:baseline) + (1|Transect:baseline), data = df.props_FG)
+lmer_gaus_fg_4 <- lmer(propFG ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|baseline), data = df.props_FG)
+
+AIC(lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4)
+
+summary(lmer_gaus_fg_1)
+summary(lmer_gaus_fg_2)
+summary(lmer_gaus_fg_3)
+summary(lmer_gaus_fg_4)
+
+
+#Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
+
+proportion_fg_gauss <- df.props_FG$propFG #Histogram showing lots of zeroes and ones 
+hist(proportion_fg_gauss)
+qqnorm(df.props_FG$propFG) #use to visualize whether raw data are normally distributed
+qqnorm(resid(lmer_gaus_fg_4))     #Use to visualize whether model residuals vs predicted are normally distributed
+plot(lmer_gaus_fg_4)              #Use to visualize whether model residuals vs predicted are normally distributed
+
+
+#Choose lmer_gaus_fg_4 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus_fg_4)
+plot_model(lmer_gaus_fg_4, type = "diag")
+sjPlot::plot_model(lmer_gaus_fg_4, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_fg_4, df.method = "satterthwaite", title = "Proportion of Functional Groups in Vegetation", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup, adjust = "tukey")
+
+
+emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup | Bank_Location, adjust = "tukey")
+emmip(lmer_gaus_fg_4, FunctionalGroup ~ Bank_Location, CIs = TRUE)
+```
+
+
+
+
+
 
 ```{spp presence, abundance, and proportion table}
 
@@ -686,7 +973,7 @@ View(distinct_species_bank)
 
 ```
 
-```{r visualize unknowns_In progress}
+```{r visualize unknowns}
 
 # take "seedbankdf" and select for unknowns and "sp."
 
@@ -744,185 +1031,6 @@ df.props_nativity_sb <- seedbank %>%
   complete(Nativity, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
 
 ``` 
-
-```{r radar/spider charts}
-
-#get proportions of short-lived, long-lived, FAC,  FACU/UPL, FACW/OBL, forb and graminoid for both native and introduced --> of the native, what proportion (out of whole?) & vice versa
-#will need to remove any row that doesn't have all info listed (including Juncus sp.)
-seedbankdf$Nativity <- as.factor(seedbankdf$Nativity)
-seedbankdf$WIS_Grouped <- as.factor(seedbankdf$WIS_Grouped)
-
-#count of native and introduced
-native_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
-  filter(Longevity_2 !="Variable") %>%
-  group_by(Nativity) %>% 
-  summarise(count = n())
-
-view(native_count)
-
-#INTRODUCED
-#WIS
-introd_WIS_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
-  filter(Longevity_2 !="Variable") %>%
-  subset(Nativity == "Introduced") %>%
-  group_by(WIS_Grouped) %>% 
-  summarise(count = n())
-  
-view(introd_WIS_count)
-
-#Longevity
-introd_longevity_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
-  filter(Longevity_2 !="Variable") %>%
-  subset(Nativity == "Introduced") %>%
-  group_by(Longevity_2) %>% 
-  summarise(count = n())
-  
-view(introd_longevity_count)
-
-#habit
-introduced_habit_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
-  filter(Longevity_2 !="Variable") %>%
-  subset(Nativity == "Introduced") %>%
-  group_by(Habit) %>% 
-  summarise(count = n())
-  
-view(introduced_habit_count)
-
-#NATIVE counts
-#WIS
-native_WIS_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
-  filter(Longevity_2 !="Variable") %>%
-  subset(Nativity == "Native") %>%
-  group_by(WIS_Grouped) %>% 
-  summarise(count = n())
-  
-view(native_WIS_count)
-
-#Longevity
-native_longevity_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
-  filter(Longevity_2 !="Variable") %>%
-  subset(Nativity == "Native") %>%
-  group_by(Longevity_2) %>% 
-  summarise(count = n())
-  
-view(native_longevity_count)
-
-#Habit
-native_habit_count <- seedbankdf %>% 
-  drop_na(Species_Name, WIS_Grouped, Habit, Longevity_2, Nativity) %>%
-  filter(Habit !="Woody") %>%
-  filter(Longevity_2 !="Variable") %>%
-  subset(Nativity == "Native") %>%
-  group_by(Habit) %>% 
-  summarise(count = n())
-  
-view(native_habit_count)
-
-#build a data frame with proportions
-metric <- c("Short-lived", "Long-lived", "OBL/FACW", "FAC", "UPL/FACU", "FORB", "Graminoid")
-Introduced <- c(92, 172, 1, 52, 211, 193, 71)
-Native <- c(79, 177, 199, 18, 39, 80, 176)
-
-DF_Spider <- data.frame(metric, Introduced, Native)
-  
-#build a data frame with counts
-Nativity <- c("Native", "Introduced")
-Shortlived <- c(79, 92)
-Longlived <- c(177, 171)
-OBL_FACW <- c(199, 1)
-FAC <- c(18, 52)
-UPL_FACU <- c(39, 210)
-Forb <- c(80, 193)
-Graminoid <- c(176, 71)
-
-DF_Spider_2 <- data.frame(Nativity, Shortlived, Longlived, OBL_FACW, FAC, UPL_FACU, Forb, Graminoid)
-
-
-#pivot and calc proportions
-t<-t(DF_Spider_2)
-t<-as.data.frame(t)
-t<-janitor::row_to_names(t,row_number=1)
-t$'1'<-1
-t$'2'<-0
-t$Native<-as.numeric(t$Native)/256
-t$Introduced<-as.numeric(t$Introduced)/263
-t <- t[, c("1", "2", "Native",'Introduced')] # leave the row index blank to keep all rows
-DF_Spider_2<-t(t)
-DF_Spider_2<-as.data.frame(DF_Spider_2)
-view(DF_Spider_2)
-
-view(radar_df)
-
-# plot with default options:
-radarchart(DF_Spider_2)
-
-# Set graphic colors
-library(RColorBrewer)
-coul <- brewer.pal(3, "Dark2")
-colors_border <- coul
-library(scales)
-colors_in <- alpha(coul,0.3)
-
-#customize
-radarchart(DF_Spider_2, axistype=1 , 
-    title = "Seed Bank",
-    #custom polygon
-    pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
-    #custom the grid
-    cglcol="darkgrey", cglty=1, axislabcol="darkgrey", caxislabels=seq(0,1), cglwd=0.8,
-    #custom labels
-    vlcex=1)
-#add legend
-legend(x=.6, y=1.4, legend = rownames(DF_Spider_2[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "darkgrey", cex=1.2, pt.cex=3)
-
-
-#EXAMPLE radar
-# Library
-library(fmsb)
-
-# Create data: note in High school for several students
-set.seed(99)
-data <- as.data.frame(matrix( sample( 0:20 , 15 , replace=F) , ncol=5))
-colnames(data) <- c("math" , "english" , "biology" , "music" , "R-coding" )
-rownames(data) <- paste("mister" , letters[1:3] , sep="-")
-
-view(data)
-# To use the fmsb package, I have to add 2 lines to the dataframe: the max and min of each variable to show on the plot!
-data <- rbind(rep(20,5) , rep(0,5) , data)
- 
-# plot with default options:
-radarchart(data)
-
-#variable
-# Set graphic colors
-library(RColorBrewer)
-coul <- brewer.pal(3, "BuPu")
-colors_border <- coul
-library(scales)
-colors_in <- alpha(coul,0.3)
-
-radarchart( data  , axistype=1 , 
-    #custom polygon
-    pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
-    #custom the grid
-    cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.8,
-    #custom labels
-    vlcex=0.8 
-    )
-
-```
 
 ```{r visualize abundances} 
 # looking at abundance of germinants in seed bank
@@ -993,624 +1101,3 @@ print(Abundance_baseline_v)
 
 ```
 
-#Dont use the code below b/c it contains both sampling bouts over the season; want to use
-#only the first sampling bout; leaving it here for reference though
-```{veg - r graph WIS by baseline}
-
-#This graph contains both sampling bouts and first and second hits
-
-WIS_baseline <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/WIS_baseline_upload.csv")
-
-str(WIS_baseline)
-View(WIS_baseline)
-
-#Remove unwanted columns and change to long format
-
-WIS_baseline <- select(WIS_baseline, -Total.Hits, - UPL, -FACU, -FAC, -FACW, -OBL)
-
-WIS_baseline_long <- melt(WIS_baseline, id.vars = c("Baseline","Transect"))
-
-View(WIS_baseline_long)
-
-#add data points w/o jitter 
-#Facet by WIS type
-
-WIS_baseline_long %>% ggplot(aes(x=Baseline, y=value)) +
-  geom_boxplot()+
-  geom_point()+
-  theme_bw(base_size=16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-  facet_wrap(~variable)
-
-#add data points w/o jitter
-#Facet by Baseline
-
-WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
-  geom_boxplot()+
-  geom_point()+
-  theme_bw(base_size=16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-  facet_wrap(~Baseline)
-
-#add data points w/o jitter
-#Not faceted by baseline; includes all 45 transects
-
-WIS_baseline_long %>% ggplot(aes(x=variable, y=value)) +
-  geom_boxplot()+
-  geom_point()+
-  theme_bw(base_size=16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-#Need to get the means of each baseline
-
-df_WIS_baseline_means <- WIS_baseline_long %>%
-  group_by(Baseline, variable) %>%
-  dplyr::summarise(Mean = mean(value))
-
-View(df_WIS_baseline_means)
-
-#Now do boxplot 
-
-df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean)) +
-  geom_boxplot()+
-  geom_point()+
-  theme_bw(base_size=16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-```
-
-
-```{ veg - r graph WIS by bank location then move on to statistical model}
-
-#This csv contains first sampling bout and first hits and second hits
-
-WIS_bankLoc <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/WIS_byBankLoc_Upload.csv")
-
-str(WIS_bankLoc)
-View(WIS_bankLoc)
-
-#Remove unwanted columns, change to long format, name columns as desired
-
-WIS_bankLoc <- select(WIS_bankLoc, -Total.Hits, -Hits.by.Loc, - UPL, -FACU, -FAC, -FACW, -OBL)
-
-WIS_bankLoc_long <- melt(WIS_bankLoc, id.vars = c("Baseline","Transect", "Location"))
-
-View(WIS_bankLoc_long)
-
-names(WIS_bankLoc_long) <- c("Baseline","Transect","Location","WIS","PropWIS")
-
-View(WIS_bankLoc_long)
-
- 
-#add data points w/o jitter for bank location
-#change width of boxes and add axis labels 
-#Visualize boxplots and can see that the level of replication being graphed is wrong
-#b/c it is showing all 45 transects
-
-
-p <- WIS_bankLoc_long %>% ggplot(aes(x=variable, y=value))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Wetland Indicator Status", y = "Proportion")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-print(p)
-
-p + facet_wrap(~Location)
-
-#Need to get the means of each baseline
-#The above code currently graphs all 45 transects
-
-df_WIS_baseline_means <- WIS_bankLoc_long %>%
-  group_by(Baseline, Location, variable) %>%
-  dplyr::summarise(Mean = mean(value))
-
-View(df_WIS_baseline_means)
-
-#Now create new boxplot with baseline means
-
-p <- df_WIS_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Wetland Indicator Status", y = "Proportion Vegetation Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-print(p)
-
-p + facet_wrap(~Location)
-
-
-#Stats model for proportion of species upper bank location; Gaussian family fixed and random effects
-
-#First select out the upper bank location only
-
-df_UpperBank <- subset(WIS_bankLoc_long, Location =="upper")
-View(df_UpperBank)
-
-lm_gaus_null <- lm(PropWIS ~ 1, data = df_UpperBank )
-lm_gaus_upper <- lm(PropWIS ~ WIS, data = df_UpperBank ) 
-
-AIC(lm_gaus_null,lm_gaus_upper)
-
-glm_gaus_upper <- lmer(PropWIS ~ WIS + (1|Transect:Baseline),data = df_UpperBank)
-
-qqnorm(resid(glm_gaus_upper))
-qqline(resid(glm_gaus_upper))
-
-effectsize::standardize(glm_gaus_upper) %>% summary()
-plot_residuals(glm_gaus_upper)
-plot_model(glm_gaus_upper, type = "diag")
-sjPlot::plot_model(glm_gaus_upper, type = "est", show.values = T)
-
-sjPlot::tab_model(glm_gaus_upper, title = "WIS Proportions in Upper Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_upper, pairwise ~ WIS, adjust = "tukey")
-
-
-#Stats model for proportion of species middle bank location; Gaussian family fixed and random effects
-
-#First select out the upper bank location only
-
-df_MidBank <- subset(WIS_bankLoc_long, Location =="middle")
-View(df_MidBank)
-
-lm_gaus_null <- lm(PropWIS ~ 1, data = df_MidBank )
-lm_gaus_mid <- lm(PropWIS ~ WIS, data = df_MidBank ) 
-
-AIC(lm_gaus_null,lm_gaus_mid)
-
-glm_gaus_mid <- lmer(PropWIS ~ WIS + (1|Transect:Baseline),data = df_MidBank)
-
-qqnorm(resid(glm_gaus_mid))
-qqline(resid(glm_gaus_mid))
-
-effectsize::standardize(glm_gaus_mid) %>% summary()
-plot_residuals(glm_gaus_mid)
-plot_model(glm_gaus_mid, type = "diag")
-sjPlot::plot_model(glm_gaus_mid, type = "est", show.values = T)
-
-sjPlot::tab_model(glm_gaus_mid, title = "WIS Proportions in Middle Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_mid, pairwise ~ WIS, adjust = "tukey")
-
-
-#Stats model for proportion of species lower bank location; Gaussian family fixed and random effects
-
-#First select out the lower bank location only
-
-df_LowerBank <- subset(WIS_bankLoc_long, Location =="lower")
-View(df_LowerBank)
-
-lm_gaus_null <- lm(PropWIS ~ 1, data = df_LowerBank )
-lm_gaus_low <- lm(PropWIS ~ WIS, data = df_LowerBank ) 
-
-AIC(lm_gaus_null,lm_gaus_low)
-
-glm_gaus_low <- lmer(PropWIS ~ WIS + (1|Transect:Baseline),data = df_LowerBank)
-
-qqnorm(resid(glm_gaus_low))
-qqline(resid(glm_gaus_low))
-
-effectsize::standardize(glm_gaus_low) %>% summary()
-plot_residuals(glm_gaus_low)
-plot_model(glm_gaus_low, type = "diag")
-sjPlot::plot_model(glm_gaus_low, type = "est", show.values = T)
-
-sjPlot::tab_model(glm_gaus_low, title = "WIS Proportions in Lower Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_low, pairwise ~ WIS, adjust = "tukey")
-
-
-```
-
-
-```{veg - r graph native/intro by bank location}
-
-#This csv contains only first sampling bout and first and second hits
-
-NatIntro_bankLoc <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/NativeIntro_byBankLoc_Upload.csv")
-
-str(NatIntro_bankLoc)
-View(NatIntro_bankLoc)
-
-#Remove unwanted columns 
-
-NatIntro_bankLoc <- select(NatIntro_bankLoc, -Total.Hits, -Hits.by.Loc, - Native, -Introduced)
-
-View(NatIntro_bankLoc)
-
-#add data points w/o jitter for bank location
-#change width of boxes and add axis labels 
-#Visualize boxplots and can see that the level of replication being graphed is wrong
-#b/c it is showing all 45 transects
-
-
-NatIntro_bankLoc %>% ggplot(aes(x=Location, y=Prop.native))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Location", y = "Proportion Native Cover")+
-  theme_bw(base_size = 16)
-
-
-#Need to get the means of each baseline
-#The above code currently graphs all 45 transects
-
-df_NatIntro_bankLoc_means <- NatIntro_bankLoc %>%
-  group_by(Baseline, Location) %>%
-  dplyr::summarise(Mean = mean(Prop.native))
-
-View(df_NatIntro_bankLoc_means)
-
-#Now create new boxplot with baseline means
-
-df_NatIntro_bankLoc_means %>% ggplot(aes(x=Location, y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Location", y = "Proportion Native Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = Location), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)
-
-
-#Stats model for proportion of native/intro spp by bank loc; Gaussian family fixed and random effects
-
-
-lm_gaus_null <- lm(Prop.native ~ 1, data = NatIntro_bankLoc)
-lm_gaus_location <- lm(Prop.native ~ Location, data = NatIntro_bankLoc) 
-
-AIC(lm_gaus_null,lm_gaus_location)
-
-lm_gaus_location <- lmer(Prop.native ~ Location + (1|Transect:Baseline),data = NatIntro_bankLoc)
-
-qqnorm(resid(lm_gaus_location))
-qqline(resid(lm_gaus_location))
-
-effectsize::standardize(lm_gaus_location) %>% summary()
-plot_residuals(lm_gaus_location)
-plot_model(lm_gaus_location, type = "diag")
-sjPlot::plot_model(lm_gaus_location, type = "est", show.values = T)
-
-sjPlot::tab_model(lm_gaus_location, title = "Native Introduced Proportions by Bank Location", dv.labels = "Proportion Cover")
-
-emmeans(lm_gaus_location, pairwise ~ Location, adjust = "tukey")
-
-```
-
-
-```{veg - r graph common species using both sample bouts}
-
-#This csv contains both sampling bouts and first and second hits
-
-Common_species_BothBouts <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/Common_species_props_upload_BothBouts.csv")
-
-str(Common_species_BothBouts)
-View(Common_species_BothBouts)
-
-#Remove unwanted columns and change to long format
-
-Common_species_BothBouts <- select(Common_species_BothBouts, -Total.Hits, -Hit.by.loc)
-
-Common_species_BothBouts_long <- melt(Common_species_BothBouts, id.vars = c("Baseline","Transect", "Location"))
-
-View(Common_species_BothBouts_long)
-
-
-Common_species_BothBouts_long %>% ggplot(aes(x=variable, y=value))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Species", y = "Proportion of Cover")+
-  theme_bw(base_size = 16)
-
-#Need to get the means of each baseline
-#The above code currently graphs all 45 transects
-
-df_commonSpp_baseline_means <- Common_species_BothBouts_long %>%
-  group_by(Baseline, variable) %>%
-  dplyr::summarise(Mean = mean(value))
-
-View(df_commonSpp_baseline_means)
-
-
-#Now create new boxplot with baseline means
-
-df_commonSpp_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Species", y = "Proportion of Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-
-#Now get the means of each species by bank location
-
-df_commonSpp_bankLoc_means <- Common_species_BothBouts_long %>%
-  group_by(Baseline, Location, variable) %>%
-  dplyr::summarise(Mean = mean(value))
-
-View(df_commonSpp_bankLoc_means)
-
-#Now create new boxplot with baseline means by bank location
-
-p <- df_commonSpp_bankLoc_means %>% ggplot(aes(x=variable, y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Species", y = "Proportion of Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-print(p)
-
-p + facet_wrap(~Location)
-
-
-#Add code that reorders from highest to lowest cover
-#Not working yet, don't know why
-
-p <- df_commonSpp_bankLoc_means %>% ggplot(aes(x=fct_reorder(variable,Mean,mean), y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Species", y = "Proportion of Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-print(p)
-
-p + facet_wrap(~Location)
-
-
-```
-
-
-```{veg - r graph common species using only first sample bout}
-
-#This csv contains only first sampling bout and first and second hits
-
-Common_species_FirstBout <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/Common_species_props_upload_FirstBout.csv")
-
-str(Common_species_FirstBout)
-View(Common_species_FirstBout)
-
-#Remove unwanted columns and change to long format
-
-Common_species_FirstBout <- select(Common_species_FirstBout, -Total.Hits, -Hit.by.Loc, -caremo, -elyrep, -conarv, -broine, -cirarv, -phaaru, 
-                                   -taroff, -dacglo, -symlan, -symocc, -brotec, -rhacat, -medsat, -pruvir, -rumcri, -scharu)
-
-Common_species_FirstBout_long <- melt(Common_species_FirstBout, id.vars = c("Baseline","Transect", "Location"))
-
-View(Common_species_FirstBout_long)
-
-
-Common_species_FirstBout_long %>% ggplot(aes(x=variable, y=value))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Species", y = "Proportion of Cover")+
-  theme_bw(base_size = 16)
-
-#Need to get the means of each baseline
-#The above code currently graphs all 45 transects
-
-df_commonSpp_baseline_means <- Common_species_FirstBout_long %>%
-  group_by(Baseline, variable) %>%
-  dplyr::summarise(Mean = mean(value))
-
-View(df_commonSpp_baseline_means)
-
-
-#Now create new boxplot with baseline means
-
-df_commonSpp_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Species", y = "Proportion of Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-
-#Now get the means of each species by bank location
-
-df_commonSpp_bankLoc_means <- Common_species_FirstBout_long %>%
-  group_by(Baseline, Location, variable) %>%
-  dplyr::summarise(Mean = mean(value))
-
-View(df_commonSpp_bankLoc_means)
-
-#Now create new boxplot with baseline means by bank location
-
-p <- df_commonSpp_bankLoc_means %>% ggplot(aes(x=variable, y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Species", y = "Proportion of Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-print(p)
-
-p + facet_wrap(~Location) 
-
-
-#Now reorder by descending order of cover within each panel
-#Not working can't figure it out
-
-str(df_commonSpp_bankLoc_means)
-
-
-df_commonSpp_bankLoc_means %>% 
-  ggplot(aes(y=reorder_within(Mean, variable, Location), 
-              x=variable)) +
-  geom_boxplot()+
-  geom_point()+
-  scale_y_reordered()+
-  facet_wrap(~Location, scales = "free_y")+
-
-  labs(x = "Species", y = "Proportion of Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-
-```
-
-
-```{veg - r graph functional groups by bank location}
-
-#This csv contains first sampling bout and first hits plus second hits
-
-FG_bankLoc <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/FunctionalGroup_byBankLoc_Upload.csv")
-
-str(FG_bankLoc)
-View(FG_bankLoc)
-
-#Remove unwanted columns, change to long format, name columns as desired
-
-FG_bankLoc <- select(FG_bankLoc, -Total.Hits, -Hit.by.loc, -PG, -PF, -AF, -VF, -BF, -W, -AG)
-
-FG_bankLoc_long <- melt(FG_bankLoc, id.vars = c("Baseline","Transect", "Location"))
-
-View(FG_bankLoc_long)
-
-names(FG_bankLoc_long) <- c("Baseline","Transect","Location","FuncGroup","PropFuncGroup")
-
-View(FG_bankLoc_long)
-
-
-#add data points w/o jitter for bank location
-#change width of boxes and add axis labels 
-#Visualize boxplots and can see that the level of replication being graphed is wrong
-#b/c it is showing all 45 transects
-
-
-p <- FG_bankLoc_long %>% ggplot(aes(x=FuncGroup, y=PropFuncGroup))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Functional Group", y = "Proportion")+
-  theme_bw(base_size = 16)
-print(p)
-
-p + facet_wrap(~Location)
-
-#Need to get the means of each baseline
-#The above code currently graphs all 45 transects
-
-df_FG_baseline_means <- FG_bankLoc_long %>%
-  group_by(Baseline, Location, FuncGroup) %>%
-  dplyr::summarise(Mean = mean(PropFuncGroup))
-
-View(df_FG_baseline_means)
-
-
-#Now create new boxplot with baseline means
-
-p <- df_FG_baseline_means %>% ggplot(aes(x=FuncGroup, y=Mean))+
-  geom_boxplot()+
-  geom_point()+
-
-  labs(x = "Functional Group", y = "Proportion Vegetation Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = FuncGroup), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-
-print(p)
-
-p + facet_wrap(~Location)
-
-
-#Stats model for proportion of species upper bank location; Gaussian family fixed and random effects
-
-#First select out the upper bank location only
-
-df_UpperBank <- subset(FG_bankLoc_long, Location =="upper")
-View(df_UpperBank)
-
-lm_gaus_null <- lm(PropFuncGroup ~ 1, data = df_UpperBank )
-lm_gaus_upper <- lm(PropFuncGroup ~ FuncGroup, data = df_UpperBank ) 
-
-AIC(lm_gaus_null,lm_gaus_upper)
-
-glm_gaus_upper <- lmer(PropFuncGroup ~ FuncGroup + (1|Transect:Baseline),data = df_UpperBank)
-
-qqnorm(resid(glm_gaus_upper))
-qqline(resid(glm_gaus_upper))
-
-effectsize::standardize(glm_gaus_upper) %>% summary()
-plot_residuals(glm_gaus_upper)
-plot_model(glm_gaus_upper, type = "diag")
-sjPlot::plot_model(glm_gaus_upper, type = "est", show.values = T)
-
-sjPlot::tab_model(glm_gaus_upper, title = "Functional Group Proportions in Upper Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_upper, pairwise ~ FuncGroup, adjust = "tukey")
-
-
-#Stats model for proportion of species middle bank location; Gaussian family fixed and random effects
-
-#First select out the middle bank location only
-
-df_MidBank <- subset(FG_bankLoc_long, Location =="middle")
-View(df_MidBank)
-
-lm_gaus_null <- lm(PropFuncGroup ~ 1, data = df_MidBank)
-lm_gaus_middle <- lm(PropFuncGroup ~ FuncGroup, data = df_MidBank) 
-
-AIC(lm_gaus_null,lm_gaus_middle)
-
-glm_gaus_middle <- lmer(PropFuncGroup ~ FuncGroup + (1|Transect:Baseline),data = df_MidBank)
-
-qqnorm(resid(glm_gaus_middle))
-qqline(resid(glm_gaus_middle))
-
-effectsize::standardize(glm_gaus_middle) %>% summary()
-plot_residuals(glm_gaus_middle)
-plot_model(glm_gaus_middle, type = "diag")
-sjPlot::plot_model(glm_gaus_middle, type = "est", show.values = T)
-
-sjPlot::tab_model(glm_gaus_middle, title = "Functional Group Proportions in Middle Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_middle, pairwise ~ FuncGroup, adjust = "tukey")
-
-
-#Stats model for proportion of species lower bank location; Gaussian family fixed and random effects
-
-#First select out the lower bank location only
-
-df_LowBank <- subset(FG_bankLoc_long, Location =="lower")
-View(df_LowBank)
-
-lm_gaus_null <- lm(PropFuncGroup ~ 1, data = df_LowBank)
-lm_gaus_lower <- lm(PropFuncGroup ~ FuncGroup, data = df_LowBank) 
-
-AIC(lm_gaus_null,lm_gaus_lower)
-
-glm_gaus_lower <- lmer(PropFuncGroup ~ FuncGroup + (1|Transect:Baseline),data = df_LowBank)
-
-qqnorm(resid(glm_gaus_lower))
-qqline(resid(glm_gaus_lower))
-
-effectsize::standardize(glm_gaus_lower) %>% summary()
-plot_residuals(glm_gaus_lower)
-plot_model(glm_gaus_lower, type = "diag")
-sjPlot::plot_model(glm_gaus_lower, type = "est", show.values = T)
-
-sjPlot::tab_model(glm_gaus_lower, title = "Functional Group Proportions in Lower Bank", dv.labels = "Proportion Cover")
-
-emmeans(glm_gaus_lower, pairwise ~ FuncGroup, adjust = "tukey")
-
-
-```
