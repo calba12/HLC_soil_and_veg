@@ -14,6 +14,9 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 #Bring in raw data file
 veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
 
+veg <- read.csv("20201204_allHitsData_postQC_5.csv") #mac
+
+
 #Import data using a relative pathway
 veg <- read.csv("./20201204_allHitsData_postQC_prep4.csv")
 
@@ -405,7 +408,7 @@ df_stacked_WIS %>%
 ```
 
 
-```{r stats for WIS upper bank location gaussian and log transformed}
+```{r stats for WIS upper bank location gaussian and log transformed - don'tuse}
 
 #Stats model for proportion of species upper bank location
 #First select out the upper bank location only
@@ -468,7 +471,7 @@ emmeans(lm_gaus_log_upper, pairwise ~ WIS_GP, adjust = "tukey")
 ```
 
 
-```{r stats for WIS middle bank location gaussian and log transformed}
+```{r stats for WIS middle bank location gaussian and log transformed - don't use}
 
 #Stats model for proportion of species upper bank location
 #First select out the upper bank location only
@@ -530,7 +533,7 @@ emmeans(lm_gaus_log_mid, pairwise ~ WIS_GP, adjust = "tukey")
 ```
 
 
-```{r stats for WIS lower bank location gaussian }
+```{r stats for WIS lower bank location gaussian - don't use }
 
 #Stats model for proportion of species lower bank location
 #First select out the upper bank location only
@@ -622,7 +625,7 @@ emmip(lmer_gaus4, WIS_GP ~ Bank_Location, CIs = TRUE)
 ```
 
 
-```{r stats for WIS upper bank location trying quasibinomial and gamlss with zero inflation}
+```{r stats for WIS upper bank location trying quasibinomial and gamlss with zero inflation _ don't use}
 
 
 #glm with logit <https://www.andrewheiss.com/blog/2021/11/08/beta-regression-guide/> family = quasibinomial() gets rid of the warning that you don't have a binary outcome variable
