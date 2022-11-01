@@ -883,6 +883,8 @@ legend(x=0.6,
 view(df.props_WIS_veg)
 str(df.props_WIS_veg)
 
+
+#Anova
 lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
 lmer_gaus1 <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #add in variation explained by WIS
 lmer_gaus2 <- lmer(prop ~ WIS_GP + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #add in variation explained by bank location

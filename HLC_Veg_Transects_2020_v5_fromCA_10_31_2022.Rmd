@@ -14,6 +14,10 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 #Bring in raw data file
 veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
 
+veg <- read.csv("20201204_allHitsData_postQC_prep4.csv")
+
+veg <- read.csv("20201204_allHitsData_postQC_5.csv") #mac
+
 head(veg)
 str(veg)
 
