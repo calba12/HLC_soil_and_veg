@@ -20,6 +20,10 @@ seedbank <- read.csv("20220802_HLC_SB_Data_Final5.csv") #mac path
 
 #Turquoise path
 
+seedbank <- seedbank %>%
+  mutate(Transect_ID = as.factor(Transect_ID)) %>%
+  mutate(Baseline = as.factor(Baseline)) 
+
 
 #head(seedbank)
 #str(seedbank)
@@ -631,7 +635,9 @@ radarchart( data  , axistype=1 ,
 
 warnings()
 
-glmer_pois_null <- glmer(prop ~ 1 + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+df.props_WIS_seed$prop2 <- df.props_WIS_seed$prop *100
+
+glmer_pois_null <- glmer(prop2 ~ 1 + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
 glmer_pois1 <- glmer(prop ~ WIS + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #add in variation explained by WIS
 glmer_pois2 <- glmer(prop ~ WIS + Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #add in variation explained by bank location
 glmer_pois3 <- glmer(prop ~ WIS + Bank_Location + WIS*Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #add in interaction term

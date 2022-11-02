@@ -22,6 +22,11 @@ str(veg)
 
 #View(veg)
 
+veg <- veg %>%
+  mutate(sample.bout = as.factor(sample.bout))%>%
+  mutate(Transect = as.factor(Transect)) %>%
+  mutate(baseline = as.factor(baseline)) %>%
+  mutate(baseline.rep = as.factor(baseline.rep))
 
 #add "sp." to species names
 #$ after name makes it specific so that it isn't correcting to 'Carex sp. emoryi', for example
