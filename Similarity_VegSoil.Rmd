@@ -5,7 +5,7 @@ date: '2022-09-05'
 output: html_document
 ---
 
-```{r}
+```{r libraries}
 library(vegan)
 library(dplyr)
 library(tidyr)
@@ -163,20 +163,20 @@ species.wide <- bind_rows(seedbank[,c("Transect","Bank_Location","Species.Hit","
 
 ```
 
-Chrissy start here to play with code
-```{r similarity data wrangling}
+Chrissy START HERE 
+```{r similarity data wrangling_START HERE}
 # 1.  READ 
 
 # read in data that is in long format
-seedbank <- read.csv("20220802_HLC_SB_Data_Final4.csv") #mac path & Turquoise path
+seedbank <- read.csv("20220802_HLC_SB_Data_Final5.csv") #mac path
 
-aboveground <- read.csv("20201204_allHitsData_postQC_prep4.csv") #mac
+aboveground <- read.csv("20201204_allHitsData_postQC_5.csv") #mac
 
 
 #2. APPLY FILTERS
 
 seedbank.sim <- seedbank %>%
-  # If you want to remove not (!) when name contains sp., Unknown, or (|) cf. or if NA
+  # If you want to remove use not (!) when name contains sp., Unknown, or (|) cf. or if NA
   filter(!grepl("sp.|Unknown|cf.|NA",seedbank$SPECIFIC_EPITHET_FINAL), 
          !is.na(SPECIFIC_EPITHET_FINAL)) 
 
@@ -202,8 +202,8 @@ aboveground.sim <- aboveground %>%
   filter(Transect !="B7-12.5") %>%
   filter(Transect !="B7-37.5")
 
-view(seedbank.sim)
-view(aboveground.sim)
+View(seedbank.sim)
+View(aboveground.sim)
 
 #  3. RENAME SO COLUMNS MATCH
 seedbank.sim <- seedbank.sim %>%
@@ -229,15 +229,16 @@ sim.matrix <- bind_rows(seedbank.sim[,c("Transect","Bank_Location","Species.Hit"
 
 ## adjust as needed for whatever analysis you're doing. Keep the first three columns as a data.frame (or tibble) because you'll need them for group arguments
 
-view(sim.matrix) #why 133 rows? should be 162? 81*2
+View(sim.matrix) #why 143 rows? should be 162? 81*2
 ```
 
 ``` {r similarity next steps} 
 
-#reformatting
+#reformatting so that we can see the transect/BL/veg or SB information on the edges rather than as a column, because the code to analyze the matrix requires no text data
 sim.matrix$UniqueID <- paste(sim.matrix$Transect, sim.matrix$VegSoil, sim.matrix$Bank_Location, sep = "-") #pasting columns together
 
-sim.matrix <- sim.matrix[,c(72,1:71)] #move uniqueID column to front
+sim.matrix <- sim.matrix[,c(73,1:72)] #move uniqueID column to front
+#should have new Unique ID column on far left; sometimes need to adjust this code if new columns are added
 
 sim.matrix <- sim.matrix[order(sim.matrix$UniqueID),] #put in order
 
@@ -249,14 +250,14 @@ sim.matrix2 <- sim.matrix[-c(1:4)] #removing columns with text so that I can ana
 
 sim.matrix2 <- as.matrix(sim.matrix2)
 head(sim.matrix2)
-
+View(sim.matrix2)
 
 #Running similarity
 vegdist.out <- vegdist(sim.matrix2, method="bray", binary=TRUE) #Jaccard dissimilarity, presence/abs
 matrix.out <- as.matrix(vegdist.out) #put into matrix 
-view(matrix.out) #this is comparing all samples to each other
+View(matrix.out) #this is comparing all samples to each other #this is showing 143x143
 
-#grabbing the meaningful numbers from the matrix
+#grabbing the numbers of interest from the matrix
 DistVals <- data.frame(PlotID =NULL, Value = NULL) ## creating new dataframe to store outputs of plot dissimilarity 
 for(i in 4:nrow(matrix.out)){ 
   wantRow <- row.names(matrix.out)[i] 
@@ -266,9 +267,9 @@ for(i in 4:nrow(matrix.out)){
   DistVals <- rbind(DistVals, OutDF)
 }
 
-view(DistVals)
+View(DistVals) #Giving me 140 rows
 
-length(unique(DistVals$PlotID)) #should be 81
+length(unique(DistVals$PlotID)) #should be 81; I think it is giving 140 because it's comparing soil to soil and veg to veg; If I figure out the initial issue (line 232) this issue might be easier to work out
 
 #ideas -- could do some manual work --> pull numbers of interest out of matrix 
           # could filter one transect at a time (I think that's what michelle had in mind?)

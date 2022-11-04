@@ -910,25 +910,41 @@ summary(lmer_gaus4) #Get model output
 #Can also get the output for lines 599-603 below using sjPlot code 
 
 proportion_WIS_gauss <- df.props_WIS_veg$prop #Histogram showing lots of zeroes, positive skew 
-hist(proportion_WIS_gauss)
+hist(proportion_WIS_gauss)#shows skew. L shaped-distrib/right skewed-> not normal
 qqnorm(df.props_WIS_veg$prop) #use to visualize whether raw data are normally distributed
-qqnorm(resid(lmer_gaus4))     #Use to visualize whether model residuals vs predicted are normally distributed
+#raw data; shows a lot of 0s and a lot of 1's; normal otherwise
+#if normally distributed this would like a straight line
+qqnorm(resid(lmer_gaus4))     #Use to visualize whether model residuals vs predicted are normally distributed 
+#good fit (meaning model doesn't violate normality assumptions) if dots fit along a line; rare to get ecological data that fits this line perfectly
 plot(lmer_gaus4)              #Use to visualize whether model residuals vs predicted are normally distributed
+#this shows what happens to variance around the mean as you go from smaller to larger numbers
+#well fit model that doesn't violate assumptions would look like equal smattering of rows of dots
+#not about distribution but about if variances are equal across the dataset
+#here we see that variance increases from left to right, and on left hand side, more positive; more evenly distributed to the right
+#model violates assumption of homogeniety of variances
+
 
 
 #Choose lmer_gaus_upper4 based on AIC and run diagnostics, output, pairwise comparisons
 
 #effectsize::standardize(lmer_gaus_upper2) %>% summary()
-plot_residuals(lmer_gaus4)
-plot_model(lmer_gaus4, type = "diag")
-sjPlot::plot_model(lmer_gaus4, type = "est", show.values = T)
+plot_residuals(lmer_gaus4) #who knows
+plot_model(lmer_gaus4, type = "diag") #same as line 919
+sjPlot::plot_model(lmer_gaus4, type = "est", show.values = T) # comparing to intercept; quick data viz; this info would go into table
 
-sjPlot::tab_model(lmer_gaus4, df.method = "satterthwaite", title = "Proportion WIS in Vegetation", dv.labels = "Proportion Cover")
+sjPlot::tab_model(lmer_gaus4, df.method = "satterthwaite", title = "Proportion WIS in Vegetation", dv.labels = "Proportion Cover") #another table showing that info
 
-emmeans(lmer_gaus4, df.method = "satterthwaite", pairwise ~ WIS_GP | Bank_Location, adjust = "tukey")
-emmip(lmer_gaus4, WIS_GP ~ Bank_Location, CIs = TRUE)
+emmeans(lmer_gaus4, df.method = "satterthwaite", pairwise ~ WIS_GP | Bank_Location, adjust = "tukey") #this first part is what I would use to report in summary table; to build table off of this
+#emmean is essentially the same as estimate
 
-as.data.frame(df_emmeans) #not sure if this works
+#second part (contrasts), pay attn to what is significant; pick and choose from the significant ones, the ones that are BIOLOGICALLY meaningful
+#when i decide which ones I care about, that is what goes into the text; would not be a table for this
+
+emmip(lmer_gaus4, WIS_GP ~ Bank_Location, CIs = TRUE) #graph of interaction between bank location and WIS #need to have CI's for the thesis--> how can i make it look better? #work on aesthetics
+emmip(lmer_gaus4, WIS_GP ~ Bank_Location) #graph of interaction between bank location and WIS #might be better to show w/out CI for talk
+#y axis: proportional cover, model fitted estimate of that; prop of 5 diff groups depends on bank location; lines connecting them is showing interaction
+
+as.data.frame(df_emmeans) #not sure if this works 
 view(df_emmeans)
 
 ```
@@ -991,7 +1007,7 @@ lmer_gaus_fg_2 <- lmer(propFG ~ FunctionalGroup2 + Bank_Location + (1|baseline) 
 lmer_gaus_fg_3 <- lmer(propFG ~ FunctionalGroup2 + Bank_Location + FunctionalGroup2*Bank_Location + (1|Transect:baseline) + (1|Transect:baseline), data = df.props_FG_veg)
 lmer_gaus_fg_4 <- lmer(propFG ~ FunctionalGroup2 + Bank_Location + FunctionalGroup2*Bank_Location + (1|baseline), data = df.props_FG_veg)
 
-AIC(lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4) #something is wrong fg_1 shouldn't have the lowest AIC
+AIC(lmer_gaus_null, lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4) #something is wrong fg_1 shouldn't have the lowest AIC
 
 summary(lmer_gaus_fg_1)
 summary(lmer_gaus_fg_2)
