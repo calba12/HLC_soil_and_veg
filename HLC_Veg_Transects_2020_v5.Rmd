@@ -1023,7 +1023,7 @@ p + facet_wrap(~Location)
 
 ```
 
-Want to redo common species using proper prepping steps within R
+Want to redo common species using proper prepping steps within R but can use this for HLC report due Nov 2022
 ```{r graph common species using only first sample bout}
 
 #This csv contains only first sampling bout and first and second hits
@@ -1304,7 +1304,7 @@ lmer_gaus_fg_2 <- lmer(propFG ~ FunctionalGroup + Bank_Location + (1|baseline) +
 lmer_gaus_fg_3 <- lmer(propFG ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|Transect:baseline) + (1|Transect:baseline), data = df.props_FG)
 lmer_gaus_fg_4 <- lmer(propFG ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|baseline), data = df.props_FG)
 
-AIC(lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4)
+AIC(lmer_gaus_null, lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4)
 
 summary(lmer_gaus_fg_1)
 summary(lmer_gaus_fg_2)
@@ -1335,4 +1335,6 @@ emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup,
 
 emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup | Bank_Location, adjust = "tukey")
 emmip(lmer_gaus_fg_4, FunctionalGroup ~ Bank_Location, CIs = TRUE)
+
+
 ```

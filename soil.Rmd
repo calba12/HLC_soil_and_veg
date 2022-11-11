@@ -10,18 +10,26 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r check data and attach libraries}
+```{r check data attach libraries rename transects and baselines}
 
 
 soil_forR <- read.csv("Q:\\Research\\Grants and Funding\\HighLineCanalConservancy_2019\\7_Project\\Stormwater\\Stats_in_R\\soil_forR.csv", header = TRUE, as.is = TRUE)
 
 head(soil_forR)
 str(soil_forR)
+View(soil_forR)
 
 library(tidyverse)
 library(ggplot2)
 library(forcats)
 library(ggpubr)
+library(RColorBrewer)
+
+soil_forR <- soil_forR %>%
+  mutate(baseline=recode(baseline, "B3"="B03", "B5"="B05","B7"="B07"))
+
+View(soil_forR)
+
 
 ```
 
@@ -49,9 +57,6 @@ min(soil_forR$per_om)
 
 
 #r add data points to boxplot of OM by bank location
-library(tidyverse)
-library(ggplot2)
-
 
 soil_forR %>% ggplot(aes(x=location, y=per_om)) +
   geom_boxplot()+
@@ -81,10 +86,11 @@ soil_forR %>% ggplot(aes(x=location, y=per_om))+
   labs(x = "Bank location", y = "Soil organic matter (%)")+
   theme_bw(base_size=16)
 
+#FOR HLC REPORT
 #change width of boxes and add axis labels with NO jitter
 soil_forR %>% ggplot(aes(x=location, y=per_om))+
   geom_boxplot(width = 0.5)+
-  stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="orange", fill="orange")+
   labs(x = "Bank location", y = "Soil organic matter (%)")+
   theme_bw(base_size=16)
 
@@ -101,12 +107,22 @@ soil_forR %>% ggplot(aes(x=location, y=per_om))+
   theme_bw(base_size=16)
   
   
-#boxplot of OM by baseline transect with reorder function enabled and NO jitter  
-  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,per_om, mean), y=per_om))+ 
+#boxplot of OM by baseline transect with reorder function enabled descending and NO jitter  
+  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,-per_om, mean), y=per_om))+ 
   geom_boxplot(width = 0.5)+
-  stat_summary(fun=mean, geom="point", shape=20, size=3, color="red", fill="red")+
-  labs(x = "Transect ID", y = "Soil organic matter (%)")+
-  theme_bw(base_size=16)
+  geom_point() +
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="orange", fill="orange")+
+  labs(x = "Transect ID", y = "Soil Organic Matter (%)")+
+  theme_bw(base_size=16) 
+  
+
+  #boxplot of OM by baseline transect no reordering and NO jitter  
+  soil_forR %>% ggplot(aes(x=baseline, y=per_om))+ 
+  geom_boxplot(width = 0.5)+
+  geom_point() +
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="orange", fill="orange")+
+  labs(x = "Baseline ID", y = "Soil Organic Matter (%)")+
+  theme_bw(base_size=16) 
 
 
 #boxplot of OM by baseline with bank location by color
