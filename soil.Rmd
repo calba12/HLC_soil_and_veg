@@ -9,9 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
 ```{r check data attach libraries rename transects and baselines}
-
 
 soil_forR <- read.csv("Q:\\Research\\Grants and Funding\\HighLineCanalConservancy_2019\\7_Project\\Stormwater\\Stats_in_R\\soil_forR.csv", header = TRUE, as.is = TRUE)
 
@@ -24,15 +22,19 @@ library(ggplot2)
 library(forcats)
 library(ggpubr)
 library(RColorBrewer)
+library(soiltexture)
+library(dplyr)
+library(reshape2)
+library(plotrix)
 
 soil_forR <- soil_forR %>%
-  mutate(baseline=recode(baseline, "B3"="B03", "B5"="B05","B7"="B07"))
+  mutate(baseline=recode(baseline, "B3"="B03", "B5"="B05","B7"="B07")) %>%
+  mutate(location=recode(location, "bottom" = "Bottom", "middle" = "Middle", "top" ="Top"))
 
 View(soil_forR)
 
 
 ```
-
 
 ```{r boxplots for organic matter}
 help(boxplot)
@@ -91,7 +93,7 @@ soil_forR %>% ggplot(aes(x=location, y=per_om))+
 soil_forR %>% ggplot(aes(x=location, y=per_om))+
   geom_boxplot(width = 0.5)+
   stat_summary(fun=mean, geom="point", shape=20, size=3, color="orange", fill="orange")+
-  labs(x = "Bank location", y = "Soil organic matter (%)")+
+  labs(x = "Bank location", y = "Soil Organic Matter (%)")+
   theme_bw(base_size=16)
 
 
@@ -116,7 +118,8 @@ soil_forR %>% ggplot(aes(x=location, y=per_om))+
   theme_bw(base_size=16) 
   
 
-  #boxplot of OM by baseline transect no reordering and NO jitter  
+#FOR HLC REPORT
+#boxplot of OM by baseline transect no reordering and NO jitter  
   soil_forR %>% ggplot(aes(x=baseline, y=per_om))+ 
   geom_boxplot(width = 0.5)+
   geom_point() +
@@ -138,7 +141,6 @@ soil_forR %>% ggplot(aes(x=location, y=per_om))+
   theme_bw(base_size=16)
 
 ```
-
 
 ```{r means with data points for SOM}
 
@@ -182,6 +184,79 @@ ggbarplot(soil_forR, x = "baseline", y = "per_om",
 
 ```
 
+```{r soil texture and SOM triangle}
+
+#display an empty triangle
+TT.plot(class.sys = "none")
+
+#display USDA triangle
+TT.plot(class.sys = "USDA.TT")
+
+#display most commonly used now by many US agencies
+TT.plot(class.sys = "USDA-NCSS.TT")
+
+#European soil map
+TT.plot(class.sys = "HYPRES.TT")
+
+#Return table of classes for given system
+TT.classes.tbl(class.sys = "HYPRES.TT", collapse = NULL)
+
+
+#TT.css2xy Converts texture data (3 classes) into x-y coordinates.
+#Converts texture data (3 classes) into x-y coordinates. This
+#function is the ’heart’ of most soiltexture plot functions.
+
+#Usage
+#TT.css2xy(tri.data, geo, css.names = NULL, text.tol = NULL,
+#tri.sum.tst = NULL, tri.pos.tst = NULL, set.par = FALSE,
+#text.sum = NULL, blr.clock = NULL)
+
+
+#check that sand silt clay sum to 100
+soil_forR <- soil_forR %>% mutate(texture_check = per_sand + per_silt + per_clay)
+View(soil_forR)
+names(soil_forR)
+
+#Rename columns as required by soiltexture package
+soil_forR <- rename(soil_forR, "SAND" = "per_sand", "SILT" = "per_silt", "CLAY" = "per_clay") 
+
+#Make wide data long
+
+#soil_forR_long <- melt(soil_forR, measure.vars=c("SAND","SILT","CLAY"),
+                  #variable.name="per_texture",value.name="measurement")
+#View(soil_forR_long)
+
+
+#Select only the needed columns
+
+texture_simple <- soil_forR %>% select(SAND, SILT, CLAY, per_om)
+View(texture_simple)
+
+
+#Plotting texture values onto pyramid using USDA classification
+TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, main = "Soil Texture Data")
+
+
+#Plotting texture values onto pyramid using European Soil Map classification
+TT.plot(class.sys = "HYPRES.TT", tri.data = texture_simple, tri.sum.tst = FALSE, main = "Soil Texture Data")
+
+#Plotting texture values onto pyramid with other factors using USDA classification
+
+TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "per_om", main = "Soil Texture and Organic Matter")
+
+TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "ec", main = "Soil Texture and Electrical Conductivity")
+
+TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "bulkden", main = "Soil Texture and Bulk Density")
+
+TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "ph", main = "Soil Texture and pH")
+
+TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "no3_n", main = "Soil Texture and Nitrate-Nitrogen")
+
+TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "p", main = "Soil Texture and Phosphorous")
+
+TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "k", main = "Soil Texture and Potassium")
+
+```
 
 ```{r boxplots of pH}
 
@@ -224,9 +299,6 @@ soil_forR %>% ggplot(aes(x=location, y=ph)) +
   theme_bw(base_size=16)
 
 ```
-
-
-
 
 ```{r boxplots of nitrate}
 
@@ -290,9 +362,6 @@ soil_forR %>% ggplot(aes(x=baseline, y=no3_n)) +
   theme_bw(base_size=16)
 
 ```
-
-
-
 
 ```{r boxplots of ec as proxy for salinity}
 
@@ -365,7 +434,6 @@ soil_forR %>% ggplot(aes(x=baseline, y=ec)) +
   theme_bw(base_size=16)
 
 ```
-
 
 ```{r boxplots of P}
 
@@ -615,7 +683,6 @@ soil_forR %>% ggplot(aes(x=fct_reorder(baseline, fe, mean), y=fe))+
   theme_bw(base_size=16)
 ```
 
-
 ```{r boxplots of magnesium}
 #add data points w/o jitter for bank location
 
@@ -673,7 +740,6 @@ soil_forR %>% ggplot(aes(x=fct_reorder(baseline, mn, mean), y=mn))+
   theme_bw(base_size=16)
 
 ```
-
 
 ```{r boxplots of copper}
 
@@ -733,7 +799,6 @@ soil_forR %>% ggplot(aes(x=fct_reorder(baseline, cu, mean), y=cu))+
   theme_bw(base_size=16)
 
 ```
-
 
 ```{r boxplots of bulk density}
 
@@ -811,7 +876,6 @@ soil_forR %>% ggplot(aes(x=fct_reorder(baseline, bulkden, mean), y=bulkden))+
 
 ```
 
-
 ```{r regressions/correlations percent OM against macronutrients}
 
 attach(soil_forR)
@@ -855,7 +919,6 @@ ggscatter(soil_forR, x ="per_om", y = "k", na.rm = TRUE,
           #xlab = "Percent organic matter", ylab = "Potassium")
 
 ```
-
 
 ```{r regressions/correlations soil nutrients against each other}
 
@@ -924,7 +987,6 @@ ggscatter(soil_forR, x ="per_sand", y = "k", na.rm = TRUE,
           stat_cor(aes(color = location, label.x = 3))
           #xlab = "Percent sand", ylab = "Potassium")
 ```
-
 
 ```{r SOM against texture fractions}
 
