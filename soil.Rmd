@@ -240,9 +240,63 @@ TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FAL
 #Plotting texture values onto pyramid using European Soil Map classification
 TT.plot(class.sys = "HYPRES.TT", tri.data = texture_simple, tri.sum.tst = FALSE, main = "Soil Texture Data")
 
-#Plotting texture values onto pyramid with other factors using USDA classification
+#FOR HLC REPORT
+#Plotting texture values onto pyramid with SOM using USDA classification
 
 TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "per_om", main = "Soil Texture and Organic Matter")
+
+#FOR HLC REPORT
+#Plotting texture values onto pyramid with SOM using USDA classification, adding legend
+
+TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "per_om", main = "Soil Texture and Organic Matter"
+
+)  #
+
+#Recompute some internal values: 
+
+z.cex.range <- TT.get("z.cex.range")
+def.pch <-par("pch")
+def.col <-par("col")
+def.cex <-TT.get("cex")
+oc.str  <-TT.str(
+  texture_simple[,"per_om"],
+  z.cex.range[1],
+  z.cex.range[2] 
+  
+  ) #
+
+# #The legend:
+
+legend(
+  x=110, 
+  y=90, 
+  title= 
+    expression(bold('% per_om')),
+        legend = formatC(
+          c(
+          min( texture_simple[,"per_om"] ), 
+                             quantile(texture_simple[,"per_om"] ,probs=c(25,50,75)/100), 
+                             max( texture_simple[,"per_om"] )
+                             ),
+                  format = "f", 
+                  digits = 2, 
+                  width = 4, 
+                  flag = "0"
+                  ), # 
+        pt.lwd = 4,
+        col = def.col,
+        pt.cex = c(
+          min(oc.str),
+          quantile(oc.str, probs=c(25,50,75/100),
+                   max(oc.str)
+                   ), #,
+          pch = def.pch,
+          bty = "o",
+          bg = NA,
+          box.col = NA, #Uncomment this to remove legend box
+          text.col = "black",
+          cex = def.cex
+        ))  #
 
 TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "ec", main = "Soil Texture and Electrical Conductivity")
 
