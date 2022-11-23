@@ -264,7 +264,7 @@ View(distinct_species_bank)
 ```
 
 
-```{r hit type by bare soil, litter, vegetation, water, dwd}
+```{r graphs for hit type by bare soil, litter, vegetation, water, dwd}
 
 #Create general categories based on whether vegetation was hit first, or pin dropped straight to bare ground, litter, water
 # To do this, if surface hit is NULL, then hit type is vegetation, otherwise bare soil, litter, dwd, water as designated in the "Surface.Hit" column
@@ -367,7 +367,7 @@ p <- ggplot(df_stacked_baseline, aes(fill = Surface.Hit, y = Mean, x = baseline)
   labs(x = "Bank Location", y = "Proportion of Cover") +
   guides(fill = guide_legend("Cover Type")) +
   theme_bw(base_size = 16) + 
-  scale_fill_brewer(palette = "BuGn")
+  scale_fill_brewer(palette = "Spectral")
 
 print(p)
 
@@ -377,14 +377,16 @@ print(p)
 
 df_stacked_baseline <- aggregate(Mean ~ baseline + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
 
-p <- ggplot(df_stacked_baseline, aes(fill = Surface.Hit, y = Mean, x = baseline))+
+p <- ggplot(df_stacked_baseline, aes(x = factor (baseline, level =c("B03", "B05", "B07", "B10", "B13", "B14", "B15", "B17", "B18")), y = Mean, fill = Surface.Hit, label = round(Mean, digits = 2)))+
   geom_bar(position = "stack", stat = "identity", color = "black") +
   labs(x = "Baseline", y = "Proportion of Cover") +
   guides(fill = guide_legend("Cover Type")) +
   theme_bw(base_size = 16) + 
-  scale_fill_brewer(palette = "Spectral")
+  scale_fill_brewer(palette = "BuGn", breaks = c("Bare Soil", "Litter", "Vegetation", "Water", "Woody Debris"))
 
 print(p)
+
+
 
 
 ```
@@ -1271,15 +1273,16 @@ View(df.props_FG_means)
 p <- df.props_FG_means %>% ggplot(aes(x=factor(FunctionalGroup, levels = c('PG', 'PF', 'W', 'SLF', 'AG')), y=Mean))+
   geom_boxplot()+
   geom_point()+
-
   labs(x = "Functional Group", y = "Proportion Vegetation Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = FunctionalGroup), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  stat_summary(fun=mean, geom="point", aes(group = FunctionalGroup), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
   theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+  scale_fill_brewer(palette = "BuGn")
 
 print(p)
 
 p + facet_wrap(~Bank_Location)
+
 
 #Make stacked bar graph 
 
@@ -1302,7 +1305,7 @@ df.props_FG_stacked_baseline <- aggregate(Mean ~ baseline + FunctionalGroup, dat
 
 View(df.props_FG_stacked_baseline)
 
-p <- ggplot(df.props_FG_stacked_baseline, aes(fill = FunctionalGroup, y = Mean, x = baseline))+
+p <- ggplot(df.props_FG_stacked_baseline, aes(x = factor (baseline, level = c("B03", "B05", "B07", "B10", "B13", "B14", "B15", "B17", "B18")), y = Mean, fill = FunctionalGroup))+
   geom_bar(position = "stack", stat = "identity", color = "black") +
   labs(x = "Baseline", y = "Proportion of Cover") +
   guides(fill = guide_legend("Functional Group Type")) +
@@ -1310,6 +1313,7 @@ p <- ggplot(df.props_FG_stacked_baseline, aes(fill = FunctionalGroup, y = Mean, 
   scale_fill_brewer(palette = "BuGn")
 
 print(p)
+
 
 ```
 
