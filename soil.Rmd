@@ -29,14 +29,20 @@ library(plotrix)
 
 soil_forR <- soil_forR %>%
   mutate(baseline=recode(baseline, "B3"="B03", "B5"="B05","B7"="B07")) %>%
-  mutate(location=recode(location, "bottom" = "Bottom", "middle" = "Middle", "top" ="Top"))
+  mutate(location=recode(location, "bottom" = "Bottom", "middle" = "Middle", "top" ="Top")) %>%
+  mutate(baseline = as.factor(baseline)) %>%
+  mutate(location = as.factor(location)) %>%
+  mutate(texture = as.factor(texture)) %>%
+  mutate(texture_abb = as.factor(texture_abb))
 
+str(soil_forR)
 View(soil_forR)
 
 
 ```
 
 ```{r boxplots for organic matter}
+
 help(boxplot)
 attach(soil_forR)
 
@@ -232,7 +238,7 @@ soil_forR <- rename(soil_forR, "SAND" = "per_sand", "SILT" = "per_silt", "CLAY" 
 texture_simple <- soil_forR %>% select(SAND, SILT, CLAY, per_om)
 View(texture_simple)
 
-
+#FOR HLCC REPORT
 #Plotting texture values onto pyramid using USDA classification
 TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, main = "Soil Texture Data")
 
@@ -246,7 +252,8 @@ TT.plot(class.sys = "HYPRES.TT", tri.data = texture_simple, tri.sum.tst = FALSE,
 TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "per_om", main = "Soil Texture and Organic Matter")
 
 #FOR HLC REPORT
-#Plotting texture values onto pyramid with SOM using USDA classification, adding legend
+#Plotting texture values onto pyramid with SOM using USDA classification, adding legend; couldn't get
+#legend describing dot size to work
 
 TT.plot(class.sys = "USDA-NCSS.TT", tri.data = texture_simple, tri.sum.tst = FALSE, z.name = "per_om", main = "Soil Texture and Organic Matter"
 

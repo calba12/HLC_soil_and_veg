@@ -333,7 +333,8 @@ p <- df_prop_hit_type_means %>% ggplot(aes(x=factor(Surface.Hit, levels = c('Lit
   stat_summary(fun=mean, geom="point", aes(group = Bank_Location), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="red")+
   theme_bw(base_size = 16)+
   theme(axis.text.x=element_text(angle=45, hjust=1))+
-  scale_fill_brewer(palette = "BuGn")
+  scale_fill_brewer(palette = "BuGn", name = "Cover Type")+
+  theme(legend.position = "none")
 
 print(p)
 
@@ -387,7 +388,18 @@ p <- ggplot(df_stacked_baseline, aes(x = factor (baseline, level =c("B03", "B05"
 print(p)
 
 
+#Get some cover type means to report for HLC final report
+df_prop_hit_type_means <- df.prop_hit_type %>%
+  group_by(baseline, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type), sd = sd(prop_cover_type))
 
+View(df_prop_hit_type_means)
+
+df_prop_hit_type_means <- df.prop_hit_type %>%
+  group_by(Bank_Location, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type), sd = sd(prop_cover_type))
+
+View(df_prop_hit_type_means)
 
 ```
 
@@ -1118,7 +1130,7 @@ p + scale_x_discrete(labels = c("Smooth brome","Reed canary grass", "Quack grass
 
 df_commonSpp_bankLoc_means <- Common_species_FirstBout_long %>%
   group_by(Baseline, Location, variable) %>%
-  dplyr::summarise(Mean = mean(value))
+  dplyr::summarise(Mean = mean(value), sd = sd(value))
 
 View(df_commonSpp_bankLoc_means)
 
@@ -1197,6 +1209,13 @@ p + scale_x_discrete(labels = c("Smooth brome","Reed canary grass", "Quack grass
 #                             "Pr Fo Fac" = "darkgoldenrod4", "Pr Fo Up" = "darkgoldenrod2", "An Gr Up" = "gray71"))
 
 
+#Get some means for HLCC report
+
+df_commonSpp_bankLoc_means <- Common_species_FirstBout_long %>%
+  group_by(Location, variable) %>%
+  dplyr::summarise(Mean = mean(value), sd = sd(value))
+
+View(df_commonSpp_bankLoc_means)
 
   
 ```
@@ -1269,8 +1288,9 @@ df.props_FG_means <- df.props_FG %>%
 View(df.props_FG_means)
 
 #Now create new boxplot with baseline means
+#FOR HLCC REPORT
 
-p <- df.props_FG_means %>% ggplot(aes(x=factor(FunctionalGroup, levels = c('PG', 'PF', 'W', 'SLF', 'AG')), y=Mean))+
+p <- df.props_FG_means %>% ggplot(aes(x=factor(FunctionalGroup, levels = c('PG', 'PF', 'W', 'SLF', 'AG')), y=Mean, fill = FunctionalGroup))+
   geom_boxplot()+
   geom_point()+
   labs(x = "Functional Group", y = "Proportion Vegetation Cover")+
