@@ -172,6 +172,8 @@ seedbank <- read.csv("20220802_HLC_SB_Data_Final5.csv") #mac path
 
 aboveground <- read.csv("20201204_allHitsData_postQC_5.csv") #mac
 
+str(seedbank)
+distinct(seedbank, )
 
 #2. APPLY FILTERS
 
@@ -230,6 +232,12 @@ sim.matrix <- bind_rows(seedbank.sim[,c("Transect","Bank_Location","Species.Hit"
 ## adjust as needed for whatever analysis you're doing. Keep the first three columns as a data.frame (or tibble) because you'll need them for group arguments
 
 View(sim.matrix) #why 143 rows? should be 162? 81*2
+
+df <- seedbank %>% distinct(Org_trayID, Full_TrayID, Transect_ID, Bank_Location)
+View(df)
+
+df <- seedbank %>% distinct(Org_trayID, Full_TrayID, Transect_ID, Bank_Location)
+View(df) #change to code sim.matix
 ```
 
 ``` {r similarity next steps} 

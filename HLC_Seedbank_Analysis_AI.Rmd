@@ -18,6 +18,7 @@ library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(t
 
 seedbank <- read.csv("20220802_HLC_SB_Data_Final5.csv") #mac path
 
+
 #Turquoise path
 
 seedbank <- seedbank %>%
@@ -226,7 +227,8 @@ WIS_BL <- df_WIS_means_sb %>%
 print(WIS_BL)
 
 WIS_BL <- WIS_BL + facet_wrap(~Bank_Location) 
-print(WIS_BL)
+print(WIS_BL) 
+
 
 
 #Make stacked bar graph 
@@ -632,23 +634,21 @@ radarchart( data  , axistype=1 ,
 #10/31/22 I'm working on converting this code from the veg to work for the seed bank, which means renaming things, running a glmer rather than and lmer, and adding the poisson distribution. 
 #Need to run code in chunk above named "r graph WIS by bank location" that creates the data file df.props_WIS_seed
 #Create competing models
+#decided poisson won't work bc it is proportion. Will run in the same way as the veg data
 
-warnings()
+lmer_sb_null <- lmer(prop ~ 1 + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_sb1 <- lmer(prop ~ WIS + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed) #add in variation explained by WIS
+lmer_sb2 <- lmer(prop ~ WIS + Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed) #add in variation explained by bank location
+lmer_sb3 <- lmer(prop ~ WIS + Bank_Location + WIS*Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed) #add in interaction term
+lmer_sb4 <- lmer(prop ~ WIS + Bank_Location + WIS*Bank_Location + (1|Baseline), data = df.props_WIS_seed) #Remove random effect of transect within baseline
 
-df.props_WIS_seed$prop2 <- df.props_WIS_seed$prop *100
+AIC(lmer_sb_null, lmer_sb1,lmer_sb2,lmer_sb3, lmer_sb4) #code to run AIC; lowest number is best fit; typically considered that difference should be at least 2 to be considered a meaningful improvement of fit
+#why is AIC for null best for sb WIS?
 
-glmer_pois_null <- glmer(prop2 ~ 1 + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
-glmer_pois1 <- glmer(prop ~ WIS + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #add in variation explained by WIS
-glmer_pois2 <- glmer(prop ~ WIS + Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #add in variation explained by bank location
-glmer_pois3 <- glmer(prop ~ WIS + Bank_Location + WIS*Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #add in interaction term
-glmer_pois4 <- glmer(prop ~ WIS + Bank_Location + WIS*Bank_Location + (1|Baseline), data = df.props_WIS_seed, family = poisson(link = log)) #Remove random effect of transect within baseline
-
-AIC(lmer_gaus_null, lmer_gaus1,lmer_gaus2,lmer_gaus3, lmer_gaus4) #code to run AIC; lowest number is best fit; typically considered that difference should be at least 2 to be considered a meaningful improvement of fit
-
-summary(glmer_pois1) #Get model output
-summary(glmer_pois2) #Get model output
-summary(glmer_pois3) #Get model output
-summary(glmer_pois4) #Get model output
+summary(lmer_sb1) #Get model output
+summary(lmer_sb2) #Get model output
+summary(lmer_sb3) #Get model output
+summary(lmer_sb4) #Get model output
 
 
 #Different ways to visualize the distribution of the data; the raw data (distribution of y) is not normally distributed but the model fit
@@ -656,28 +656,28 @@ summary(glmer_pois4) #Get model output
 
 #Can also get the output for lines 599-603 below using sjPlot code 
 
-proportion_WIS_pois <- df.props_WIS_seed$prop #Histogram showing lots of zeroes, positive skew 
-hist(proportion_WIS_pois)
+proportion_WIS <- df.props_WIS_seed$prop #Histogram showing lots of zeroes, positive skew 
+hist(proportion_WIS)
 qqnorm(df.props_WIS_seed$prop) #use to visualize whether raw data are normally distributed
-qqnorm(resid(glmer_pois4))     #Use to visualize whether model residuals vs predicted are normally distributed
+qqnorm(resid(lmer_sb4))     #Use to visualize whether model residuals vs predicted are normally distributed
 plot(glmer_pois4)              #Use to visualize whether model residuals vs predicted are normally distributed
 
 
-#Choose lmer_gaus_upper4 based on AIC and run diagnostics, output, pairwise comparisons
+#Choose lmer_gaus_upper4 based on AIC and run diagnostics, output, pairwise comparisons (from veg code)
 
 #effectsize::standardize(lmer_gaus_upper2) %>% summary()
 #Diagnostics
-plot_residuals(glmer_pois4)
-plot_model(glmer_pois4, type = "diag")
-sjPlot::plot_model(glmer_pois4, type = "est", show.values = T)
+plot_residuals(lmer_sb4)
+plot_model(lmer_sb4, type = "diag")
+sjPlot::plot_model(lmer_sb4, type = "est", show.values = T)
 
 #creates table; information from the ANOVA
-sjPlot::tab_model(glmer_pois4, df.method = "satterthwaite", title = "Proportion WIS in Vegetation", dv.labels = "Proportion Cover")
+sjPlot::tab_model(lmer_sb4, df.method = "satterthwaite", title = "Proportion WIS in Vegetation", dv.labels = "Proportion Cover")
 
 #post hoc: tukey/ familywise error rate
-emmeans(glmer_pois4, df.method = "satterthwaite", pairwise ~ WIS | Bank_Location, adjust = "tukey")
-emmip(glmer_pois4, WIS ~ Bank_Location, CIs = TRUE)
-emmip(glmer_pois4, WIS ~ Bank_Location)
+emmeans(lmer_sb4, df.method = "satterthwaite", pairwise ~ WIS | Bank_Location, adjust = "tukey")
+emmip(lmer_sb4, WIS ~ Bank_Location, CIs = TRUE)
+emmip(lmer_sb4, WIS ~ Bank_Location)
 
 ```
 
@@ -687,13 +687,16 @@ emmip(glmer_pois4, WIS ~ Bank_Location)
 
 #Create competing models
 
-lmer_gaus_null <- glmer(prop ~ 1 + (1|Baseline) + (1|Transect:Baseline), data = df.props_nativity_sb) #intercept only, just models variation across baselines and transects, no accounting for variation explained by nativity
-lmer_gaus_native_1 <- glmer(prop ~ Nativity + (1|Baseline) + (1|Transect:Baseline), data = df.props_nativity_sb) #add in variation explained by nativity
-lmer_gaus_native_2 <- glmer(prop ~ Nativity + Bank_Location + (1|Baseline) + (1|Transect:Baseline), data = df.props_nativity_sb) #add in variation explained by bank location
-lmer_gaus_native_3 <- glmer(prop ~ Nativity + Bank_Location + Nativity*Bank_Location + (1|Transect:Baseline) + (1|Transect:baseline), data = df.props_nativity_sb) #add in interaction term
-lmer_gaus_native_4 <- glmer(prop ~ Nativity + Bank_Location + Nativity*Bank_Location + (1|Transect:Baseline), data = df.props_nativity_sb) #Remove random effect of transect within baseline
+lmer_gaus__native_null <- lmer(prop ~ 1 + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_nativity_sb) #intercept only, just models variation across baselines and transects, no accounting for variation explained by nativity
+lmer_gaus_native_1 <- lmer(prop ~ Nativity + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_nativity_sb) #add in variation explained by nativity
+lmer_gaus_native_2 <- lmer(prop ~ Nativity + Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_nativity_sb) #add in variation explained by bank location
+lmer_gaus_native_3 <- lmer(prop ~ Nativity + Bank_Location + Nativity*Bank_Location + (1|Transect_ID:Baseline) + (1|Transect_ID:Baseline), data = df.props_nativity_sb) #add in interaction term
+lmer_gaus_native_4 <- lmer(prop ~ Nativity + Bank_Location + Nativity*Bank_Location + (1|Transect_ID:Baseline), data = df.props_nativity_sb) #Remove random effect of transect within baseline
 
 AIC(lmer_gaus_native_1, lmer_gaus_native_2, lmer_gaus_native_3, lmer_gaus_native_4)
+#lmer_gau_native_4 has lowest AIC | variation explained by nativity, bank location, interaction; random effect of transect within baseline removed
+
+
 
 summary(lmer_gaus_native_1)
 summary(lmer_gaus_native_2)
@@ -703,9 +706,9 @@ summary(lmer_gaus_native_4)
 
 #Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
 
-proportion_Nativity_gauss <- df.props_Nativity_veg$prop #Histogram showing lots of zeroes and ones 
+proportion_Nativity_gauss <- df.props_nativity_sb$prop #Histogram showing lots of zeroes and ones 
 hist(proportion_Nativity_gauss)
-qqnorm(df.props_Nativity_veg$prop) #use to visualize whether raw data are normally distributed
+qqnorm(df.props_nativity_sb$prop) #use to visualize whether raw data are normally distributed
 qqnorm(resid(lmer_gaus_native_4))     #Use to visualize whether model residuals vs predicted are normally distributed
 plot(lmer_gaus_native_4)              #Use to visualize whether model residuals vs predicted are normally distributed
 
@@ -724,6 +727,7 @@ sjPlot::tab_model(lmer_gaus_native_4, df.method = "satterthwaite", title = "Prop
 
 emmeans(lmer_gaus_native_4, df.method = "satterthwaite", pairwise ~ Nativity | Bank_Location, adjust = "tukey")
 emmip(lmer_gaus_native_4, Nativity~ Bank_Location, CIs = TRUE)
+emmip(lmer_gaus_native_4, Nativity~ Bank_Location) #without CIs
 
 ```
 
@@ -732,12 +736,13 @@ emmip(lmer_gaus_native_4, Nativity~ Bank_Location, CIs = TRUE)
 #Need to run code in chunk above named "r graph functional groups by bank location" that creates the data file df.props_FG
 
 #Create competing models
+view(df.props_FunctGroup_seed)
 
-lmer_gaus_null <- lmer(propFG ~ 1 + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
-lmer_gaus_fg_1 <- lmer(propFG ~ FunctionalGroup + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
-lmer_gaus_fg_2 <- lmer(propFG ~ FunctionalGroup + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
-lmer_gaus_fg_3 <- lmer(propFG ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|Transect:baseline) + (1|Transect:baseline), data = df.props_FG)
-lmer_gaus_fg_4 <- lmer(propFG ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|baseline), data = df.props_FG)
+lmer_gaus_null <- lmer(prop ~ 1 + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
+lmer_gaus_fg_1 <- lmer(prop ~ Functional_Group_2 + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
+lmer_gaus_fg_2 <- lmer(prop ~ Functional_Group_2 + Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
+lmer_gaus_fg_3 <- lmer(prop ~ Functional_Group_2 + Bank_Location + Functional_Group_2*Bank_Location + (1|Transect_ID:Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
+lmer_gaus_fg_4 <- lmer(prop ~ Functional_Group_2 + Bank_Location + Functional_Group_2*Bank_Location + (1|Baseline), data = df.props_FunctGroup_seed)
 
 AIC(lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4)
 
@@ -749,14 +754,14 @@ summary(lmer_gaus_fg_4)
 
 #Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
 
-proportion_fg_gauss <- df.props_FG$propFG #Histogram showing lots of zeroes and ones 
+proportion_fg_gauss <- df.props_FunctGroup_seed$prop #Histogram showing lots of zeroes and ones 
 hist(proportion_fg_gauss)
-qqnorm(df.props_FG$propFG) #use to visualize whether raw data are normally distributed
+qqnorm(df.props_FunctGroup_seed$propFG) #use to visualize whether raw data are normally distributed
 qqnorm(resid(lmer_gaus_fg_4))     #Use to visualize whether model residuals vs predicted are normally distributed
 plot(lmer_gaus_fg_4)              #Use to visualize whether model residuals vs predicted are normally distributed
 
 
-#Choose lmer_gaus_fg_4 based on AIC and run diagnostics, output, pairwise comparisons
+#Choose ?
 
 #effectsize::standardize(lmer_gaus_upper2) %>% summary()
 plot_residuals(lmer_gaus_fg_4)
@@ -765,11 +770,13 @@ sjPlot::plot_model(lmer_gaus_fg_4, type = "est", show.values = T)
 
 sjPlot::tab_model(lmer_gaus_fg_4, df.method = "satterthwaite", title = "Proportion of Functional Groups in Vegetation", dv.labels = "Proportion Cover")
 
-emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup, adjust = "tukey")
+emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ Functional_Group_2, adjust = "tukey")
 
 
-emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup | Bank_Location, adjust = "tukey")
-emmip(lmer_gaus_fg_4, FunctionalGroup ~ Bank_Location, CIs = TRUE)
+emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ Functional_Group_2 | Bank_Location, adjust = "tukey")
+emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location, CIs = TRUE)
+emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location)
+
 ```
 
 
