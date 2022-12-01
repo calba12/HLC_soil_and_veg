@@ -176,11 +176,12 @@ str(seedbank)
 distinct(seedbank, )
 
 #2. APPLY FILTERS
-
+#below code is the code that is excluding 19 samples (rows in the matrix)
 seedbank.sim <- seedbank %>%
   # If you want to remove use not (!) when name contains sp., Unknown, or (|) cf. or if NA
   filter(!grepl("sp.|Unknown|cf.|NA",seedbank$SPECIFIC_EPITHET_FINAL), 
          !is.na(SPECIFIC_EPITHET_FINAL)) 
+view(seedbank.sim)
 
 aboveground.sim <- aboveground %>%
   filter(sample.bout == 1,  # only want the first sampling bout
