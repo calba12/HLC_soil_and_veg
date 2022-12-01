@@ -52,7 +52,9 @@ View(vegdf)
 
 #check species spellings
 
-df <- vegdf %>% distinct(VegHit_SoilSurfaceHit)
+df <- vegdf %>% distinct(Species.Hit) %>%
+  arrange(Species.Hit)
+
 View(df)
 
 #Check that all levels of data are present
@@ -90,7 +92,7 @@ View(df_Spp_bout1)
 
 #Whole-canal level: number of species hits by sample bout and hit number, includes foliar and ground first hits
 df.canal <- vegdf %>% 
-  group_by(sample.bout, Hit.Number) %>%
+  #group_by(sample.bout, Hit.Number) %>%
   summarise(Species.Hit = n()) 
 
 View(df.canal)
@@ -1246,7 +1248,7 @@ View(df.top_percent_veg)
 ```
 
 
-```{r graph functional groups by bank location}
+```{r graph functional groups}
 
 #Prepping data file for proportion as response variable
 
@@ -1334,6 +1336,20 @@ p <- ggplot(df.props_FG_stacked_baseline, aes(x = factor (baseline, level = c("B
 
 print(p)
 
+
+#Some additional stats for HLCC report
+
+df.props_FG_means <- df.props_FG %>%
+  group_by(baseline, FunctionalGroup) %>%
+  dplyr::summarise(Mean = mean(propFG), sd = sd(propFG))
+
+View(df.props_FG_means)
+
+df.props_FG_means <- df.props_FG %>%
+  group_by(Bank_Location, FunctionalGroup) %>%
+  dplyr::summarise(Mean = mean(propFG), sd = sd(propFG))
+
+View(df.props_FG_means)
 
 ```
 

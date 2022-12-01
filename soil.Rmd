@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r check data attach libraries rename transects and baselines}
 
-soil_forR <- read.csv("Q:\\Research\\Grants and Funding\\HighLineCanalConservancy_2019\\7_Project\\Stormwater\\Stats_in_R\\soil_forR.csv", header = TRUE, as.is = TRUE)
+soil_forR <- read.csv("Q:\\Research\\Grants and Funding\\HighLineCanalConservancy_2019\\7_Project\\Stormwater_MovedToQ_UseMe\\Data_Analysis\\soil\\Final_SoilData_20201006\\soil_forR.csv", header = TRUE, as.is = TRUE)
 
 head(soil_forR)
 str(soil_forR)
@@ -43,9 +43,6 @@ View(soil_forR)
 
 ```{r boxplots for organic matter}
 
-help(boxplot)
-attach(soil_forR)
-
 boxplot(per_om)
 quantile(per_om, probs=c(0, 0.25, 0.5, 0.75, 1))
 
@@ -63,6 +60,17 @@ soil_forR %>%
 max(soil_forR$per_om)
 min(soil_forR$per_om)
 
+summary <- soil_forR %>%
+  group_by(location) %>%
+  dplyr::summarise(Mean = mean(per_om), sd = sd(per_om))
+
+View(summary)
+
+summary <- soil_forR %>%
+  group_by(baseline) %>%
+  dplyr::summarise(Mean = mean(per_om), sd = sd(per_om))
+
+View(summary)
 
 #r add data points to boxplot of OM by bank location
 
@@ -94,29 +102,19 @@ soil_forR %>% ggplot(aes(x=location, y=per_om))+
   labs(x = "Bank location", y = "Soil organic matter (%)")+
   theme_bw(base_size=16)
 
-#FOR HLC REPORT
+#FOR HLCC REPORT
 #change width of boxes and add axis labels with NO jitter
 soil_forR %>% ggplot(aes(x=location, y=per_om))+
   geom_boxplot(width = 0.5)+
+  geom_point() +
   stat_summary(fun=mean, geom="point", shape=20, size=3, color="orange", fill="orange")+
   labs(x = "Bank location", y = "Soil Organic Matter (%)")+
   theme_bw(base_size=16)
 
-
-#boxplot of OM by baseline transect with reorder function enabled and with jitter
-
-
-#soil_forR %>% ggplot(aes(x=baseline, y=per_om)) +
-  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,per_om, mean), y=per_om))+ 
-  geom_boxplot(width = 0.5)+
-  geom_jitter(alpha = 0.6, width = 0.15)+
-  stat_summary(fun=mean, geom="point", shape=20, size=3, color="red", fill="red")+
-  labs(x = "Transect ID", y = "Soil organic matter (%)")+
-  theme_bw(base_size=16)
   
-  
-#boxplot of OM by baseline transect with reorder function enabled descending and NO jitter  
-  soil_forR %>% ggplot(aes(x=fct_reorder(baseline,-per_om, mean), y=per_om))+ 
+#FOR HLCC REPORT  
+#boxplot of OM by baseline 
+  soil_forR %>% ggplot(aes(x=baseline, y=per_om))+ 
   geom_boxplot(width = 0.5)+
   geom_point() +
   stat_summary(fun=mean, geom="point", shape=20, size=3, color="orange", fill="orange")+
@@ -130,8 +128,8 @@ soil_forR %>% ggplot(aes(x=location, y=per_om))+
   geom_boxplot(width = 0.5)+
   geom_point() +
   stat_summary(fun=mean, geom="point", shape=20, size=3, color="orange", fill="orange")+
-  labs(x = "Baseline ID", y = "Soil Organic Matter (%)")+
-  theme_bw(base_size=16) 
+  labs(x = "Baseline", y = "Soil Organic Matter (%)")+
+  theme_bw(base_size=20)
 
 
 #boxplot of OM by baseline with bank location by color
@@ -158,7 +156,6 @@ soil_forR %>%
   group_by(baseline) %>%
   get_summary_stats(per_om, type = "mean_se")
 
-attach(soil_forR)
 
 #Basic bar plot of means +/- SE by bank location, points jittered
 ggbarplot(soil_forR, x = "location", y = "per_om", width = 0.5,
@@ -191,6 +188,13 @@ ggbarplot(soil_forR, x = "baseline", y = "per_om",
 ```
 
 ```{r soil texture and SOM triangle}
+
+#Count texture classes
+
+texture_count <- soil_forR %>% 
+  group_by(texture) %>%
+  summarise(texture = n()) 
+View(texture_count)
 
 #display an empty triangle
 TT.plot(class.sys = "none")
@@ -363,8 +367,6 @@ soil_forR %>% ggplot(aes(x=location, y=ph)) +
 
 ```{r boxplots of nitrate}
 
-attach(soil_forR)
-
 #add data points w/o jitter for bank location
 
 soil_forR %>% ggplot(aes(x=location, y=no3_n)) +
@@ -494,13 +496,20 @@ soil_forR %>% ggplot(aes(x=baseline, y=ec)) +
   labs(x = "Baseline Transect ID", y = "Electrical conductivity (mmhos/cm)", color = "Bank location")+
   theme_bw(base_size=16)
 
+  
+#FOR HLCC report
+  
+  soil_forR %>% ggplot(aes(x=baseline, y=ec))+ 
+  geom_boxplot(width = 0.5)+
+  geom_point() +
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="orange", fill="orange")+
+  labs(x = "Baseline", y = "Electrical conductivity (mmhos/cm)")+
+  theme_bw(base_size=20)
+  
+  
 ```
 
 ```{r boxplots of P}
-
-attach(soil_forR)
-library(tidyverse)
-library(ggplot2)
 
 #add data points w/o jitter for bank location
 
@@ -567,10 +576,6 @@ soil_forR %>% ggplot(aes(x=baseline, y=p)) +
 ```
 
 ```{r boxplots of K}
-
-attach(soil_forR)
-library(tidyverse)
-library(ggplot2)
 
 #add data points w/o jitter for bank location
 
@@ -870,6 +875,13 @@ soil_forR %>%
   group_by(baseline) %>%
   get_summary_stats(bulkden, type = "mean_se")
 
+summary <- soil_forR %>%
+  group_by(location) %>%
+  dplyr::summarise(Mean = mean(bulkden), sd = sd(bulkden))
+
+View(summary)
+
+#Starting plots
 soil_forR %>% ggplot(aes(x=location, y=bulkden)) +
   geom_boxplot()+
   geom_point()+
@@ -934,13 +946,20 @@ soil_forR %>% ggplot(aes(x=fct_reorder(baseline, bulkden, mean), y=bulkden))+
   stat_summary(fun=mean, geom="point", shape=20, size=3, color="black", fill="black")+
   labs(x = "Transect ID", y = "Bulk density", color = "Bank location")+
   theme_bw(base_size=16)
+  
+#FOR HLCC REPORT  
+#boxplot of bulk density by baseline 
+  soil_forR %>% ggplot(aes(x=baseline, y=bulkden))+ 
+  geom_boxplot(width = 0.5)+
+  geom_point() +
+  stat_summary(fun=mean, geom="point", shape=20, size=3, color="orange", fill="orange")+
+  labs(x = "Baseline", y = "Bulk Density g/cm3 ")+
+  theme_bw(base_size=20) 
+  
 
 ```
 
 ```{r regressions/correlations percent OM against macronutrients}
-
-attach(soil_forR)
-library(ggpubr)
 
 #scatter.smooth(x=ph, y=ec, main="ph ~ ec")
 #scatter.smooth(x=ph, y=p, main="ph ~ p")
