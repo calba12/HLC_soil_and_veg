@@ -163,7 +163,7 @@ species.wide <- bind_rows(seedbank[,c("Transect","Bank_Location","Species.Hit","
 
 ```
 
-Chrissy START HERE 
+ START HERE 
 ```{r similarity data wrangling_START HERE}
 # 1.  READ 
 

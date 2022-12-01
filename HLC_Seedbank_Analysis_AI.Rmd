@@ -670,6 +670,7 @@ plot(glmer_pois4)              #Use to visualize whether model residuals vs pred
 plot_residuals(lmer_sb4)
 plot_model(lmer_sb4, type = "diag")
 sjPlot::plot_model(lmer_sb4, type = "est", show.values = T)
+#explaination for the top one, these are estimates WIS FACU : -.07, meaning that facultative upland spp have 7% less cover than facultative species, across all bank locations, but that diff is not significant because no star (indicating p value)
 
 #creates table; information from the ANOVA
 sjPlot::tab_model(lmer_sb4, df.method = "satterthwaite", title = "Proportion WIS in Vegetation", dv.labels = "Proportion Cover")
