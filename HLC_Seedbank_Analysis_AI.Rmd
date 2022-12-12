@@ -188,7 +188,7 @@ df_WIS_means_sb <- df.props_WIS_seed %>%
   group_by(Baseline, Bank_Location, WIS) %>%
   dplyr::summarise(Mean = mean(prop))
 
-View(df_WIS_means_sb)
+#View(df_WIS_means_sb)
 
 #get the means again but average bank location as well
 df_WIS_means_sb2 <- df.props_WIS_seed %>%
@@ -298,7 +298,7 @@ df_FGroup_means <- df.props_FunctGroup_seed %>%
 df_FGroup_means_sb2 <- df.props_FunctGroup_seed %>%
   group_by(Baseline, Functional_Group_2) %>%
   dplyr::summarise(Mean = mean(prop))
-View(df_FGroup_means_sb2)
+#View(df_FGroup_means_sb2)
 
 #boxplot without bank location
 FGroup1 <- df_FGroup_means_sb2 %>% 
@@ -629,9 +629,7 @@ radarchart( data  , axistype=1 ,
 
 
 
-#copied 10/31 from CA veg --> work to apply to SB; use g and Poisson distribution
 ```{r stats for WIS with WIS and bank location interaction}
-#10/31/22 I'm working on converting this code from the veg to work for the seed bank, which means renaming things, running a glmer rather than and lmer, and adding the poisson distribution. 
 #Need to run code in chunk above named "r graph WIS by bank location" that creates the data file df.props_WIS_seed
 #Create competing models
 #decided poisson won't work bc it is proportion. Will run in the same way as the veg data
@@ -643,7 +641,7 @@ lmer_sb3 <- lmer(prop ~ WIS + Bank_Location + WIS*Bank_Location + (1|Baseline) +
 lmer_sb4 <- lmer(prop ~ WIS + Bank_Location + WIS*Bank_Location + (1|Baseline), data = df.props_WIS_seed) #Remove random effect of transect within baseline
 
 AIC(lmer_sb_null, lmer_sb1,lmer_sb2,lmer_sb3, lmer_sb4) #code to run AIC; lowest number is best fit; typically considered that difference should be at least 2 to be considered a meaningful improvement of fit
-#why is AIC for null best for sb WIS?
+#why is AIC for null best for sb WIS? --> due to AIC penalizing adding variables, we can use biological knowledge to override 
 
 summary(lmer_sb1) #Get model output
 summary(lmer_sb2) #Get model output
@@ -675,8 +673,14 @@ sjPlot::plot_model(lmer_sb4, type = "est", show.values = T)
 #creates table; information from the ANOVA
 sjPlot::tab_model(lmer_sb4, df.method = "satterthwaite", title = "Proportion WIS in Vegetation", dv.labels = "Proportion Cover")
 
+
 #post hoc: tukey/ familywise error rate
 emmeans(lmer_sb4, df.method = "satterthwaite", pairwise ~ WIS | Bank_Location, adjust = "tukey")
+
+#export
+WIS_emmeans_output_SB<-as.data.frame(emmeans(lmer_sb4, df.method = "satterthwaite", pairwise ~ WIS | Bank_Location, adjust = "tukey")) #data frame
+write_xlsx(WIS_emmeans_output_SB, 'WIS_emmeans_output_SB.xlsx')
+
 emmip(lmer_sb4, WIS ~ Bank_Location, CIs = TRUE)
 emmip(lmer_sb4, WIS ~ Bank_Location)
 
@@ -727,6 +731,10 @@ sjPlot::plot_model(lmer_gaus_native_4, type = "est", show.values = T)
 sjPlot::tab_model(lmer_gaus_native_4, df.method = "satterthwaite", title = "Proportion Native and Introduced in Vegetation", dv.labels = "Proportion Cover")
 
 emmeans(lmer_gaus_native_4, df.method = "satterthwaite", pairwise ~ Nativity | Bank_Location, adjust = "tukey")
+
+nativ_emmeans_output_SB<-as.data.frame(emmeans(lmer_gaus_native_4, df.method = "satterthwaite", pairwise ~ Nativity | Bank_Location, adjust = "tukey")) #data frame
+write_xlsx(nativ_emmeans_output_SB, 'nativ_emmeans_output_SB.xlsx')
+
 emmip(lmer_gaus_native_4, Nativity~ Bank_Location, CIs = TRUE)
 emmip(lmer_gaus_native_4, Nativity~ Bank_Location) #without CIs
 
@@ -745,7 +753,7 @@ lmer_gaus_fg_2 <- lmer(prop ~ Functional_Group_2 + Bank_Location + (1|Baseline) 
 lmer_gaus_fg_3 <- lmer(prop ~ Functional_Group_2 + Bank_Location + Functional_Group_2*Bank_Location + (1|Transect_ID:Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
 lmer_gaus_fg_4 <- lmer(prop ~ Functional_Group_2 + Bank_Location + Functional_Group_2*Bank_Location + (1|Baseline), data = df.props_FunctGroup_seed)
 
-AIC(lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4)
+AIC(lmer_gaus_null, lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4)
 
 summary(lmer_gaus_fg_1)
 summary(lmer_gaus_fg_2)
@@ -762,7 +770,6 @@ qqnorm(resid(lmer_gaus_fg_4))     #Use to visualize whether model residuals vs p
 plot(lmer_gaus_fg_4)              #Use to visualize whether model residuals vs predicted are normally distributed
 
 
-#Choose ?
 
 #effectsize::standardize(lmer_gaus_upper2) %>% summary()
 plot_residuals(lmer_gaus_fg_4)
@@ -775,6 +782,11 @@ emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ Functional_Group
 
 
 emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ Functional_Group_2 | Bank_Location, adjust = "tukey")
+
+FG_emmeans_output_SB<-as.data.frame(emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ Functional_Group_2 | Bank_Location, adjust = "tukey")) #data frame
+write_xlsx(FG_emmeans_output_SB, 'FG_emmeans_output_SB.xlsx')
+
+
 emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location, CIs = TRUE)
 emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location)
 

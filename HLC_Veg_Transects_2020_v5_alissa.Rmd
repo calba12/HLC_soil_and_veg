@@ -122,7 +122,7 @@ df.canal <- vegdf_bout1 %>%
   summarise(Species.Hit = n()) 
 
 View(df.canal)
-write_xlsx(df.canal, 'hits_byCanal.xlsx')
+#write_xlsx(df.canal, 'hits_byCanal.xlsx')
 
 #Baseline level: number of species hits by sample bout and hit number, includes foliar and ground first hits
 df.baseline <- vegdf_bout1 %>% 
@@ -611,14 +611,14 @@ View(df.props_FG_veg)
 #get the means across transect (transected is nested within baseline as replication)
 df_FG_means_veg <- df.props_FG_veg %>%
   group_by(baseline, Bank_Location, FunctionalGroup2) %>%
-  dplyr::summarise(Mean = mean(prop))
+  dplyr::summarise(Mean = mean(propFG))
 
 #View(df_FG_means_veg)
 
 #get the means again but average bank location as well
 df_FG_means_veg2 <- df.props_FG_veg %>%
   group_by(baseline, FunctionalGroup2) %>%
-  dplyr::summarise(Mean = mean(prop))
+  dplyr::summarise(Mean = mean(propFG))
 
 View(df_FG_means_veg2)
 
@@ -937,6 +937,10 @@ sjPlot::tab_model(lmer_gaus4, df.method = "satterthwaite", title = "Proportion W
 emmeans(lmer_gaus4, df.method = "satterthwaite", pairwise ~ WIS_GP | Bank_Location, adjust = "tukey") #this first part is what I would use to report in summary table; to build table off of this
 #emmean is essentially the same as estimate
 
+#export
+WIS_emmeans_output<-as.data.frame(emmeans(lmer_gaus4, df.method = "satterthwaite", pairwise ~ WIS_GP | Bank_Location, adjust = "tukey")) #data frame
+write_xlsx(WIS_emmeans_output, 'WIS_emmeans_output.xlsx')
+
 #second part (contrasts), pay attn to what is significant; pick and choose from the significant ones, the ones that are BIOLOGICALLY meaningful
 #when i decide which ones I care about, that is what goes into the text; would not be a table for this
 
@@ -991,10 +995,15 @@ sjPlot::plot_model(lmer_gaus_native_4, type = "est", show.values = T)
 sjPlot::tab_model(lmer_gaus_native_4, df.method = "satterthwaite", title = "Proportion Native and Introduced in Vegetation", dv.labels = "Proportion Cover")
 
 emmeans(lmer_gaus_native_4, df.method = "satterthwaite", pairwise ~ Nativity | Bank_Location, adjust = "tukey")
+
+#export
+nativ_emmeans_output<-as.data.frame(emmeans(lmer_gaus_native_4, df.method = "satterthwaite", pairwise ~ Nativity | Bank_Location, adjust = "tukey")) #data frame
+write_xlsx(nativ_emmeans_output, 'nativ_emmeans_output.xlsx')
+
 emmip(lmer_gaus_native_4, Nativity~ Bank_Location, CIs = TRUE)
 
 ```
-#issue with fg AIC
+
 ```{r stats for functional group by bank location interaction}
 
 #Need to run code in chunk above named "r graph functional groups by bank location" that creates the data file df.props_FG
@@ -1033,8 +1042,11 @@ sjPlot::plot_model(lmer_gaus_fg_4, type = "est", show.values = T)
 
 sjPlot::tab_model(lmer_gaus_fg_4, df.method = "satterthwaite", title = "Proportion of Functional Groups in Vegetation", dv.labels = "Proportion Cover")
 
-emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup, adjust = "tukey")
+emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup2 | Bank_Location, adjust = "tukey")
 
+#export
+FG_emmeans_output<-as.data.frame(emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup2 | Bank_Location, adjust = "tukey")) #data frame
+write_xlsx(FG_emmeans_output, 'FG_emmeans_output.xlsx')
 
 emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup | Bank_Location, adjust = "tukey")
 emmip(lmer_gaus_fg_4, FunctionalGroup ~ Bank_Location, CIs = TRUE)
