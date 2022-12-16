@@ -841,17 +841,22 @@ summary(lmer_sb2) #Get model output
 summary(lmer_sb3) #Get model output
 summary(lmer_sb4) #Get model output
 
-#CODE BELOW THIS POINT STILL NEEDS TO BE FIXED
+WISG_SB_model_summary<-as.data.frame(coef(summary(lmer_sb4))) #put coefficients into dataframe
+
+write.csv(WISG_SB_model_summary, 'WIS_G_SB_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
+
+#Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
+
 #Different ways to visualize the distribution of the data; the raw data (distribution of y) is not normally distributed but the model fit
 #(with y conditional on x) looks decent (although still violates normality) based on qqplot and distribution of fitted versus residuals
 
 #Can also get the output for lines 599-603 below using sjPlot code 
 
-proportion_WIS <- df.props_WIS_seed$prop #Histogram showing lots of zeroes, positive skew 
+proportion_WIS <- df.props_WIS_seed_grouped$prop #Histogram showing lots of zeroes, positive skew 
 hist(proportion_WIS)
-qqnorm(df.props_WIS_seed$prop) #use to visualize whether raw data are normally distributed
+qqnorm(df.props_WIS_seed_grouped$prop) #use to visualize whether raw data are normally distributed
 qqnorm(resid(lmer_sb4))     #Use to visualize whether model residuals vs predicted are normally distributed
-plot(glmer_pois4)              #Use to visualize whether model residuals vs predicted are normally distributed
+plot(lmer_sb4)              #Use to visualize whether model residuals vs predicted are normally distributed
 
 
 #Choose lmer_gaus_upper4 based on AIC and run diagnostics, output, pairwise comparisons (from veg code)
@@ -871,11 +876,11 @@ sjPlot::tab_model(lmer_sb4, df.method = "satterthwaite", title = "Proportion WIS
 emmeans(lmer_sb4, df.method = "satterthwaite", pairwise ~ WIS | Bank_Location, adjust = "tukey")
 
 #export
-WIS_emmeans_output_SB<-as.data.frame(emmeans(lmer_sb4, df.method = "satterthwaite", pairwise ~ WIS | Bank_Location, adjust = "tukey")) #data frame
+WIS_emmeans_output_SB<-as.data.frame(emmeans(lmer_sb4, df.method = "satterthwaite", pairwise ~ WIS_Grouped | Bank_Location, adjust = "tukey")) #data frame
 write_xlsx(WIS_emmeans_output_SB, 'WIS_emmeans_output_SB.xlsx')
 
-emmip(lmer_sb4, WIS ~ Bank_Location, CIs = TRUE)
-emmip(lmer_sb4, WIS ~ Bank_Location)
+emmip(lmer_sb4, WIS_Grouped ~ Bank_Location, CIs = TRUE)
+emmip(lmer_sb4, WIS_Grouped ~ Bank_Location)
 
 ```
 
