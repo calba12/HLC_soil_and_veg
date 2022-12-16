@@ -10,6 +10,8 @@ output: html_document
 
 library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(tidytext);
 library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2); library(sjPlot); library(emmeans)
+library(lmerTest)
+
 
 #Bring in raw data file
 #veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
@@ -903,7 +905,12 @@ summary(lmer_gaus2) #Get model output
 summary(lmer_gaus3) #Get model output
 summary(lmer_gaus4) #Get model output
 
+WIS_veg_model_summary<-as.data.frame(coef(summary(lmer_gaus4))) #put coefficients into dataframe
 
+write.csv(WIS_veg_model_summary, 'WIS_veg_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
+
+
+library(lmerTest)
 #Different ways to visualize the distribution of the data; the raw data (distribution of y) is not normally distributed but the model fit
 #(with y conditional on x) looks decent (although still violates normality) based on qqplot and distribution of fitted versus residuals
 
@@ -973,6 +980,11 @@ summary(lmer_gaus_native_3)
 summary(lmer_gaus_native_4)
 
 
+N_veg_model_summary<-as.data.frame(coef(summary(lmer_gaus_native_4))) #put coefficients into dataframe
+
+write.csv(N_veg_model_summary, 'N_veg_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
+
+
 #Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
 
 proportion_Nativity_gauss <- df.props_Nativity_veg$prop #Histogram showing lots of zeroes and ones 
@@ -1016,13 +1028,16 @@ lmer_gaus_fg_2 <- lmer(propFG ~ FunctionalGroup2 + Bank_Location + (1|baseline) 
 lmer_gaus_fg_3 <- lmer(propFG ~ FunctionalGroup2 + Bank_Location + FunctionalGroup2*Bank_Location + (1|Transect:baseline) + (1|Transect:baseline), data = df.props_FG_veg)
 lmer_gaus_fg_4 <- lmer(propFG ~ FunctionalGroup2 + Bank_Location + FunctionalGroup2*Bank_Location + (1|baseline), data = df.props_FG_veg)
 
-AIC(lmer_gaus_null, lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4) #something is wrong fg_1 shouldn't have the lowest AIC
+AIC(lmer_gaus_null, lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4) 
 
 summary(lmer_gaus_fg_1)
 summary(lmer_gaus_fg_2)
 summary(lmer_gaus_fg_3)
-summary(lmer_gaus_fg_4)
+summary(lmer_gaus_fg_4) #using this model even though AIC isn't lowest
 
+FG_veg_model_summary<-as.data.frame(coef(summary(lmer_gaus_fg_4))) #put coefficients into dataframe
+
+write.csv(FG_veg_model_summary, 'FG_veg_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
 
 #Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
 
