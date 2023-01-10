@@ -907,7 +907,7 @@ summary(lmer_gaus4) #Get model output
 
 WIS_veg_model_summary<-as.data.frame(coef(summary(lmer_gaus4))) #put coefficients into dataframe
 
-write.csv(WIS_veg_model_summary, 'WIS_veg_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
+#write.csv(WIS_veg_model_summary, 'WIS_veg_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
 
 
 library(lmerTest)
@@ -954,6 +954,12 @@ write_xlsx(WIS_emmeans_output, 'WIS_emmeans_output.xlsx')
 emmip(lmer_gaus4, WIS_GP ~ Bank_Location, CIs = TRUE) #graph of interaction between bank location and WIS #need to have CI's for the thesis--> how can i make it look better? #work on aesthetics
 emmip(lmer_gaus4, WIS_GP ~ Bank_Location) #graph of interaction between bank location and WIS #might be better to show w/out CI for talk
 #y axis: proportional cover, model fitted estimate of that; prop of 5 diff groups depends on bank location; lines connecting them is showing interaction
+
+#customizations
+emmip(lmer_gaus4, WIS_GP ~ Bank_Location, CIs = TRUE, linearg = list(),
+      CIarg = list(lwd = 1, alpha = 1)) +
+  ggplot2::theme_bw()
+
 
 as.data.frame(df_emmeans) #not sure if this works 
 view(df_emmeans)

@@ -688,6 +688,11 @@ write_xlsx(WIS_emmeans_output_SB, 'WIS_emmeans_output_SB.xlsx')
 emmip(lmer_sb4, WIS ~ Bank_Location, CIs = TRUE)
 emmip(lmer_sb4, WIS ~ Bank_Location)
 
+#customizations
+emmip(lmer_sb4, WIS ~ Bank_Location, CIs = TRUE, linearg = list(),
+      CIarg = list(lwd = 1, alpha = 1)) +
+  ggplot2::theme_bw()
+
 ```
 
 ```{r nativity stats with nativity and bank location interaction}
