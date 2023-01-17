@@ -1,0 +1,28 @@
+VegHit_SoilSurfaceHit,Longevity,Habit,WIS_GP,Nativity,Freq2,prop
+Ambrosia trifida,Annual,Forb,FAC,Native,3,0.020408163
+Apocynum cannabinum,Perennial,Forb,FAC,Native,1,0.006802721
+Bromus inermis,Perennial,Graminoid,UPL,Introduced,7,0.047619048
+Carex emoryi,Perennial,Graminoid,OBL,Native,14,0.095238095
+Carex sp.,Perennial,Graminoid,,Native,1,0.006802721
+Celtis occidentalis,Perennial,Woody,FACU,Introduced,1,0.006802721
+Cirsium arvense,Perennial,Forb,FACU,Introduced,3,0.020408163
+Convolvulus arvensis,Perennial,Forb,UPL,Introduced,1,0.006802721
+Dactylis glomerata,Perennial,Graminoid,FACU,Introduced,3,0.020408163
+Elymus repens,Perennial,Graminoid,FACU,Introduced,2,0.013605442
+Fraxinus pennsylvanica,Perennial,Woody,FAC,Native,1,0.006802721
+Lactuca serriola,Variable,Forb,FAC,Introduced,3,0.020408163
+Parthenocissus vitacea,Perennial,Woody,FAC,Native,1,0.006802721
+Persicaria sp.,Perennial,Forb,FACW,,5,0.034013605
+Phalaris arundinacea,Perennial,Graminoid,FACW,Native,66,0.448979592
+Plantago major,Perennial,Forb,FAC,Introduced,1,0.006802721
+Rhamnus cathartica,Perennial,Woody,FACU,Introduced,5,0.034013605
+Sagittaria sp.,Perennial,Forb,OBL,Native,2,0.013605442
+Schedonorus arundinaceus,Perennial,Graminoid,FACU,Introduced,6,0.040816327
+Schoenoplectus tabernaemontani,Perennial,Graminoid,OBL,Native,1,0.006802721
+Symphoricarpos occidentalis,Perennial,Woody,UPL,Native,1,0.006802721
+Symphyotrichum lanceolatum ssp. hesperium,Perennial,Forb,FACW,Native,4,0.027210884
+Taraxacum officinale,Perennial,Forb,FACU,Introduced,4,0.027210884
+Typha angustifolia,Perennial,Forb,OBL,Native,4,0.027210884
+Typha latifolia,Perennial,Forb,OBL,Native,4,0.027210884
+Ulmus pumila,Perennial,Woody,UPL,Introduced,2,0.013605442
+Verbascum thapsus,Variable,Forb,UPL,Introduced,1,0.006802721

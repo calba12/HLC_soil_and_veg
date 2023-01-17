@@ -63,7 +63,7 @@ df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
   select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS)
 
 view(df_Spp)
-write_xlsx(df_Spp, 'SB_SppList.xlsx')
+#write_xlsx(df_Spp, 'SB_SppList.xlsx')
 
 
 ```
@@ -92,14 +92,101 @@ sum(SB_Spp_prop_tbl$Freq2)
 #merge with veg prop data
 
 #veg_prop_tbl <- read.csv("./Veg_SppList_Prop4_AI08202022.csv")
-veg_prop_tbl <- read.csv("./AG_SppList_proportions.csv")
+veg_prop_tbl <- read.csv("AG_SppList_proportions_2023.csv")
+#^need to update with new AG file 1/17/23
 
 merged_spp_prop <- merge(veg_prop_tbl, SB_Spp_prop_tbl, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS_GP", "Nativity"), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity"), all.x =TRUE, all.y = TRUE)
 
 view(merged_spp_prop)
 
-#write_xlsx(merged_spp_prop, 'merged_SppList_Prop.xlsx')
+write_xlsx(merged_spp_prop, 'merged_SppList_Prop_2023.xlsx')
 
+
+#Merged but seperated by Bank Location
+#Lower
+SB_Spp_tbl_Lower <- seedbankdf %>%
+  filter(Bank_Location == "Lower") %>%
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS)%>% 
+  group_by(Species_Name, Longevity_1, Habit, Nativity, WIS) %>%
+  summarise(Freq2 = n())
+view(SB_Spp_tbl_Lower)
+
+SB_Spp_prop_tbl_Lower <- SB_Spp_tbl_Lower %>%
+  drop_na(Species_Name) %>%
+  mutate(prop = Freq2/sum(SB_Spp_tbl_Lower$Freq2))
+
+view(SB_Spp_prop_tbl_Lower)
+sum(SB_Spp_prop_tbl_Lower$Freq2)
+#write_xlsx(SB_Spp_prop_tbl, 'SB_SppList_Proportions.xlsx')
+
+#merge with veg prop data, lower
+
+veg_prop_tbl_lower <- read.csv("AG_SppList_proportions_Lower.csv")
+view(veg_prop_tbl_lower)
+
+
+merged_spp_prop_lower <- merge(veg_prop_tbl_lower, SB_Spp_prop_tbl_Lower, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS_GP", "Nativity"), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity"), all.x =TRUE, all.y = TRUE)
+
+view(merged_spp_prop_lower)
+
+write_xlsx(merged_spp_prop_lower, 'merged_SppList_Prop_lower.xlsx')
+
+#Middle
+SB_Spp_tbl_Middle <- seedbankdf %>%
+  filter(Bank_Location == "Middle") %>%
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS)%>% 
+  group_by(Species_Name, Longevity_1, Habit, Nativity, WIS) %>%
+  summarise(Freq2 = n())
+view(SB_Spp_tbl_Middle)
+
+SB_Spp_prop_tbl_Middle <- SB_Spp_tbl_Middle %>%
+  drop_na(Species_Name) %>%
+  mutate(prop = Freq2/sum(SB_Spp_tbl_Middle$Freq2))
+
+view(SB_Spp_prop_tbl_Middle)
+sum(SB_Spp_prop_tbl_Middle$Freq2)
+#write_xlsx(SB_Spp_prop_tbl, 'SB_SppList_Proportions.xlsx')
+
+#merge with veg prop data, middle
+
+veg_prop_tbl_middle <- read.csv("AG_SppList_proportions_middle.csv")
+view(veg_prop_tbl_middle)
+
+
+merged_spp_prop_middle <- merge(veg_prop_tbl_middle, SB_Spp_prop_tbl_Middle, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS_GP", "Nativity"), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity"), all.x =TRUE, all.y = TRUE)
+
+view(merged_spp_prop_middle)
+
+write_xlsx(merged_spp_prop_middle, 'merged_SppList_Prop_middle.xlsx')
+
+
+#Upper
+SB_Spp_tbl_Upper <- seedbankdf %>%
+  filter(Bank_Location == "Upper") %>%
+  select(Species_Name, Longevity_1, Habit, Nativity, WIS)%>% 
+  group_by(Species_Name, Longevity_1, Habit, Nativity, WIS) %>%
+  summarise(Freq2 = n())
+view(SB_Spp_tbl_Upper)
+
+SB_Spp_prop_tbl_Upper <- SB_Spp_tbl_Upper %>%
+  drop_na(Species_Name) %>%
+  mutate(prop = Freq2/sum(SB_Spp_tbl_Upper$Freq2))
+
+view(SB_Spp_prop_tbl_Middle)
+sum(SB_Spp_prop_tbl_Middle$Freq2)
+#write_xlsx(SB_Spp_prop_tbl, 'SB_SppList_Proportions.xlsx')
+
+#merge with veg prop data, upper
+
+veg_prop_tbl_upper <- read.csv("AG_SppList_proportions_Upper.csv")
+view(veg_prop_tbl_upper)
+
+
+merged_spp_prop_upper <- merge(veg_prop_tbl_upper, SB_Spp_prop_tbl_Upper, by.x = c("VegHit_SoilSurfaceHit", "Longevity", "Habit", "WIS_GP", "Nativity"), by.y = c("Species_Name", "Longevity_1", "Habit", "WIS", "Nativity"), all.x =TRUE, all.y = TRUE)
+
+view(merged_spp_prop_upper)
+
+write_xlsx(merged_spp_prop_middle, 'merged_SppList_Prop_upper.xlsx')
 
 ```
 

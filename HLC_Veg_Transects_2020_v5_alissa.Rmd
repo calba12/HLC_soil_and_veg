@@ -34,10 +34,10 @@ veg <- veg %>%
 #$ after name makes it specific so that it isn't correcting to 'Carex sp. emoryi', for example
 veg_sp <- data.frame(veg)
 
-veg_sp$VegHit_SoilSurfaceHit<-veg_sp$VegHit_SoilSurfaceHit %>% 
+veg$VegHit_SoilSurfaceHit<-veg_sp$VegHit_SoilSurfaceHit %>% 
   str_replace_all(c('Carex$'='Carex sp.','Persicaria$'='Persicaria sp.','Rosa$'='Rosa sp.','Sagittaria$'='Sagittaria sp.', 'Bidens$'='Bidens sp.', 'Tilia$'='Tilia sp.', 'Asclepias$'='Asclepias sp.', 'Chenopodium$'='Chenopodium sp.', 'Poa$'='Poa sp.'))
 
-veg_sp$Species.Hit <-veg_sp$Species.Hit %>% 
+veg$Species.Hit <-veg_sp$Species.Hit %>% 
   str_replace_all(c('Carex$'='Carex sp.','Persicaria$'='Persicaria sp.','Rosa$'='Rosa sp.','Sagittaria$'='Sagittaria sp.','Bidens$'='Bidens sp.', 'Tilia$'='Tilia sp.', 'Asclepias$'='Asclepias sp.', 'Chenopodium$'='Chenopodium sp.', 'Poa$'='Poa sp.'))
 
 #change sample bout to a factor
@@ -102,15 +102,63 @@ Spp_count_tbl <- vegdf_bout1 %>%
   group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity) %>%
   summarise(Freq2 = n()) %>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
-         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL")
 
 
 Spp_prop_tbl <- Spp_count_tbl %>% 
   mutate(prop = Freq2/sum(Spp_count_tbl$Freq2))
 
-#view(Spp_prop_tbl)
+view(Spp_prop_tbl)
 sum(Spp_count_tbl$Freq2) #doubled checked proportions--they are correct
-#write_xlsx(Spp_prop_tbl, 'AG_SppList_proportions.xlsx')
+write_xlsx(Spp_prop_tbl, 'AG_SppList_proportions_2023.xlsx')
+
+#Proportion for LOWER bank
+Spp_count_tbl_Lower <- vegdf_bout1 %>% 
+  filter(Bank_Location == "lower")  %>% 
+  group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity) %>%
+  summarise(Freq2 = n()) %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL")
+
+
+Spp_count_tbl_Lower<- Spp_count_tbl_Lower %>% 
+  mutate(prop = Freq2/sum(Spp_count_tbl_Lower$Freq2))
+
+view(Spp_count_tbl_Lower)
+sum(Spp_count_tbl$Freq2) 
+write_xlsx(Spp_count_tbl_Lower, 'AG_SppList_proportions_Lower.xlsx')
+
+#Proportion for MIDDLE bank
+Spp_count_tbl_middle <- vegdf_bout1 %>% 
+  filter(Bank_Location == "middle")  %>% 
+  group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity) %>%
+  summarise(Freq2 = n()) %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL")
+
+
+Spp_count_tbl_middle<- Spp_count_tbl_middle %>% 
+  mutate(prop = Freq2/sum(Spp_count_tbl_middle$Freq2))
+
+view(Spp_count_tbl_middle)
+sum(Spp_count_tbl_middle$Freq2) 
+write_xlsx(Spp_count_tbl_middle, 'AG_SppList_proportions_Middle.xlsx')
+
+#Proportion for Upper bank
+Spp_count_tbl_upper <- vegdf_bout1 %>% 
+  filter(Bank_Location == "upper")  %>% 
+  group_by(VegHit_SoilSurfaceHit, Longevity, Habit, WIS_GP, Nativity) %>%
+  summarise(Freq2 = n()) %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL")
+
+
+Spp_count_tbl_upper<- Spp_count_tbl_upper %>% 
+  mutate(prop = Freq2/sum(Spp_count_tbl_upper$Freq2))
+
+view(Spp_count_tbl_upper)
+sum(Spp_count_tbl_upper$Freq2) 
+write_xlsx(Spp_count_tbl_upper, 'AG_SppList_proportions_Upper.xlsx')
 
 ```
 

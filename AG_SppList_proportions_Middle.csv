@@ -1,0 +1,40 @@
+VegHit_SoilSurfaceHit,Longevity,Habit,WIS_GP,Nativity,Freq2,prop
+Ambrosia trifida,Annual,Forb,FAC,Native,2,0.008264463
+Apocynum cannabinum,Perennial,Forb,FAC,Native,4,0.016528926
+Asclepias speciosa,Perennial,Forb,FAC,Native,1,0.004132231
+Bromus inermis,Perennial,Graminoid,UPL,Introduced,40,0.165289256
+Bromus tectorum,Annual,Graminoid,UPL,Introduced,1,0.004132231
+Carex emoryi,Perennial,Graminoid,OBL,Native,8,0.033057851
+Carex sp.,Perennial,Graminoid,,Native,2,0.008264463
+Chenopodium album,Annual,Forb,FACU,Introduced,1,0.004132231
+Cirsium arvense,Perennial,Forb,FACU,Introduced,13,0.053719008
+Convolvulus arvensis,Perennial,Forb,UPL,Introduced,3,0.012396694
+Conyza canadensis,Annual,Forb,FACU,Introduced,1,0.004132231
+Dactylis glomerata,Perennial,Graminoid,FACU,Introduced,8,0.033057851
+Elymus repens,Perennial,Graminoid,FACU,Introduced,17,0.070247934
+Euphorbia esula,Perennial,Forb,UPL,Introduced,1,0.004132231
+Glycyrrhiza lepidota,Perennial,Forb,FACU,Native,1,0.004132231
+Juniperus scopulorum,Perennial,Woody,UPL,Native,2,0.008264463
+Lactuca serriola,Variable,Forb,FAC,Introduced,3,0.012396694
+Mentha spicata,Perennial,Forb,FACW,Introduced,2,0.008264463
+Mirabilis nyctaginea,Perennial,Forb,UPL,Native,1,0.004132231
+Parthenocissus vitacea,Perennial,Woody,FAC,Native,13,0.053719008
+Persicaria sp.,Perennial,Forb,FACW,,1,0.004132231
+Phalaris arundinacea,Perennial,Graminoid,FACW,Native,47,0.194214876
+Poa pratensis,Perennial,Graminoid,FACU,Introduced,2,0.008264463
+Prunus virginiana,Perennial,Woody,FACU,Native,5,0.020661157
+Ranunculus sceleratus,Perennial,Forb,OBL,Native,1,0.004132231
+Rhamnus cathartica,Perennial,Woody,FACU,Introduced,11,0.045454545
+Rosa sp.,Perennial,Woody,,Introduced,2,0.008264463
+Rumex crispus,Perennial,Forb,FAC,Introduced,4,0.016528926
+Salix exigua ssp. exigua,Perennial,Woody,FACW,Native,2,0.008264463
+Schedonorus arundinaceus,Perennial,Graminoid,FACU,Introduced,1,0.004132231
+Scorzonera laciniata,Variable,Forb,UPL,Introduced,1,0.004132231
+Solidago gigantea,Perennial,Forb,FAC,Native,2,0.008264463
+Sonchus oleraceus,Annual,Forb,UPL,Introduced,1,0.004132231
+Symphoricarpos occidentalis,Perennial,Woody,UPL,Native,8,0.033057851
+Symphyotrichum lanceolatum ssp. hesperium,Perennial,Forb,FACW,Native,13,0.053719008
+Taraxacum officinale,Perennial,Forb,FACU,Introduced,13,0.053719008
+Tragopogon dubius,Variable,Forb,UPL,Introduced,1,0.004132231
+Typha latifolia,Perennial,Forb,OBL,Native,1,0.004132231
+Ulmus pumila,Perennial,Woody,UPL,Introduced,2,0.008264463
