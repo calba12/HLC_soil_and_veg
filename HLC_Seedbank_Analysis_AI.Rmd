@@ -806,7 +806,7 @@ summary(lmer_gaus_native_4) #lowest AIC
 
 N_SB_model_summary<-as.data.frame(coef(summary(lmer_gaus_native_4))) #put coefficients into dataframe
 
-write.csv(N_SB_model_summary, 'N_SB_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
+#write.csv(N_SB_model_summary, 'N_SB_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
 
 #Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
 
@@ -832,11 +832,15 @@ sjPlot::tab_model(lmer_gaus_native_4, df.method = "satterthwaite", title = "Prop
 emmeans(lmer_gaus_native_4, df.method = "satterthwaite", pairwise ~ Nativity | Bank_Location, adjust = "tukey")
 
 nativ_emmeans_output_SB<-as.data.frame(emmeans(lmer_gaus_native_4, df.method = "satterthwaite", pairwise ~ Nativity | Bank_Location, adjust = "tukey")) #data frame
-write_xlsx(nativ_emmeans_output_SB, 'nativ_emmeans_output_SB.xlsx')
+#write_xlsx(nativ_emmeans_output_SB, 'nativ_emmeans_output_SB.xlsx')
 
 emmip(lmer_gaus_native_4, Nativity~ Bank_Location, CIs = TRUE)
 emmip(lmer_gaus_native_4, Nativity~ Bank_Location) #without CIs
 
+#customizations
+emmip(lmer_gaus_native_4, Nativity ~ Bank_Location, CIs = TRUE, linearg = list(),
+      CIarg = list(lwd = 1, alpha = 1)) +
+  ggplot2::theme_bw()
 ```
 
 ```{r stats for functional group by bank location interaction}
@@ -861,7 +865,7 @@ summary(lmer_gaus_fg_4) #not lowest AIC but chosen model
 
 FG_SB_model_summary<-as.data.frame(coef(summary(lmer_gaus_fg_4))) #put coefficients into dataframe
 
-write.csv(FG_SB_model_summary, 'FG_SB_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
+#write.csv(FG_SB_model_summary, 'FG_SB_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
 #Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
 
 proportion_fg_gauss <- df.props_FunctGroup_seed$prop #Histogram showing lots of zeroes and ones 
@@ -890,6 +894,16 @@ write_xlsx(FG_emmeans_output_SB, 'FG_emmeans_output_SB.xlsx')
 
 emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location, CIs = TRUE)
 emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location)
+
+#customizations
+emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location, CIs = TRUE, linearg = list(),
+      CIarg = list(lwd = 1, alpha = 1)) +
+  ggplot2::theme_bw()
+
+emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location, linearg = list(),
+      CIarg = list(lwd = 1, alpha = 1)) +
+  ggplot2::theme_bw()
+
 
 ```
 
