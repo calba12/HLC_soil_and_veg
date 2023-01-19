@@ -172,8 +172,8 @@ SB_Spp_prop_tbl_Upper <- SB_Spp_tbl_Upper %>%
   drop_na(Species_Name) %>%
   mutate(prop = Freq2/sum(SB_Spp_tbl_Upper$Freq2))
 
-view(SB_Spp_prop_tbl_Middle)
-sum(SB_Spp_prop_tbl_Middle$Freq2)
+view(SB_Spp_prop_tbl_Upper)
+sum(SB_Spp_prop_tbl_Upper$Freq2)
 #write_xlsx(SB_Spp_prop_tbl, 'SB_SppList_Proportions.xlsx')
 
 #merge with veg prop data, upper
@@ -186,7 +186,7 @@ merged_spp_prop_upper <- merge(veg_prop_tbl_upper, SB_Spp_prop_tbl_Upper, by.x =
 
 view(merged_spp_prop_upper)
 
-write_xlsx(merged_spp_prop_middle, 'merged_SppList_Prop_upper.xlsx')
+write_xlsx(merged_spp_prop_upper, 'merged_SppList_Prop_upper.xlsx')
 
 ```
 
