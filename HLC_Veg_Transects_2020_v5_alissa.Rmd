@@ -358,7 +358,8 @@ vegdf$Surface.Hit <- as.character(vegdf$Surface.Hit)
 hit_type <- vegdf %>%
   group_by(sample.bout, Hit.Number, Bank_Location, baseline, Transect, Num_transect_points, Surface.Hit) %>%
   filter(sample.bout =="1") %>%
-  replace_na(list(Surface.Hit = 'Vegetation')) 
+    mutate(Surface.Hit=recode(Surface.Hit, "NULL" = "Vegetation", "litter" = "Litter", 
+                             "bare soil" = "Bare Soil", "water" = "Water", "downed woody debris" = "Woody Debris")) 
 
 n_distinct(hit_type$Surface.Hit) # check number of hit types (veg, litter, bare soil, dwd, water)
 
@@ -406,8 +407,8 @@ View(df_prop_hit_type_means)
 
 #Now create new boxplot with baseline means
 
-COVER_TYPE_BP <- df_prop_hit_type_means %>% 
-  ggplot(aes(x=factor(Surface.Hit, levels = c('litter', 'Vegetation', 'bare soil', 'downed woody debris', 'water')), y=Mean, fill=Surface.Hit))+
+COVER_TYPE <- df_prop_hit_type_means %>% 
+  ggplot(aes(x=factor(Surface.Hit, levels = c('Litter', 'Vegetation', 'Bare soil', 'Woody Debris', 'Water')), y=Mean, fill=Surface.Hit))+
   geom_boxplot()+
   geom_point()+
   labs(x = "Cover Type", y = "Proportion of Cover")+
@@ -416,11 +417,9 @@ COVER_TYPE_BP <- df_prop_hit_type_means %>%
   theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
   scale_fill_brewer(palette = "Set2")
   
-print(COVER_TYPE_BP)
+print(COVER_TYPE)
 
-COVER_TYPE_BP + facet_wrap(~Bank_Location)
-
-
+COVER_TYPE + facet_wrap(~Bank_Location)
 
 COVER_TYPE_BP2 + facet_wrap(~Bank_Location)
 
@@ -468,7 +467,163 @@ COVER_TYPE_BPw + facet_wrap(~Bank_Location)
 
 ```
 
+```{r graphs for hit type by bare soil, litter, vegetation, water, dwd _updated 1/25/23}
 
+#Create general categories based on whether vegetation was hit first, or pin dropped straight to bare ground, litter, water
+# To do this, if surface hit is NULL, then hit type is vegetation, otherwise bare soil, litter, dwd, water as designated in the "Surface.Hit" column
+
+vegdf$Surface.Hit <- as.character(vegdf$Surface.Hit)
+
+hit_type <- vegdf %>%
+  group_by(sample.bout, Hit.Number, Bank_Location, baseline, Transect, Num_transect_points, Surface.Hit) %>%
+  filter(sample.bout =="1") %>%
+   mutate(Surface.Hit=recode(Surface.Hit, "NULL" = "Vegetation", "litter" = "Litter", 
+                             "bare soil" = "Bare Soil", "water" = "Water", "downed woody debris" = "Woody Debris"))
+  
+View(hit_type)
+
+n_distinct(hit_type$Surface.Hit) # check number of hit types (veg, litter, bare soil, dwd, water)
+
+
+
+#Prepping data file for proportion as response variable
+#This final data set is grouped by transects
+
+hit_type$Surface.Hit <- as.factor(hit_type$Surface.Hit)
+
+df.prop_hit_type <- hit_type %>%
+  group_by(Hit.Number, Bank_Location, baseline, Transect, Surface.Hit) %>%
+  summarise(Count = n()) %>%
+  mutate(prop_cover_type = Count/sum(Count)) %>%
+  complete(Surface.Hit, fill = list(Count = 0, prop_cover_type = 0)) ## keep all levels of factor and replace NA with zeros for both Count and prop_cover_type
+
+sum(df.prop_hit_type$prop_cover_type[1:5])
+
+View(df.prop_hit_type)
+
+
+#Make boxplot
+
+p <- df.prop_hit_type %>% ggplot(aes(x=Surface.Hit, y=prop_cover_type))+ 
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Cover Type", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = Surface.Hit), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+p + facet_wrap(~Bank_Location)
+
+
+#Need to get the means of each baseline
+#The above code currently graphs all 45 transects
+
+df_prop_hit_type_means <- df.prop_hit_type %>%
+  group_by(baseline, Bank_Location, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type))
+
+View(df_prop_hit_type_means)
+
+#Now create new boxplot with baseline means
+
+p2 <- df_prop_hit_type_means %>% ggplot(aes(x=factor(Surface.Hit, levels = c('Litter', 'Vegetation', 'Bare Soil', 'Woody Debris', 'Water')), y=Mean, fill = Surface.Hit))+
+  geom_boxplot()+
+  geom_point()+
+  labs(x = "Cover Type", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = Surface.Hit), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="red")+ #1/25/23 changed group to be surface hit instead of bank location
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=45, hjust=1))+
+  scale_fill_brewer(palette = "BuGn", name = "Cover Type")+
+  theme(legend.position = "none")
+
+print(p2)
+
+p2 + facet_wrap(~Bank_Location)
+
+
+
+
+#formatting
+
+COVER_BP <- df_prop_hit_type_means %>% ggplot(aes(x=factor(Surface.Hit, levels = c('Litter', 'Vegetation', 'Bare Soil', 'Woody Debris', 'Water')), y=Mean, fill = Surface.Hit))+
+  geom_boxplot()+
+  geom_point(colour="black")+
+  labs(x = "Cover Type", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = Surface.Hit), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+ #1/25/23 changed group to be surface hit instead of bank location
+  theme_bw(base_size = 14)+
+  theme(axis.text.x=element_text(angle=45, hjust=1))+
+  scale_fill_brewer(palette = "BrBG", name = "Cover Type")+
+  theme(legend.position = "none")
+
+print(COVER_BP)
+
+COVER_BP + facet_wrap(~Bank_Location)
+
+#Make stacked bar graph by bank location
+
+df_stacked <- aggregate(Mean ~ Bank_Location + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
+
+View(df_stacked)
+
+Cover_stacked <- ggplot(df_stacked, aes(fill = Surface.Hit, y = Mean, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Cover Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "BrBG", name = "Cover Type")
+
+print(Cover_stacked)
+
+
+#Make stacked bar graph by baseline
+#Not manually ordered
+
+df_stacked_baseline <- aggregate(Mean ~ baseline + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
+
+View(df_stacked_baseline)
+
+p <- ggplot(df_stacked_baseline, aes(fill = Surface.Hit, y = Mean, x = baseline))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Cover Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "Spectral")
+
+print(p)
+
+#FOR HLC REPORT
+#Make stacked bar graph by baseline
+#Need to manually reorder by baseline and change legend colors 
+
+df_stacked_baseline <- aggregate(Mean ~ baseline + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
+
+p <- ggplot(df_stacked_baseline, aes(x = factor (baseline, level =c("B03", "B05", "B07", "B10", "B13", "B14", "B15", "B17", "B18")), y = Mean, fill = Surface.Hit, label = round(Mean, digits = 2)))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Baseline", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Cover Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "BuGn", breaks = c("Bare Soil", "Litter", "Vegetation", "Water", "Woody Debris"))
+
+print(p)
+
+
+#Get some cover type means to report for HLC final report
+df_prop_hit_type_means <- df.prop_hit_type %>%
+  group_by(baseline, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type), sd = sd(prop_cover_type))
+
+View(df_prop_hit_type_means)
+
+df_prop_hit_type_means <- df.prop_hit_type %>%
+  group_by(Bank_Location, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type), sd = sd(prop_cover_type))
+
+View(df_prop_hit_type_means)
+
+```
 
 
 ```{r graph WIS}

@@ -1,0 +1,1402 @@
+<<<<<<< HEAD
+---
+title: "HLC_Veg_Analysis"
+author: "Christina Alba"
+date: "1/14/2022"
+output: html_document
+---
+
+```{r libraries, bring in file, some data cleaning}
+
+library(knitr); library(multcomp); library(dplyr);library(lme4);library(ggplot2); library(tidyverse); library(tidytext); library(glmmTMB)
+library(ggpubr); library(rstatix);library(writexl);library(ggformula); library(tidyr);library(reshape2); library(sjPlot); library(emmeans); library(RColorBrewer); library(gamlss); library(lmerTest)
+
+#Bring in raw data file
+veg <- read.csv("Q:/Research/Grants and Funding/HighLineCanalConservancy_2019/7_Project/Stormwater_MovedToQ_UseMe/Data_Analysis/vegetation/Raw Data from RickL/20201204_allHitsData_postQC_prep4.csv")
+
+head(veg)
+str(veg)
+
+View(veg)
+
+#change desired columns to factor
+
+veg <- veg %>%
+  mutate(sample.bout = as.factor(sample.bout))%>%
+  mutate(Transect = as.factor(Transect)) %>%
+  mutate(baseline = as.factor(baseline)) %>%
+  mutate(baseline.rep = as.factor(baseline.rep))
+
+str(veg)
+
+## Remove zero from Hit.Number
+
+veg <- veg[veg$Hit.Number != "0",]
+View(veg)
+
+#Rename unweildly columns; remove unwanted columns; rename transects so they go in order
+#of sampling along HLC
+vegdf <- veg %>% select(-Number.of.Points.Along.Transect_fromRick) %>%
+rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc) %>%
+  mutate(Transect=recode(Transect,"B3-0"="B03-0", "B3-10"="B03-10", "B3-20" = "B03-20",
+                         "B3-29"="B03-29", "B3-41"="B03-41", "B5-0" = "B05-0", "B5-12.5" = "B05-12.5",
+                         "B5-25"="B05-25", "B5-37.5"="B05-37.5", "B5-50"="B05-50", "B7-0"="B07-0",
+                         "B7-12.5"="B07-12.5","B7-25"="B07-25","B7-37.5"="B07-37.5","B7-50"="B07-50"))%>%
+  mutate(baseline=recode(baseline, "B3"="B03", "B5"="B05","B7"="B07")) %>%
+  mutate(Bank_Location = recode(Bank_Location, "lower" = "Lower", "middle" = "Middle", "upper" = "Upper"))
+
+
+head(vegdf)
+View(vegdf)
+
+
+#check species spellings
+
+df <- vegdf %>% distinct(Species.Hit) %>%
+  arrange(Species.Hit)
+
+View(df)
+
+#Check that all levels of data are present
+check.df <- vegdf %>% filter(sample.bout == "1") %>%
+  distinct(Transect, Bank_Location)
+View(check.df)
+
+```
+
+
+```{r create species tables for thesis}
+
+#Pull out species names using "distinct"; arrange alphabetically using "arrange";remove 
+#unwanted entries (rock, soil, litter) using "subset"; keep desired columns using "select"
+
+df_bout1 <- subset(vegdf,sample.bout =="1")
+View(df_bout1)
+
+df_Spp_bout1 <- distinct(df_bout1, VegHit_SoilSurfaceHit, .keep_all = TRUE) %>%
+  arrange(VegHit_SoilSurfaceHit)%>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water")%>%
+  select(VegHit_SoilSurfaceHit, Bank_Location, Longevity, Habit, FunctionalGroup, WIS)
+  
+View(df_Spp_bout1)
+
+#Export as csv
+
+```
+
+
+```{r count hits at each level of organization: canal, baseline, transect}
+
+#Summing number of hits at each level of organization (whole canal, baselines, transects)
+
+#Whole-canal level: number of species hits by sample bout and hit number, includes foliar and ground first hits
+df.canal <- vegdf %>% 
+  #group_by(sample.bout, Hit.Number) %>%
+  summarise(Species.Hit = n()) 
+
+View(df.canal)
+write_xlsx(df.canal, 'hits_byCanal.xlsx')
+
+#Baseline level: number of species hits by sample bout and hit number, includes foliar and ground first hits
+df.baseline <- vegdf %>% 
+  group_by(sample.bout, baseline, Hit.Number) %>%
+  summarise(Species.Hit = n()) 
+
+View(df.baseline)
+
+write_xlsx(df.baseline, 'hits_byBaseline.xlsx')
+
+#Transect level: number of species hits by sample bout and hit number, includes foliar and ground first hits
+
+df.transect <- vegdf %>% 
+  group_by(sample.bout, baseline, baseline.rep, Hit.Number) %>%
+  summarise(Species.Hit = n()) 
+
+View(df.transect)
+
+write_xlsx(df.transect, 'hits_byTransect.xlsx')
+
+
+```
+
+
+```{r determine common species, cutoff point 1% cover}
+
+#Foliar hits only
+#Group species counts by sample bout, hit number, transect, etc.
+#Use summarise to count hits by species, drop NA's
+
+veg_only_transect <- vegdf %>%
+  group_by(sample.bout, Hit.Number, baseline, Transect, Num_transect_points, Bank_Location, FunctionalGroup, Nativity, Cvalue, WIS, Species.Hit) %>%
+  summarise(Species = n()) %>%
+  drop_na()
+
+head(veg_only_transect)
+View(veg_only_transect)
+
+#The Excel file exported below has both sample bouts and hit numbers one and two
+
+write_xlsx(veg_only_transect, 'Species_counts.xlsx')
+
+#Foliar hits only
+#summarize species proportions at scale of whole canal, includes all sample bouts and hits
+#Used sum(prop_species$Freq) code to count 1909 total hits across whole canal
+#Use to determine which species have at least 1% cover
+#To see all species, remove the filter statement
+
+prop_species_canal <- veg_only_transect %>%
+  group_by(Species.Hit) %>%
+  summarise(Freq = sum(Species)) %>%
+  mutate(prop = Freq/1642) %>%
+  filter(prop > 0.0099) %>%
+  arrange(desc(prop))
+  
+View(prop_species_canal)
+
+sum(prop_species_canal$Freq)
+
+#Now filter out species with 1% as determine with the code above
+
+Common_species_canal_BothBouts <- veg_only_transect %>%
+  group_by(baseline) %>%
+  filter(Species.Hit == "Bromus inermis"| Species.Hit == "Phalaris arundinacea" | Species.Hit == "Elymus repens"
+         | Species.Hit == "Convolvulus arvensis" | Species.Hit == "Cirsium arvense" | Species.Hit == "Dactylis glomerata"
+         | Species.Hit == "	Carex emoryi" | Species.Hit == "Rhamnus cathartica" | Species.Hit == "Symphyotrichum lanceolatum ssp. hesperium"
+         | Species.Hit == "Taraxacum officinale" | Species.Hit == "Schedonorus arundinaceus" | Species.Hit == "Symphoricarpos occidentalis"
+         | Species.Hit == "Salix exigua ssp. exigua" | Species.Hit == "Medicago sativa" | Species.Hit == "Typha angustifolia"
+         | Species.Hit == "Ulmus pumila" | Species.Hit == "Bromus tectorum" | Species.Hit == "Prunus virginiana") 
+  
+  
+View(Common_species_canal_BothBouts)
+
+#The Excel file exported below has both sample bouts
+
+write_xlsx(Common_species_canal_BothBouts, 'Common_species_BothBouts.xlsx')
+
+
+#Same as above but look at only first sample bout 
+
+veg_only_transect_FirstBout <- filter(veg_only_transect, sample.bout == "1")
+View(veg_only_transect_FirstBout)
+
+
+prop_species_canal_FirstBout <- veg_only_transect_FirstBout %>%
+  group_by(Species.Hit) %>%
+  summarise(Freq = sum(Species)) %>%
+  mutate(prop = Freq/713) %>%
+  filter(prop > 0.0099) %>%
+  arrange(desc(prop))
+
+View(prop_species_canal_FirstBout)
+
+sum(prop_species_canal_FirstBout$Freq)
+
+Common_species_canal_FirstBout <- veg_only_transect_FirstBout %>%
+  group_by(baseline) %>%
+  filter(Species.Hit == "Bromus inermis"| Species.Hit == "Phalaris arundinacea" | Species.Hit == "Elymus repens"
+         | Species.Hit == "Cirsium arvense" | Species.Hit == "Convolvulus arvensis" | Species.Hit == "Taraxacum officinale" 
+         | Species.Hit == "Dactylis glomerata" |Species.Hit == "Rhamnus cathartica" | Species.Hit == "Symphyotrichum lanceolatum ssp. hesperium"
+         |Species.Hit == "Carex emoryi" | Species.Hit == "Bromus tectorum" | Species.Hit == "Schedonorus arundinaceus" 
+         | Species.Hit == "Symphoricarpos occidentalis" | Species.Hit == "Medicago sativa" | Species.Hit == "Rumex crispus" | Species.Hit == "Prunus virginiana") 
+  
+  
+View(Common_species_canal_FirstBout)
+
+#The Excel file exported below has only first sample bout
+
+write_xlsx(Common_species_canal_FirstBout, 'Common_species_FirstBout.xlsx')
+
+
+#Same as above but look at only second sample bout 
+
+veg_only_transect_secondOnly <- filter(veg_only_transect, sample.bout == "2")
+View(veg_only_transect_secondOnly)
+
+
+prop_species_canal_secondOnly <- veg_only_transect_secondOnly %>%
+  group_by(Species.Hit) %>%
+  summarise(Freq = sum(Species)) %>%
+  mutate(prop = Freq/964) %>%
+  filter(prop > 0.0099) %>%
+  arrange(desc(prop))
+
+View(prop_species_canal_secondOnly)
+
+sum(prop_species_canal_secondOnly$Freq)
+
+
+#Foliar hits only
+#Use most common species determined above and group by bank location and baseline, includes all sample bouts and hits
+
+prop_bank <- veg_only_transect %>%
+  group_by(Species.Hit, Bank_Location) %>%
+  summarise(Freq = sum(Species))
+
+View(prop_bank)
+
+sum(prop_bank$Freq)
+
+#Foliar hits only
+#Use the code below to create a data set where we have a list
+#of each species that occurs in the upper/middle/lower banks
+#Then can look at the proportion of native and intro species present that are 
+#grouped into the various functional/WIS groups #Thinking we will find
+#that native/intro differently distributed across the bank gradient and
+#native/intro do different "jobs" based on their functional group and WIS
+#Maybe use a percentage bar chart to show groups of native/intro
+#by upper middle lower banks
+
+#REDO BELOW AFTER FIRST SELECTING FOR ONLY THE FIRST SAMPLE BOUT AND FIRST HIT
+
+prop_species_bank <- veg_only_transect %>%
+  group_by(Species.Hit, Bank_Location, FunctionalGroup, Nativity, WIS) %>%
+  summarise(Freq = sum(Species))
+
+View(prop_species_bank)
+
+#Distinct species presence by bank location
+
+distinct_species_bank <- prop_species_bank %>%
+  distinct(Bank_Location, FunctionalGroup, Nativity, WIS)%>%
+  arrange(desc(Bank_Location))
+
+View(distinct_species_bank)
+
+```
+
+
+```{r graphs for hit type by bare soil, litter, vegetation, water, dwd}
+
+#Create general categories based on whether vegetation was hit first, or pin dropped straight to bare ground, litter, water
+# To do this, if surface hit is NULL, then hit type is vegetation, otherwise bare soil, litter, dwd, water as designated in the "Surface.Hit" column
+
+vegdf$Surface.Hit <- as.character(vegdf$Surface.Hit)
+
+hit_type <- vegdf %>%
+  group_by(sample.bout, Hit.Number, Bank_Location, baseline, Transect, Num_transect_points, Surface.Hit) %>%
+  filter(sample.bout =="1") %>%
+   mutate(Surface.Hit=recode(Surface.Hit, "NULL" = "Vegetation", "litter" = "Litter", 
+                             "bare soil" = "Bare Soil", "water" = "Water", "downed woody debris" = "Woody Debris"))
+  
+View(hit_type)
+
+n_distinct(hit_type$Surface.Hit) # check number of hit types (veg, litter, bare soil, dwd, water)
+
+
+
+#Prepping data file for proportion as response variable
+#This final data set is grouped by transects
+
+hit_type$Surface.Hit <- as.factor(hit_type$Surface.Hit)
+
+df.prop_hit_type <- hit_type %>%
+  group_by(Hit.Number, Bank_Location, baseline, Transect, Surface.Hit) %>%
+  summarise(Count = n()) %>%
+  mutate(prop_cover_type = Count/sum(Count)) %>%
+  complete(Surface.Hit, fill = list(Count = 0, prop_cover_type = 0)) ## keep all levels of factor and replace NA with zeros for both Count and prop_cover_type
+
+sum(df.prop_hit_type$prop_cover_type[1:5])
+
+View(df.prop_hit_type)
+
+
+#Make boxplot
+
+p <- df.prop_hit_type %>% ggplot(aes(x=Surface.Hit, y=prop_cover_type))+ 
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Cover Type", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = Surface.Hit), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+p + facet_wrap(~Bank_Location)
+
+
+#Need to get the means of each baseline
+#The above code currently graphs all 45 transects
+
+df_prop_hit_type_means <- df.prop_hit_type %>%
+  group_by(baseline, Bank_Location, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type))
+
+View(df_prop_hit_type_means)
+
+#Now create new boxplot with baseline means
+
+p <- df_prop_hit_type_means %>% ggplot(aes(x=factor(Surface.Hit, levels = c('Litter', 'Vegetation', 'Bare Soil', 'Woody Debris', 'Water')), y=Mean, fill = Surface.Hit))+
+  geom_boxplot()+
+  geom_point()+
+  labs(x = "Cover Type", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = Bank_Location), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=45, hjust=1))+
+  scale_fill_brewer(palette = "BuGn", name = "Cover Type")+
+  theme(legend.position = "none")
+
+print(p)
+
+p + facet_wrap(~Bank_Location)
+
+#Make stacked bar graph by bank location
+
+df_stacked <- aggregate(Mean ~ Bank_Location + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
+
+View(df_stacked)
+
+p <- ggplot(df_stacked, aes(fill = Surface.Hit, y = Mean, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Cover Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "BuGn")
+
+print(p)
+
+
+#Make stacked bar graph by baseline
+#Not manually ordered
+
+df_stacked_baseline <- aggregate(Mean ~ baseline + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
+
+View(df_stacked_baseline)
+
+p <- ggplot(df_stacked_baseline, aes(fill = Surface.Hit, y = Mean, x = baseline))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Cover Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "Spectral")
+
+print(p)
+
+#FOR HLC REPORT
+#Make stacked bar graph by baseline
+#Need to manually reorder by baseline and change legend colors 
+
+df_stacked_baseline <- aggregate(Mean ~ baseline + Surface.Hit, data = df_prop_hit_type_means, FUN = mean)
+
+p <- ggplot(df_stacked_baseline, aes(x = factor (baseline, level =c("B03", "B05", "B07", "B10", "B13", "B14", "B15", "B17", "B18")), y = Mean, fill = Surface.Hit, label = round(Mean, digits = 2)))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Baseline", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Cover Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "BuGn", breaks = c("Bare Soil", "Litter", "Vegetation", "Water", "Woody Debris"))
+
+print(p)
+
+
+#Get some cover type means to report for HLC final report
+df_prop_hit_type_means <- df.prop_hit_type %>%
+  group_by(baseline, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type), sd = sd(prop_cover_type))
+
+View(df_prop_hit_type_means)
+
+df_prop_hit_type_means <- df.prop_hit_type %>%
+  group_by(Bank_Location, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type), sd = sd(prop_cover_type))
+
+View(df_prop_hit_type_means)
+
+```
+
+
+```{r stats for bare soil, litter, veg}
+
+#Remove water and dwd from df.prop_hit_type before doing stats
+df.stats <- df.prop_hit_type %>% filter(Surface.Hit == "bare soil" | Surface.Hit == "litter" | Surface.Hit == "Vegetation")
+View(df.stats)
+
+#Create competing models
+
+lmer_gaus_null <- lmer(prop_cover_type ~ 1 + (1|baseline) + (1|Transect:baseline), data = df.stats) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_gaus1 <- lmer(prop_cover_type ~ Surface.Hit + (1|baseline) + (1|Transect:baseline), data = df.stats) #add in variation explained by surface hit type
+lmer_gaus2 <- lmer(prop_cover_type ~ Surface.Hit + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.stats) #add in variation explained by bank location
+lmer_gaus3 <- lmer(prop_cover_type ~ Surface.Hit + Bank_Location + Surface.Hit*Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.stats) #add in interaction term
+lmer_gaus4 <- lmer(prop_cover_type ~ Surface.Hit + Bank_Location + Surface.Hit*Bank_Location + (1|baseline), data = df.stats ) #Remove random effect of transect within baseline
+
+AIC(lmer_gaus_null, lmer_gaus1,lmer_gaus2,lmer_gaus3, lmer_gaus4) #code to run AIC; lowest number is best fit; typically considered that difference should be at least 2 to be considered a meaningful improvement of fit
+
+summary(lmer_gaus1) #Get model output
+summary(lmer_gaus2) #Get model output
+summary(lmer_gaus3) #Get model output
+summary(lmer_gaus4) #Get model output
+
+
+#Different ways to visualize the distribution of the data; the raw data (distribution of y) is not normally distributed but the model fit
+#(with y conditional on x) looks decent (although still violates normality) based on qqplot and distribution of fitted versus residuals
+
+#Can also get the output for lines 599-603 below using sjPlot code 
+
+proportion_hit_gauss <- df.stats$prop_cover_type #Histogram showing lots of zeroes, positive skew 
+hist(proportion_hit_gauss)
+qqnorm(df.stats$prop_cover_type) #use to visualize whether raw data are normally distributed
+qqnorm(resid(lmer_gaus4))     #Use to visualize whether model residuals vs predicted are normally distributed
+plot(lmer_gaus4)              #Use to visualize whether model residuals vs predicted are normally distributed
+
+
+#Choose lmer_gaus_upper4 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus4)
+plot_model(lmer_gaus4, type = "diag")
+sjPlot::plot_model(lmer_gaus4, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus4, df.method = "satterthwaite", title = "Proportion by Cover Type", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus4, df.method = "satterthwaite", pairwise ~ Surface.Hit | Bank_Location, adjust = "tukey")
+emmip(lmer_gaus4, Surface.Hit ~ Bank_Location, CIs = TRUE)
+
+
+```
+
+
+```{r graph WIS by bank location and baseline}
+
+#Prepping data file for proportion WIS as response variable
+
+vegdf$WIS_GP <- as.factor(vegdf$WIS_GP)
+
+df.props_WIS_veg <- vegdf %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
+  filter(sample.bout =="1") %>%
+  drop_na(Species.Hit, WIS_GP) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
+  summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Transect, Bank_Location, WIS_GP) %>%  
+  summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(WIS_GP, fill = list(Species.Hit = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  mutate(prop_log = log(prop+1))
+  
+# Check it adds to one with the 5 groups  
+sum(df.props_WIS_veg$prop[1:5])
+    
+View(df.props_WIS_veg)
+
+#Need to get the means of each baseline
+
+df_prop_WIS_means <- df.props_WIS_veg %>%
+  group_by(baseline, Bank_Location, WIS_GP) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+View(df_prop_WIS_means)
+
+
+#Make boxplot
+
+p <- df_prop_WIS_means %>% ggplot(aes(x=factor(WIS_GP, levels = c('UPL', 'FACU', 'FAC', 'FACW', 'OBL')), y=Mean, fill=WIS_GP))+ 
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Wetland Indicator Status", y = "Proportion of Vegetative Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = WIS_GP), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+scale_fill_brewer(palette = "BuGn")
+print(p)
+
+p + facet_wrap(~Bank_Location)
+
+
+#Make stacked bar graph by bank location
+
+df_stacked_WIS <- aggregate(prop ~ Bank_Location + WIS_GP, data = df.props_WIS_veg, FUN = mean)
+
+View(df_stacked_WIS)
+
+df_stacked_WIS %>%
+  mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", 'FACU', 'FAC', 'FACW', 'OBL')) %>%
+  ggplot(aes(fill = WIS_GP, y = prop, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Wetland Indicator Status")) +
+  theme_bw(base_size = 16)+
+  scale_fill_brewer(palette = "BuGn")
+
+
+#Make stacked bar graph by baseline
+
+df_stacked_WIS_baseline <- aggregate(prop ~ baseline + WIS_GP, data = df.props_WIS_veg, FUN = mean)
+
+View(df_stacked_WIS_baseline)
+str(df_stacked_WIS_baseline)
+df_stacked_WIS_baseline$baseline <- as.character(df_stacked_WIS_baseline$baseline)
+
+df_stacked_WIS_baseline %>%
+  mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", 'FACU', 'FAC', 'FACW', 'OBL')) %>%
+  ggplot(aes(fill = WIS_GP, y = prop, x = baseline))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Baseline", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Wetland Indicator Status")) +
+  theme_bw(base_size = 16)+
+  scale_fill_brewer(palette = "BuGn")
+ 
+
+```
+
+
+```{r stats for WIS upper bank location gaussian and log transformed}
+
+#Stats model for proportion of species upper bank location
+#First select out the upper bank location only
+
+df_UpperBank <- subset(df.props_WIS_veg, Bank_Location =="upper")
+View(df_UpperBank)
+
+#Now create mixed models with an intercept only, intercept + WIS then do AIC
+#to confirm that WIS explains enough variation to substantially increase model fit
+#Fit a gaussian distribution (no transformation)
+
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df_UpperBank) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_gaus_upper <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df_UpperBank) #WIS added
+lmer_gaus_upper2 <- lmer(prop ~ WIS_GP + (1|baseline), data = df_UpperBank) #removing transect nested within baseline b/c it does not explain any additional variation
+
+summary(lmer_gaus_null) #see what model output looks like
+summary(lmer_gaus_upper) #see what model output looks like
+summary(lmer_gaus_upper2) #see what model output looks like
+
+AIC(lmer_gaus_null,lmer_gaus_upper, lmer_gaus_upper2) #Compare with model is more informative; smaller numbers are better; including WIS greatly improves model
+
+qqnorm(resid(lmer_gaus_upper2)) #Use to visualize whether normally distributed
+
+proportion_wis_gauss <- df_UpperBank$prop #Histogram showing lots of zeroes, positive skew 
+hist(proportion_wis_gauss)
+
+
+#Choose lmer_gaus_upper2 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus_upper2)
+plot_model(lmer_gaus_upper2, type = "diag")
+sjPlot::plot_model(lmer_gaus_upper2, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_upper2, df.method = "satterthwaite", title = "WIS Proportions in Upper Bank", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_upper2, df.method = "satterthwaite", pairwise ~ WIS_GP, adjust = "tukey")
+
+#Not normally distributed: Try log transformed response variable and visualize fit; log transformation did not improve
+
+lm_gaus_log_upper <- lmer(prop_log ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df_UpperBank)
+summary(lm_gaus_log_upper)
+
+qqnorm(resid(lm_gaus_log_upper)) #Use to visualize whether normally distributed
+qqline(resid(lm_gaus_log_upper)) #Use to visualize whether normally distributed
+
+proportion_wis_log <- df_UpperBank$prop_log
+hist(proportion_wis_log)
+
+
+effectsize::standardize(lm_gaus_log_upper) %>% summary()
+plot_residuals(lm_gaus_log_upper)
+plot_model(lm_gaus_log_upper, type = "diag")
+sjPlot::plot_model(lm_gaus_log_upper, type = "est", show.values = T)
+
+sjPlot::tab_model(lm_gaus_log_upper, title = "WIS Proportions in Upper Bank", dv.labels = "Proportion Cover")
+
+emmeans(lm_gaus_log_upper, pairwise ~ WIS_GP, adjust = "tukey")
+
+```
+
+
+```{r stats for WIS middle bank location gaussian and log transformed}
+
+#Stats model for proportion of species upper bank location
+#First select out the upper bank location only
+
+df_MidBank <- subset(df.props_WIS_veg, Bank_Location =="middle")
+View(df_MidBank)
+
+#Now create mixed models with an intercept only, intercept + WIS then do AIC
+#to confirm that WIS explains enough variation to substantially increase model fit
+#Fit a gaussian distribution (no transformation)
+
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df_MidBank ) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_gaus_mid <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df_MidBank ) #WIS added
+lmer_gaus_mid2 <- lmer(prop ~ WIS_GP + (1|baseline), data = df_MidBank ) #removing transect nested within baseline b/c it does not explain any additional variation
+
+summary(lmer_gaus_null) #see what model output looks like
+summary(lmer_gaus_mid) #see what model output looks like
+summary(lmer_gaus_mid2) #see what model output looks like
+
+
+AIC(lmer_gaus_null,lmer_gaus_mid, lmer_gaus_mid2) #Compare with model is more informative; smaller numbers are better; including WIS greatly improves model
+
+qqnorm(resid(lmer_gaus_mid2)) #Use to visualize whether normally distributed
+
+proportion_wis_gauss <- df_MidBank$prop
+hist(proportion_wis_gauss)
+
+proportion_wis_log <- df_MidBank$prop_log
+hist(proportion_wis_log)
+
+#Choose lmer_gaus_upper2 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_mid2) %>% summary()
+plot_residuals(lmer_gaus_mid2)
+plot_model(lmer_gaus_mid2, type = "diag")
+sjPlot::plot_model(lmer_gaus_mid2, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_mid2, title = "WIS Proportions in Middle Bank", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_mid2, pairwise ~ WIS_GP, adjust = "tukey")
+
+#Not normally distributed: Try log transformed response variable and visualize fit; log transformation did not improve
+
+lm_gaus_log_mid <- lmer(prop_log ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df_MidBank )
+summary(lm_gaus_log_mid)
+
+qqnorm(resid(lm_gaus_log_mid)) #Use to visualize whether normally distributed
+qqline(resid(lm_gaus_log_mid)) #Use to visualize whether normally distributed
+
+effectsize::standardize(lm_gaus_log_mid) %>% summary()
+plot_residuals(lm_gaus_log_mid)
+plot_model(lm_gaus_log_mid, type = "diag")
+sjPlot::plot_model(lm_gaus_log_mid, type = "est", show.values = T)
+
+sjPlot::tab_model(lm_gaus_log_mid, title = "WIS Proportions in Middle Bank", dv.labels = "Proportion Cover")
+
+emmeans(lm_gaus_log_mid, pairwise ~ WIS_GP, adjust = "tukey")
+
+```
+
+
+```{r stats for WIS lower bank location gaussian }
+
+#Stats model for proportion of species lower bank location
+#First select out the upper bank location only
+
+df_LowBank <- subset(df.props_WIS_veg, Bank_Location =="lower")
+View(df_LowBank)
+
+#Now create mixed models with an intercept only, intercept + WIS then do AIC
+#to confirm that WIS explains enough variation to substantially increase model fit
+#Fit a gaussian distribution (no transformation)
+
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df_LowBank) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_gaus_low <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df_LowBank) #WIS added
+lmer_gaus_low2 <- lmer(prop ~ WIS_GP + (1|baseline), data = df_LowBank) #removing transect nested within baseline b/c it does not explain any additional variation
+
+summary(lmer_gaus_null) #see what model output looks like
+summary(lmer_gaus_low) #see what model output looks like
+summary(lmer_gaus_low2) #see what model output looks like
+
+
+AIC(lmer_gaus_null,lmer_gaus_low, lmer_gaus_low2) #Compare with model is more informative; smaller numbers are better; including WIS greatly improves model
+
+qqnorm(resid(lmer_gaus_low2)) #Use to visualize whether normally distributed
+
+proportion_wis_gauss <- df_LowBank$prop
+hist(proportion_wis_gauss)
+
+proportion_wis_log <- df_LowBank$prop_log
+hist(proportion_wis_log)
+
+#Choose lmer_gaus_upper2 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_low2) %>% summary()
+plot_residuals(lmer_gaus_low2)
+plot_model(lmer_gaus_low2, type = "diag")
+sjPlot::plot_model(lmer_gaus_low2, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_low2, title = "WIS Proportions in Lower Bank", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_low2, pairwise ~ WIS_GP, adjust = "tukey")
+
+```
+
+
+```{r stats for WIS with WIS and bank location interaction}
+
+#Need to run code in chunk above named "r graph WIS by bank location" that creates the data file df.props_WIS_veg
+
+#Create competing models
+
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #intercept only, just models variation across baselines and transects, no accounting for variation explained by WIS
+lmer_gaus1 <- lmer(prop ~ WIS_GP + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #add in variation explained by WIS
+lmer_gaus2 <- lmer(prop ~ WIS_GP + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #add in variation explained by bank location
+lmer_gaus3 <- lmer(prop ~ WIS_GP + Bank_Location + WIS_GP*Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_WIS_veg) #add in interaction term
+lmer_gaus4 <- lmer(prop ~ WIS_GP + Bank_Location + WIS_GP*Bank_Location + (1|baseline), data = df.props_WIS_veg) #Remove random effect of transect within baseline
+
+AIC(lmer_gaus_null, lmer_gaus1,lmer_gaus2,lmer_gaus3, lmer_gaus4) #code to run AIC; lowest number is best fit; typically considered that difference should be at least 2 to be considered a meaningful improvement of fit
+
+summary(lmer_gaus1) #Get model output
+summary(lmer_gaus2) #Get model output
+summary(lmer_gaus3) #Get model output
+summary(lmer_gaus4) #Get model output
+
+
+#Different ways to visualize the distribution of the data; the raw data (distribution of y) is not normally distributed but the model fit
+#(with y conditional on x) looks decent (although still violates normality) based on qqplot and distribution of fitted versus residuals
+
+#Can also get the output for lines 599-603 below using sjPlot code 
+
+proportion_WIS_gauss <- df.props_WIS_veg$prop #Histogram showing lots of zeroes, positive skew 
+hist(proportion_WIS_gauss)
+qqnorm(df.props_WIS_veg$prop) #use to visualize whether raw data are normally distributed
+qqnorm(resid(lmer_gaus4))     #Use to visualize whether model residuals vs predicted are normally distributed
+plot(lmer_gaus4)              #Use to visualize whether model residuals vs predicted are normally distributed
+
+
+#Choose lmer_gaus_upper4 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus4)
+plot_model(lmer_gaus4, type = "diag")
+sjPlot::plot_model(lmer_gaus4, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus4, df.method = "satterthwaite", title = "Proportion WIS in Vegetation", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus4, df.method = "satterthwaite", pairwise ~ WIS_GP | Bank_Location, adjust = "tukey")
+emmip(lmer_gaus4, WIS_GP ~ Bank_Location, CIs = TRUE)
+
+```
+
+
+```{r stats for WIS upper bank location trying quasibinomial and gamlss with zero inflation}
+
+
+#glm with logit <https://www.andrewheiss.com/blog/2021/11/08/beta-regression-guide/> family = quasibinomial() gets rid of the warning that you don't have a binary outcome variable
+
+m1 <- glm(prop ~ WIS_GP, 
+           family = quasibinomial(link = "logit"),
+           data = df_UpperBank)
+
+summary(m1)
+tab_model(m1, transform = NULL)
+confint(m1)
+
+## Are the treatment effects real?
+emmeans(m1, "WIS_GP", type = "response")
+
+effectsize::standardize(m1) %>% summary()
+plot_residuals(m1)
+plot_model(m1, type = "diag")
+sjPlot::plot_model(m1, type = "est", show.values = T)
+
+sjPlot::tab_model(m1, title = "WIS Proportions in Upper Bank", dv.labels = "Proportion Cover")
+
+emmeans(m1, pairwise ~ WIS_GP, adjust = "tukey")
+
+
+#gamlss with zero inflation (just pulled from fire code, not worked through for this data)  
+
+gam.bezi <- gamlss(prop ~ WIS_GP, 
+           family =BEZI, data = df_UpperBank, trace = FALSE)
+summary(gam.bezi)
+
+means_m1 <- lpred(gam.bezi, type = 'response', what='mu', se.fit = TRUE)
+df_fit <- data.frame(Treatment = shgrin$Treatment,
+                     M = means_m1$fit, SE = means_m1$se.fit)
+
+ggplot(df_fit, aes(Treatment, M))+
+  geom_pointrange(aes(ymin = M-SE, ymax = M+SE))+
+  labs(x="Treatment", y="Vegetation cover")+
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+
+```{r graph native/intro by bank location}
+
+#Prepping data file for proportion WIS as response variable
+
+vegdf$Nativity <- as.factor(vegdf$Nativity)
+
+df.props_Nativity_veg <- vegdf %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
+  filter(sample.bout =="1") %>%
+  drop_na(Species.Hit, Nativity) %>%  ## drops rows with missing values NA in either Species.Hit or WIS_GP
+  summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Transect, Bank_Location, Nativity) %>%  
+  summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(Nativity, fill = list(Species.Hit = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  mutate(prop_log = log(prop+1))
+  
+# Check it adds to one with the 5 groups  
+sum(df.props_Nativity_veg$prop[1:2])
+    
+View(df.props_Nativity_veg)
+
+
+#get the means across transect (transected is nested within baseline as replication)
+df_nativity_means <- df.props_Nativity_veg %>%
+  group_by(baseline, Bank_Location, Nativity) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+View(df_nativity_means)
+
+#Make boxplot with means
+
+N <- df_nativity_means %>% 
+  ggplot(aes(x=Nativity, y=Mean, fill=Nativity))+ 
+    ggtitle("Nativity Proportion by Bank Location") +
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Nativity", y = "Proportion of Seedbank")+
+    stat_summary(fun=mean, geom="point", aes(group = Nativity), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=90, hjust=1))+
+    scale_fill_brewer(palette = "BuGn")
+print(N)
+
+N + facet_wrap(~Bank_Location)
+
+
+#Make stacked bar graph 
+
+df_stacked_Nativity <- aggregate(prop ~ Bank_Location + Nativity, data = df.props_Nativity_veg, FUN = mean)
+
+View(df_stacked_Nativity)
+
+df_stacked_Nativity %>%
+  mutate(Nativity = fct_relevel(Nativity, "Introduced", 'Native')) %>%
+  ggplot(aes(fill = Nativity, y = prop, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Nativity")) +
+  theme_bw(base_size = 16)+
+  scale_fill_brewer(palette = "BuGn")
+
+#Make stacked bar graph by baseline
+
+df_stacked_Nativity_baseline <- aggregate(prop ~ baseline + Nativity, data = df.props_Nativity_veg, FUN = mean)
+
+df_stacked_Nativity_baseline
+
+df_stacked_Nativity_baseline %>%
+  mutate(Nativity = fct_relevel(Nativity, "Introduced", 'Native')) %>%
+  ggplot(aes(fill = Nativity, y = prop, x = baseline))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "baseline", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Nativity")) +
+  theme_bw(base_size = 16)+
+  scale_fill_brewer(palette = "BuGn")
+
+```
+
+
+```{r stats for Nativity upper bank location gaussian and log transformed}
+
+#Stats model for proportion of species upper bank location
+#First select out the upper bank location only
+
+df_UpperBank <- subset(df.props_Nativity_veg, Bank_Location =="upper")
+View(df_UpperBank)
+
+#Now create mixed models with an intercept only, intercept + WIS then do AIC
+#to confirm that WIS explains enough variation to substantially increase model fit
+#Fit a gaussian distribution (no transformation)
+
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df_UpperBank) #intercept only, just models variation across baselines and transects, no accounting for variation explained by Nativity
+lmer_gaus_upper <- lmer(prop ~ Nativity + (1|baseline) + (1|Transect:baseline), data = df_UpperBank) #Nativity added
+lmer_gaus_upper2 <- lmer(prop ~ Nativity + (1|baseline), data = df_UpperBank) #removing transect nested within baseline b/c it does not explain any additional variation
+
+summary(lmer_gaus_null) #see what model output looks like
+summary(lmer_gaus_upper) #see what model output looks like
+summary(lmer_gaus_upper2) #see what model output looks like
+
+AIC(lmer_gaus_null,lmer_gaus_upper, lmer_gaus_upper2) #Compare with model is more informative; smaller numbers are better; including WIS greatly improves model
+
+qqnorm(resid(lmer_gaus_upper2)) #Use to visualize whether normally distributed
+
+proportion_wis_gauss <- df_UpperBank$prop #Histogram showing lots of zeroes, positive skew 
+hist(proportion_wis_gauss)
+
+
+#Choose lmer_gaus_upper2 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus_upper2)
+plot_model(lmer_gaus_upper2, type = "diag")
+sjPlot::plot_model(lmer_gaus_upper2, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_upper2, df.method = "satterthwaite", title = "WIS Proportions in Upper Bank", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_upper2, df.method = "satterthwaite", pairwise ~ WIS_GP, adjust = "tukey")
+
+```
+
+
+```{r nativity stats with nativity and bank location interaction}
+
+#Need to run code in chunk above named "r graph native/intro by bank location" that creates the data file df.props_Nativity_veg 
+
+#Create competing models
+
+lmer_gaus_null <- lmer(prop ~ 1 + (1|baseline) + (1|Transect:baseline), data = df.props_Nativity_veg) #intercept only, just models variation across baselines and transects, no accounting for variation explained by nativity
+lmer_gaus_native_1 <- lmer(prop ~ Nativity + (1|baseline) + (1|Transect:baseline), data = df.props_Nativity_veg) #add in variation explained by nativity
+lmer_gaus_native_2 <- lmer(prop ~ Nativity + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_Nativity_veg) #add in variation explained by bank location
+lmer_gaus_native_3 <- lmer(prop ~ Nativity + Bank_Location + Nativity*Bank_Location + (1|Transect:baseline) + (1|Transect:baseline), data = df.props_Nativity_veg) #add in interaction term
+lmer_gaus_native_4 <- lmer(prop ~ Nativity + Bank_Location + Nativity*Bank_Location + (1|Transect:baseline), data = df.props_Nativity_veg) #Remove random effect of transect within baseline
+
+AIC(lmer_gaus_native_1, lmer_gaus_native_2, lmer_gaus_native_3, lmer_gaus_native_4)
+
+summary(lmer_gaus_native_1)
+summary(lmer_gaus_native_2)
+summary(lmer_gaus_native_3)
+summary(lmer_gaus_native_4)
+
+
+#Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
+
+proportion_Nativity_gauss <- df.props_Nativity_veg$prop #Histogram showing lots of zeroes and ones 
+hist(proportion_Nativity_gauss)
+qqnorm(df.props_Nativity_veg$prop) #use to visualize whether raw data are normally distributed
+qqnorm(resid(lmer_gaus_native_4))     #Use to visualize whether model residuals vs predicted are normally distributed
+plot(lmer_gaus_native_4)              #Use to visualize whether model residuals vs predicted are normally distributed
+
+qqnorm(resid(lmer_gaus_native_4)) #Use to visualize whether normally distributed
+plot(lmer_gaus_native_4)
+
+
+#Choose lmer_gaus_native_4 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus_native_4)
+plot_model(lmer_gaus_native_4, type = "diag")
+sjPlot::plot_model(lmer_gaus_native_4, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_native_4, df.method = "satterthwaite", title = "Proportion Native and Introduced in Vegetation", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_native_4, df.method = "satterthwaite", pairwise ~ Nativity | Bank_Location, adjust = "tukey")
+emmip(lmer_gaus_native_4, Nativity~ Bank_Location, CIs = TRUE)
+
+```
+
+
+```{r graph common species using both sample bouts}
+
+#This csv contains both sampling bouts and first and second hits
+
+Common_species_BothBouts <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/Common_species_props_upload_BothBouts.csv")
+
+str(Common_species_BothBouts)
+View(Common_species_BothBouts)
+
+#Remove unwanted columns and change to long format
+
+Common_species_BothBouts <- select(Common_species_BothBouts, -Total.Hits, -Hit.by.loc)
+
+Common_species_BothBouts_long <- melt(Common_species_BothBouts, id.vars = c("Baseline","Transect", "Location"))
+
+View(Common_species_BothBouts_long)
+
+
+Common_species_BothBouts_long %>% ggplot(aes(x=variable, y=value))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  theme_bw(base_size = 16)
+
+#Need to get the means of each baseline
+#The above code currently graphs all 45 transects
+
+df_commonSpp_baseline_means <- Common_species_BothBouts_long %>%
+  group_by(Baseline, variable) %>%
+  dplyr::summarise(Mean = mean(value))
+
+View(df_commonSpp_baseline_means)
+
+
+#Now create new boxplot with baseline means
+
+df_commonSpp_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+
+#Now get the means of each species by bank location
+
+df_commonSpp_bankLoc_means <- Common_species_BothBouts_long %>%
+  group_by(Baseline, Location, variable) %>%
+  dplyr::summarise(Mean = mean(value))
+
+View(df_commonSpp_bankLoc_means)
+
+#Now create new boxplot with baseline means by bank location
+
+p <- df_commonSpp_bankLoc_means %>% ggplot(aes(x=variable, y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+p + facet_wrap(~Location)
+
+
+#Add code that reorders from highest to lowest cover
+#Not working yet, don't know why
+
+p <- df_commonSpp_bankLoc_means %>% ggplot(aes(x=fct_reorder(variable,Mean,mean), y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+p + facet_wrap(~Location)
+
+
+```
+
+Want to redo common species using proper prepping steps within R but can use this for HLC report due Nov 2022
+```{r graph common species using only first sample bout}
+
+#This csv contains only first sampling bout and first and second hits
+
+Common_species_FirstBout <- read.csv("C:/Users/Christina.Alba/.ssh/HLC_soil_and_veg/Common_species_props_upload_FirstBout.csv")
+
+str(Common_species_FirstBout)
+View(Common_species_FirstBout)
+
+#Select most common species and change to long format
+
+Common_species_FirstBout <- select(Common_species_FirstBout, -Total.Hits, -Hit.by.Loc, -caremo, -elyrep, -conarv, -broine, -cirarv, -phaaru, 
+                                   -taroff, -dacglo, -symlan, -symocc, -brotec, -rhacat, -medsat, -pruvir, -rumcri, -scharu)
+
+Common_species_FirstBout_long <- melt(Common_species_FirstBout, id.vars = c("Baseline","Transect", "Location"))
+
+View(Common_species_FirstBout_long)
+
+
+Common_species_FirstBout_long %>% ggplot(aes(x=variable, y=value))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  theme_bw(base_size = 16)
+
+#Need to get the means of each baseline
+#The above code currently graphs all 45 transects
+
+df_commonSpp_baseline_means <- Common_species_FirstBout_long %>%
+  group_by(Baseline, variable) %>%
+  dplyr::summarise(Mean = mean(value))
+
+View(df_commonSpp_baseline_means)
+
+
+#Now create new boxplot with baseline means
+
+p <- df_commonSpp_baseline_means %>% ggplot(aes(x=variable, y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+#FOR HLC REPORT NOV 22
+#Now reorder descending
+
+p <- df_commonSpp_baseline_means %>% ggplot(aes(x=reorder(variable, -Mean), y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=23, size=2.0, color="seagreen", fill="seagreen")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+
+p + scale_x_discrete(labels = c("Smooth brome","Reed canary grass", "Quack grass", "Buckthorn",
+                                "Orchard grass","Canada thistle","Dandelion", "Western lined aster", 
+                                "Emory's sedge","Bindweed", "Tall fescue", "Snowberry",
+                                "Chokecherry", "Curly dock", "Cheatgrass", "Alfalfa"))
+
+
+#Now get the means of each species by bank location
+
+df_commonSpp_bankLoc_means <- Common_species_FirstBout_long %>%
+  group_by(Baseline, Location, variable) %>%
+  dplyr::summarise(Mean = mean(value), sd = sd(value))
+
+View(df_commonSpp_bankLoc_means)
+
+#Now create new boxplot with baseline means by bank location
+
+p <- df_commonSpp_bankLoc_means %>% ggplot(aes(x=variable, y=Mean))+
+  geom_boxplot()+
+  geom_point()+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+print(p)
+
+p + facet_wrap(~Location) 
+
+
+#Now reorder by descending order of cover within each panel
+#Not working can't figure it out
+
+str(df_commonSpp_bankLoc_means)
+
+
+df_commonSpp_bankLoc_means %>% 
+  ggplot(aes(y=reorder_within(Mean, variable, Location), 
+              x=variable)) +
+  geom_boxplot()+
+  geom_point()+
+  scale_y_reordered()+
+  facet_wrap(~Location, scales = "free_y")+
+
+  labs(x = "Species", y = "Proportion of Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = variable), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+
+#Make stacked bar graph by whole canal
+
+df_stacked_Abundant_spp <- aggregate(Mean ~ variable, data = df_commonSpp_baseline_means, FUN = mean)
+
+View(df_stacked_Abundant_spp)
+
+p <- df_stacked_Abundant_spp %>%
+  ggplot(aes(fill = variable, y = Mean, x = reorder(variable, -Mean)))+
+  geom_bar(position = "stack", stat = "identity", fill = "seagreen", color = "black") +
+  labs(x = "Species", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Species")) +
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=45, hjust=1), legend.position = "none")
+
+p + scale_x_discrete(labels = c("Smooth brome","Reed canary grass", "Quack grass", "Buckthorn",
+                                "Orchard grass","Canada thistle","Dandelion", "Western lined aster", 
+                                "Emory's sedge","Bindweed", "Tall fescue", "Snowberry",
+                                "Chokecherry", "Curly dock", "Cheatgrass", "Alfalfa")) 
+
+
+#scale_fill_manual(values = c("bisque4", "bisque3", "bisque2", "bisque1", 
+#                            "bisque", "darkgoldenrod4", "darkgoldenrod3", "darkgoldenrod2",
+#                             "darkgoldenrod1", "darkgoldenrod", "salmon4","salmon3", 
+#                             "salmon2", "salmon1", "thistle3", "thistle2"))
+  
+
+
+#scale_color_identity(
+#                      guide = guide_legend(),
+#                      breaks = c("bisque4","bisque2", "bisque2", "salmon3", "darkgoldenrod4", "darkgoldenrod2", "gray71"),
+#                      labels = c("Pr Gr Up","Pr Gr We", "Pr Gr Fac", "Wd", "Pr Fo Fac", "Pr Fo Up", "An Gr Up"))
+  
+  
+#scale_color_manual(name = "Functional Group Type", 
+#                   breaks = c("Pr Gr Up","Pr Gr We", "Pr Gr Fac", "Wd", "Pr Fo Fac", "Pr Fo Up", "An Gr Up"),
+#                  values = c("Pr Gr Up" = "bisque4", "Pr Gr We" = "bisque2", "Pr Gr Fac" = "bisque2", "Wd" = "salmon3",
+#                             "Pr Fo Fac" = "darkgoldenrod4", "Pr Fo Up" = "darkgoldenrod2", "An Gr Up" = "gray71"))
+
+
+#Get some means for HLCC report
+
+df_commonSpp_bankLoc_means <- Common_species_FirstBout_long %>%
+  group_by(Location, variable) %>%
+  dplyr::summarise(Mean = mean(value), sd = sd(value))
+
+View(df_commonSpp_bankLoc_means)
+
+  
+```
+
+
+```{r graph common species using only first sample bout data wrangle properly}
+
+#Not working, keep playing
+
+vegdf$Species.Hit <- as.factor(vegdf$Species.Hit)
+
+df.top_percent_veg <- vegdf %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
+  filter(sample.bout =="1") %>%
+  drop_na(Species.Hit) %>% ## drops rows with missing values NA in Species.Hit 
+  summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Transect, Bank_Location) %>%  
+  summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(prop = Species.Hit/sum(Species.Hit))%>% ## mutate the df by adding prop that is each #sp/total
+  complete(Nativity, fill = list(Species.Hit = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  mutate(prop_log = log(prop+1))
+  
+# Check it adds to one with the 5 groups  
+sum(df.top_percent_veg$prop[1:2])
+    
+View(df.top_percent_veg)
+
+```
+
+
+```{r graph functional groups}
+
+#Prepping data file for proportion as response variable
+
+vegdf$FunctionalGroup <- as.factor(vegdf$FunctionalGroup)
+
+df.props_FG <- vegdf %>%
+  dplyr::mutate(FunctionalGroup=recode(FunctionalGroup, 'AF' = "SLF", 'BF' = "SLF", 'VF' = "SLF")) %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Longevity, Habit, FunctionalGroup, Nativity, Cvalue, WIS_GP) %>%
+  filter(sample.bout =="1") %>%
+  drop_na(Species.Hit, FunctionalGroup) %>%  ## drops rows with missing values NA in either Species.Hit or FunctionalGroup
+  summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Transect, Bank_Location, FunctionalGroup) %>%  
+  summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(propFG = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(FunctionalGroup, fill = list(Species.Hit = 0, propFG = 0)) ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+
+# Check it adds to one with the 7 groups  
+sum(df.props_FG$propFG[1:5])
+    
+View(df.props_FG)
+
+# This boxplot graphs all transects so need to get baseline line below
+p <- df.props_FG %>% ggplot(aes(x=FunctionalGroup, y=propFG))+
+  geom_boxplot()+
+  geom_point()+
+  labs(x = "Functional Group", y = "Proportion of Cover")+
+  theme_bw(base_size = 16)
+print(p)
+
+p + facet_wrap(~Bank_Location)
+
+#Need to get the means of each baseline
+#The above code currently graphs all 45 transects
+
+df.props_FG_means <- df.props_FG %>%
+  group_by(baseline, Bank_Location, FunctionalGroup) %>%
+  dplyr::summarise(Mean = mean(propFG))
+
+View(df.props_FG_means)
+
+#Now create new boxplot with baseline means
+#FOR HLCC REPORT
+
+p <- df.props_FG_means %>% ggplot(aes(x=factor(FunctionalGroup, levels = c('PG', 'PF', 'W', 'SLF', 'AG')), y=Mean, fill = FunctionalGroup))+
+  geom_boxplot()+
+  geom_point()+
+  labs(x = "Functional Group", y = "Proportion Vegetation Cover")+
+  stat_summary(fun=mean, geom="point", aes(group = FunctionalGroup), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+  theme_bw(base_size = 16)+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+  scale_fill_brewer(palette = "BuGn")
+
+print(p)
+
+p + facet_wrap(~Bank_Location)
+
+
+#Make stacked bar graph 
+
+df.props_FG_stacked <- aggregate(Mean ~ Bank_Location + FunctionalGroup, data = df.props_FG_means, FUN = mean)
+
+View(df.props_FG_stacked)
+
+p <- ggplot(df.props_FG_stacked, aes(fill = FunctionalGroup, y = Mean, x = Bank_Location))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Bank Location", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Functional Group Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "BuGn")
+
+print(p)
+
+#Make stacked bar graph of baselines 
+
+df.props_FG_stacked_baseline <- aggregate(Mean ~ baseline + FunctionalGroup, data = df.props_FG_means, FUN = mean)
+
+View(df.props_FG_stacked_baseline)
+
+p <- ggplot(df.props_FG_stacked_baseline, aes(x = factor (baseline, level = c("B03", "B05", "B07", "B10", "B13", "B14", "B15", "B17", "B18")), y = Mean, fill = FunctionalGroup))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Baseline", y = "Proportion of Cover") +
+  guides(fill = guide_legend("Functional Group Type")) +
+  theme_bw(base_size = 16) + 
+  scale_fill_brewer(palette = "BuGn")
+
+print(p)
+
+
+#Some additional stats for HLCC report
+
+df.props_FG_means <- df.props_FG %>%
+  group_by(baseline, FunctionalGroup) %>%
+  dplyr::summarise(Mean = mean(propFG), sd = sd(propFG))
+
+View(df.props_FG_means)
+
+df.props_FG_means <- df.props_FG %>%
+  group_by(Bank_Location, FunctionalGroup) %>%
+  dplyr::summarise(Mean = mean(propFG), sd = sd(propFG))
+
+View(df.props_FG_means)
+
+```
+
+
+```{r stats for functional group by bank location interaction}
+
+#Need to run code in chunk above named "r graph functional groups by bank location" that creates the data file df.props_FG
+
+#Create competing models
+
+lmer_gaus_null <- lmer(propFG ~ 1 + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
+lmer_gaus_fg_1 <- lmer(propFG ~ FunctionalGroup + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
+lmer_gaus_fg_2 <- lmer(propFG ~ FunctionalGroup + Bank_Location + (1|baseline) + (1|Transect:baseline), data = df.props_FG)
+lmer_gaus_fg_3 <- lmer(propFG ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|Transect:baseline) + (1|Transect:baseline), data = df.props_FG)
+lmer_gaus_fg_4 <- lmer(propFG ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|baseline), data = df.props_FG)
+
+AIC(lmer_gaus_null, lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4)
+
+summary(lmer_gaus_fg_1)
+summary(lmer_gaus_fg_2)
+summary(lmer_gaus_fg_3)
+summary(lmer_gaus_fg_4)
+
+
+#Different ways to visualize distribution of the raw data and model fitted data (y conditional on x)
+
+proportion_fg_gauss <- df.props_FG$propFG #Histogram showing lots of zeroes and ones 
+hist(proportion_fg_gauss)
+qqnorm(df.props_FG$propFG) #use to visualize whether raw data are normally distributed
+qqnorm(resid(lmer_gaus_fg_4))     #Use to visualize whether model residuals vs predicted are normally distributed
+plot(lmer_gaus_fg_4)              #Use to visualize whether model residuals vs predicted are normally distributed
+
+
+#Choose lmer_gaus_fg_4 based on AIC and run diagnostics, output, pairwise comparisons
+
+#effectsize::standardize(lmer_gaus_upper2) %>% summary()
+plot_residuals(lmer_gaus_fg_4)
+plot_model(lmer_gaus_fg_4, type = "diag")
+sjPlot::plot_model(lmer_gaus_fg_4, type = "est", show.values = T)
+
+sjPlot::tab_model(lmer_gaus_fg_4, df.method = "satterthwaite", title = "Proportion of Functional Groups in Vegetation", dv.labels = "Proportion Cover")
+
+emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup, adjust = "tukey")
+
+
+emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup | Bank_Location, adjust = "tukey")
+emmip(lmer_gaus_fg_4, FunctionalGroup ~ Bank_Location, CIs = TRUE)
+
+
+```
