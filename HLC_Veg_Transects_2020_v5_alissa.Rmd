@@ -1192,8 +1192,17 @@ emmip(lmer_gaus4, WIS_GP ~ Bank_Location) #graph of interaction between bank loc
 #customizations
 emmip(lmer_gaus4, WIS_GP ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
-  ggplot2::theme_bw()
+  ggplot2::theme_bw() +
+  ylab("Linear Prediction of Cover WIS") +       
+  xlab("Bank Location") +
+  ggtitle("Vegetation")
 
+emmip(lmer_gaus4, WIS_GP ~ Bank_Location, linearg = list(),
+      CIarg = list(lwd = 1, alpha = 1)) +
+  ggplot2::theme_bw() +
+  ylab("Linear Prediction of Cover WIS") +       
+  xlab("Bank Location") +
+  ggtitle("Vegetation")
 
 as.data.frame(df_emmeans) #not sure if this works 
 view(df_emmeans)
@@ -1257,7 +1266,10 @@ emmip(lmer_gaus_native_4, Nativity~ Bank_Location, CIs = TRUE)
 #customizations
 emmip(lmer_gaus_native_4, Nativity ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
-  ggplot2::theme_bw()
+  ggplot2::theme_bw() +
+  ylab("Linear Prediction of Cover Nativity") +       
+  xlab("Bank Location") +
+  ggtitle("Vegetation")
 
 ```
 
@@ -1315,7 +1327,17 @@ emmip(lmer_gaus_fg_4, FunctionalGroup2 ~ Bank_Location, CIs = TRUE)
 #customizations
 emmip(lmer_gaus_fg_4, FunctionalGroup2 ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
-  ggplot2::theme_bw()
+  ggplot2::theme_bw() +
+  ylab("Linear Prediction of Cover Functional Group") +       
+  xlab("Bank Location") +
+  ggtitle("Vegetation")
+
+emmip(lmer_gaus_fg_4, FunctionalGroup2 ~ Bank_Location, linearg = list(),
+      CIarg = list(lwd = 1, alpha = 1)) +
+  ggplot2::theme_bw() +
+  ylab("Linear Prediction of Cover Functional Group") +       
+  xlab("Bank Location") +
+  ggtitle("Vegetation")
 ```
 
 

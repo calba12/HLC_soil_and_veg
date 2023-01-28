@@ -216,7 +216,7 @@ SB_families <- seedbankdf %>%
 
 view(SB_families)
 
-#write_xlsx(SB_families, 'sb_fam_counts.xlsx')
+write_xlsx(SB_families, 'sb_fam_counts.xlsx')
 
 
 
@@ -738,7 +738,7 @@ summary(lmer_sb4) #Get model output
 
 WIS_SB_model_summary<-as.data.frame(coef(summary(lmer_sb4))) #put coefficients into dataframe
 
-write.csv(WIS_SB_model_summary, 'WIS_SB_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
+#write.csv(WIS_SB_model_summary, 'WIS_SB_model_summary.csv', row.names = TRUE) #CSV, keeping names in index
 
 #Different ways to visualize the distribution of the data; the raw data (distribution of y) is not normally distributed but the model fit
 #(with y conditional on x) looks decent (although still violates normality) based on qqplot and distribution of fitted versus residuals
@@ -778,7 +778,21 @@ emmip(lmer_sb4, WIS ~ Bank_Location)
 #customizations
 emmip(lmer_sb4, WIS ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
-  ggplot2::theme_bw()
+  ggplot2::theme_bw()  +
+  ylab("Linear Prediction of Seed Bank WIS") +       
+  xlab("Bank Location") +
+  ggtitle("Seed Bank")
+
+emmip(lmer_sb4, WIS ~ Bank_Location, linearg = list(),
+      CIarg = list(lwd = 1, alpha = 1)) +
+  ggplot2::theme_bw()  +
+  ylab("Linear Prediction of Seed Bank WIS") +       
+  xlab("Bank Location") +
+  ggtitle("Seed Bank")
+
+
+  
+  
 
 ```
 
@@ -840,7 +854,17 @@ emmip(lmer_gaus_native_4, Nativity~ Bank_Location) #without CIs
 #customizations
 emmip(lmer_gaus_native_4, Nativity ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
-  ggplot2::theme_bw()
+  ggplot2::theme_bw() +
+  ylab("Linear Prediction of Seed Bank Nativity") +       
+  xlab("Bank Location") +
+  ggtitle("Seed Bank")
+
+emmip(lmer_gaus_native_4, Nativity ~ Bank_Location, linearg = list(),
+      CIarg = list(lwd = 1, alpha = 1)) +
+  ggplot2::theme_bw()  +
+  ylab("Linear Prediction of Seed Bank Nativity") +       
+  xlab("Bank Location") +
+  ggtitle("Seed Bank")
 ```
 
 ```{r stats for functional group by bank location interaction}
@@ -898,11 +922,21 @@ emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location)
 #customizations
 emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
-  ggplot2::theme_bw()
+  ggplot2::theme_bw()+
+  ylab("Linear Prediction of Seed Bank Functional Group") +       
+  xlab("Bank Location") +
+  ggtitle("Seed Bank") +
+  scale_fill_discrete(name = "Functional Group") #not able to change legend title yet
+  
 
 emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
-  ggplot2::theme_bw()
+  ggplot2::theme_bw() +
+  ylab("Linear Prediction of Seed Bank Functional Group") +       
+  xlab("Bank Location") +
+  ggtitle("Seed Bank")
+
+
 
 
 ```
@@ -1027,9 +1061,9 @@ sum(Spp_count_tbl$Freq2)
 #Summing number of hits at each level of organization (whole canal, baselines, transects)
 
 #Whole-canal level: number of species hits by sample bout and hit number, includes foliar and ground first hits
-df.canal <- vegdf %>% 
-  group_by(sample.bout, Hit.Number) %>%
-  summarise(Species.Hit = n()) 
+df.sb <- seedbankdf %>% 
+  group_by(Bank_Location) %>%
+  summarise(Species_Name = n()) 
 
 View(df.canal)
 write_xlsx(df.canal, 'hits_byCanal.xlsx')
@@ -1216,6 +1250,8 @@ SB_total_unknowns <- seedbank_unknowns_df %>%
   summarise(Freq_unk = n()) #abundances of each tray/sample (all 81)
 view(SB_total_unknowns)
 
+write_xlsx(SB_total_unknowns,'Unknowns_SB.xlsx')
+
 SB_BL_mean_unk <- SB_total_unknowns %>%
   group_by(Species_Name, Baseline, Bank_Location) %>%
   summarise(mean_unk = mean(Freq_unk)) #averages transects to give means for baseline and bank location (27)
@@ -1245,16 +1281,6 @@ Unknowns_sp_bp_V <- SB_BL_mean_unk %>%  # violin plot
     ylab("Mean Abundance of Unidentified Germinants")
 print(Unknowns_sp_bp_V)
 
-# should look at proportion! use below code to figure out how to get proportion of each
-
-df.props_nativity_sb <- seedbank %>%
-  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_1, Habit, Functional_Group_1, Nativity) %>%
-  drop_na(SPECIFIC_EPITHET_FINAL, WIS, Nativity) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
-  summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(Baseline, Transect_ID, Bank_Location, Nativity) %>% #added transect so I can get mean
-  summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
-  mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>% ## mutate the df by adding prop that is each #sp/total
-  complete(Nativity, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
 
 ``` 
 
@@ -1272,6 +1298,7 @@ SB_total_abundances <- seedbankdf %>%
 SB_BL_mean_abundance <- SB_total_abundances %>%
   group_by(Baseline, Bank_Location) %>%
   summarise(mean = mean(Freq2)) #averages transects to give means for baseline and bank location (27)
+view(SB_BL_mean_abundance)
 
 #abundance by bank location
 Abundance <- SB_BL_mean_abundance %>% #box plot
@@ -1288,12 +1315,14 @@ print(Abundance)
 Abundance_v <- SB_BL_mean_abundance %>%  # violin plot
   ggplot(aes(x=Bank_Location, y=mean, fill=Bank_Location))+ 
     geom_violin ()+
-    theme(
+    stat_summary(fun=mean, geom="point", position = position_dodge(.9), shape=20, size=2.5, color="black", fill="black")+
+    theme_bw(base_size = 10)+
+  theme(
       legend.position="none",
       plot.title = element_text(size=11)
     ) +
     xlab("Bank Location") +
-    ylab("Mean Abundance")
+    ylab("Mean Abundance of Seed Bank Germinants") 
 print(Abundance_v)
 
 #abundance by baseline
@@ -1304,6 +1333,7 @@ SB_baseline_mean_abundance <- SB_total_abundances %>%
 
 
 Abundance_baseline <- SB_baseline_mean_abundance %>% #box plot
+  mutate(Baseline = fct_relevel(Baseline, "B3", "B5", "B7", "B10", "B13", "B14", "B15", "B17", "B18")) %>%
   ggplot(aes(x=Baseline, y=mean1, fill=Baseline))+ 
   geom_boxplot()+
     geom_point()+
