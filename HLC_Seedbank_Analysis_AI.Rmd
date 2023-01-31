@@ -347,28 +347,31 @@ print(St_WIS)
 #view(seedbank)
 
 seedbank$Functional_Group_2 <- as.factor(seedbank$Functional_Group_2)
-    
+
+seedbank <- seedbank %>% rename(FunctionalGroup = Functional_Group_2)
+
+#### try changing name of Functional group and then change all code belower
 
 df.props_FunctGroup_seed <- seedbank %>%
-   filter(Functional_Group_2 !="Long-lived Woody") %>% #removing these groups from the graph (NAs were already dropped)
- filter(Functional_Group_2 !="NA Forb") %>%
- filter(Functional_Group_2 !="NA NA") %>%
- filter(Functional_Group_2 !="NA Graminoid") %>%
- filter(Functional_Group_2 !="  Graminoid") %>%
- filter(Functional_Group_2 !="Variable Forb") %>%
-  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_2, Habit, Functional_Group_2, Nativity) %>%
-  drop_na(SPECIFIC_EPITHET_FINAL, Longevity_2, Habit, Nativity, Functional_Group_2) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+   filter(FunctionalGroup !="Long-lived Woody") %>% #removing these groups from the graph (NAs were already dropped)
+ filter(FunctionalGroup !="NA Forb") %>%
+ filter(FunctionalGroup !="NA NA") %>%
+ filter(FunctionalGroup !="NA Graminoid") %>%
+ filter(FunctionalGroup !="  Graminoid") %>%
+ filter(FunctionalGroup !="Variable Forb") %>%
+  group_by(Baseline, Transect_ID, Bank_Location, WIS, Longevity_2, Habit, FunctionalGroup, Nativity) %>%
+  drop_na(SPECIFIC_EPITHET_FINAL, Longevity_2, Habit, Nativity, FunctionalGroup) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
   summarise(SPECIFIC_EPITHET_FINAL = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(Baseline, Transect_ID, Bank_Location, Functional_Group_2) %>% #added transect so I can get mean
+  group_by(Baseline, Transect_ID, Bank_Location, FunctionalGroup) %>% #added transect so I can get mean
   summarise(SPECIFIC_EPITHET_FINAL = sum(SPECIFIC_EPITHET_FINAL)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
   mutate(prop = SPECIFIC_EPITHET_FINAL/sum(SPECIFIC_EPITHET_FINAL)) %>%## mutate the df by adding prop that is each #sp/total
-  complete(Functional_Group_2, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
- filter(Functional_Group_2 !="Long-lived Woody") %>% #removing these groups from the graph (NAs were already dropped)
- filter(Functional_Group_2 !="NA Forb") %>%
- filter(Functional_Group_2 !="NA NA") %>%
- filter(Functional_Group_2 !="NA Graminoid") %>%
- filter(Functional_Group_2 !="  Graminoid") %>%
- filter(Functional_Group_2 !="Variable Forb") # have to filter these out twice, due to complete function
+  complete(FunctionalGroup, fill = list(SPECIFIC_EPITHET_FINAL = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+ filter(FunctionalGroup !="Long-lived Woody") %>% #removing these groups from the graph (NAs were already dropped)
+ filter(FunctionalGroup !="NA Forb") %>%
+ filter(FunctionalGroup !="NA NA") %>%
+ filter(FunctionalGroup !="NA Graminoid") %>%
+ filter(FunctionalGroup !="  Graminoid") %>%
+ filter(FunctionalGroup !="Variable Forb") # have to filter these out twice, due to complete function
 
 #view(df.props_FunctGroup_seed)
 #checkout color packages, ggplot color package
@@ -377,24 +380,24 @@ sum(df.props_FunctGroup_seed$prop[1:4])
 #get the means across transect (transected is nested within baseline as replication)
 
 df_FGroup_means <- df.props_FunctGroup_seed %>%
-  group_by(Baseline, Bank_Location, Functional_Group_2) %>%
+  group_by(Baseline, Bank_Location, FunctionalGroup) %>%
   dplyr::summarise(Mean = mean(prop))
 
 #View(df_FGroup_means)
 
 #get the means again but average bank location as well
 df_FGroup_means_sb2 <- df.props_FunctGroup_seed %>%
-  group_by(Baseline, Functional_Group_2) %>%
+  group_by(Baseline, FunctionalGroup) %>%
   dplyr::summarise(Mean = mean(prop))
 #View(df_FGroup_means_sb2)
 
 #boxplot without bank location
 FGroup1 <- df_FGroup_means_sb2 %>% 
-  ggplot(aes(x=Functional_Group_2, y=Mean, fill=Functional_Group_2))+ 
+  ggplot(aes(x=FunctionalGroup, y=Mean, fill=FunctionalGroup))+ 
   geom_boxplot()+
     geom_point()+
     labs(x = "Functional Group", y = "Proportion of Seed Bank")+
-    stat_summary(fun=mean, geom="point", aes(group = Functional_Group_2), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    stat_summary(fun=mean, geom="point", aes(group = FunctionalGroup), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
     scale_fill_brewer(palette = "BuPu")
@@ -403,11 +406,11 @@ print(FGroup1)
 
 #Make boxplot with means, look at bank location
 FGroup2 <- df_FGroup_means %>% 
-  ggplot(aes(x=Functional_Group_2, y=Mean, fill=Functional_Group_2))+ 
+  ggplot(aes(x=FunctionalGroup, y=Mean, fill=FunctionalGroup))+ 
   geom_boxplot()+
     geom_point()+
     labs(x = "Functional Group", y = "Proportion of Seed Bank")+
-    stat_summary(fun=mean, geom="point", aes(group = Functional_Group_2), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
+    stat_summary(fun=mean, geom="point", aes(group = FunctionalGroup), position = position_dodge(.9), shape=20, size=2.5, color="orange", fill="orange")+
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
     scale_fill_brewer(palette = "BuPu")
@@ -418,12 +421,12 @@ print(FGroup2_BL)
 
 #Make stacked bar graph 
 
-FG_stacked <- aggregate(Mean ~ Bank_Location + Functional_Group_2 , data = df_FGroup_means, FUN = mean)
+FG_stacked <- aggregate(Mean ~ Bank_Location + FunctionalGroup , data = df_FGroup_means, FUN = mean)
 
 #View(FG_stacked)
 
 St_FG <- FG_stacked %>%
-  ggplot(aes(fill = Functional_Group_2, y = Mean, x = Bank_Location))+
+  ggplot(aes(fill = FunctionalGroup, y = Mean, x = Bank_Location))+
   geom_bar(position = "stack", stat = "identity", color = "black") +
   labs(x = "Bank Location", y = "Proportion of Seed bank") +
   guides(fill = guide_legend("Functional Group")) +
@@ -457,6 +460,7 @@ df.props_nativity_sb <- seedbank %>%
 # Check it adds to one with the 5 groups  
 sum(df.props_nativity_sb$prop[1:2])
     
+
 #View(df.props_nativity_sb)
 
 #get the means across transect (transected is nested within baseline as replication)
@@ -779,14 +783,14 @@ emmip(lmer_sb4, WIS ~ Bank_Location)
 emmip(lmer_sb4, WIS ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw()  +
-  ylab("Linear Prediction of Seed Bank WIS") +       
+  ylab("Linear Prediction of Seed Bank Wetland Indicator Status (WIS) Proportion") +       
   xlab("Bank Location") +
   ggtitle("Seed Bank")
 
 emmip(lmer_sb4, WIS ~ Bank_Location, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw()  +
-  ylab("Linear Prediction of Seed Bank WIS") +       
+  ylab("Linear Prediction of Seed Bank Wetland Indicator Status (WIS) Proportion") +       
   xlab("Bank Location") +
   ggtitle("Seed Bank")
 
@@ -855,14 +859,15 @@ emmip(lmer_gaus_native_4, Nativity~ Bank_Location) #without CIs
 emmip(lmer_gaus_native_4, Nativity ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw() +
-  ylab("Linear Prediction of Seed Bank Nativity") +       
+  ylab("Linear Prediction of Seed Bank Nativity Proportion") +       
   xlab("Bank Location") +
   ggtitle("Seed Bank")
 
+#not needed for nativity (very legible)
 emmip(lmer_gaus_native_4, Nativity ~ Bank_Location, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw()  +
-  ylab("Linear Prediction of Seed Bank Nativity") +       
+  ylab("Linear Prediction of Seed Bank Nativity Proportion") +       
   xlab("Bank Location") +
   ggtitle("Seed Bank")
 ```
@@ -875,10 +880,10 @@ emmip(lmer_gaus_native_4, Nativity ~ Bank_Location, linearg = list(),
 view(df.props_FunctGroup_seed)
 
 lmer_gaus_null <- lmer(prop ~ 1 + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
-lmer_gaus_fg_1 <- lmer(prop ~ Functional_Group_2 + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
-lmer_gaus_fg_2 <- lmer(prop ~ Functional_Group_2 + Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
-lmer_gaus_fg_3 <- lmer(prop ~ Functional_Group_2 + Bank_Location + Functional_Group_2*Bank_Location + (1|Transect_ID:Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
-lmer_gaus_fg_4 <- lmer(prop ~ Functional_Group_2 + Bank_Location + Functional_Group_2*Bank_Location + (1|Baseline), data = df.props_FunctGroup_seed)
+lmer_gaus_fg_1 <- lmer(prop ~ FunctionalGroup + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
+lmer_gaus_fg_2 <- lmer(prop ~ FunctionalGroup + Bank_Location + (1|Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
+lmer_gaus_fg_3 <- lmer(prop ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|Transect_ID:Baseline) + (1|Transect_ID:Baseline), data = df.props_FunctGroup_seed)
+lmer_gaus_fg_4 <- lmer(prop ~ FunctionalGroup + Bank_Location + FunctionalGroup*Bank_Location + (1|Baseline), data = df.props_FunctGroup_seed)
 
 AIC(lmer_gaus_null, lmer_gaus_fg_1, lmer_gaus_fg_2,lmer_gaus_fg_3, lmer_gaus_fg_4)
 
@@ -916,28 +921,27 @@ FG_emmeans_output_SB<-as.data.frame(emmeans(lmer_gaus_fg_4, df.method = "sattert
 write_xlsx(FG_emmeans_output_SB, 'FG_emmeans_output_SB.xlsx')
 
 
-emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location, CIs = TRUE)
-emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location)
+emmip(lmer_gaus_fg_4, FunctionalGroup ~ Bank_Location, CIs = TRUE)
+emmip(lmer_gaus_fg_4, FunctionalGroup ~ Bank_Location)
 
 #customizations
-emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location, CIs = TRUE, linearg = list(),
+
+emmip(lmer_gaus_fg_4, FunctionalGroup ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw()+
-  ylab("Linear Prediction of Seed Bank Functional Group") +       
+  ylab("Linear Prediction of Seed Bank Functional Group Proportion") +       
   xlab("Bank Location") +
-  ggtitle("Seed Bank") +
-  scale_fill_discrete(name = "Functional Group") #not able to change legend title yet
+  ggtitle("Seed Bank") 
+
+  #scale_fill_discrete(name = "Functional Group") #not able to change legend title yet
   
 
-emmip(lmer_gaus_fg_4, Functional_Group_2 ~ Bank_Location, linearg = list(),
+emmip(lmer_gaus_fg_4, FunctionalGroup ~ Bank_Location, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw() +
-  ylab("Linear Prediction of Seed Bank Functional Group") +       
+  ylab("Linear Prediction of Seed Bank Functional Group Proportion") +       
   xlab("Bank Location") +
   ggtitle("Seed Bank")
-
-
-
 
 ```
 

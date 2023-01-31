@@ -1193,14 +1193,14 @@ emmip(lmer_gaus4, WIS_GP ~ Bank_Location) #graph of interaction between bank loc
 emmip(lmer_gaus4, WIS_GP ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw() +
-  ylab("Linear Prediction of Cover WIS") +       
+  ylab("Linear Prediction of Cover Wetland Indicator Status (WIS) Proportion") +       
   xlab("Bank Location") +
   ggtitle("Vegetation")
 
 emmip(lmer_gaus4, WIS_GP ~ Bank_Location, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw() +
-  ylab("Linear Prediction of Cover WIS") +       
+  ylab("Linear Prediction of Cover Wetland Indicator Status (WIS) Proportion") +       
   xlab("Bank Location") +
   ggtitle("Vegetation")
 
@@ -1267,7 +1267,7 @@ emmip(lmer_gaus_native_4, Nativity~ Bank_Location, CIs = TRUE)
 emmip(lmer_gaus_native_4, Nativity ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw() +
-  ylab("Linear Prediction of Cover Nativity") +       
+  ylab("Linear Prediction of Cover Nativity Proportion") +       
   xlab("Bank Location") +
   ggtitle("Vegetation")
 
@@ -1328,14 +1328,14 @@ emmip(lmer_gaus_fg_4, FunctionalGroup2 ~ Bank_Location, CIs = TRUE)
 emmip(lmer_gaus_fg_4, FunctionalGroup2 ~ Bank_Location, CIs = TRUE, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw() +
-  ylab("Linear Prediction of Cover Functional Group") +       
+  ylab("Linear Prediction of Cover Functional Group Proportion") +       
   xlab("Bank Location") +
   ggtitle("Vegetation")
 
 emmip(lmer_gaus_fg_4, FunctionalGroup2 ~ Bank_Location, linearg = list(),
       CIarg = list(lwd = 1, alpha = 1)) +
   ggplot2::theme_bw() +
-  ylab("Linear Prediction of Cover Functional Group") +       
+  ylab("Linear Prediction of Cover Functional Group Proportion") +       
   xlab("Bank Location") +
   ggtitle("Vegetation")
 ```
