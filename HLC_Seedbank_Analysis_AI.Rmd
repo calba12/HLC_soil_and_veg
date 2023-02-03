@@ -50,7 +50,7 @@ seedbankdf <- seedbankdf %>% rename(c(Species_Name=SPECIFIC_EPITHET_FINAL, Germi
 
 df_sb <- seedbankdf %>% distinct(Species_Name)
 
-View(df_sb)
+#View(df_sb)
 #^Looks good, not sure if I should keep or remove unknowns? 
 
 
@@ -62,7 +62,7 @@ df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
          & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown Poaceae") %>%
   select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS)
 
-view(df_Spp)
+#view(df_Spp)
 #write_xlsx(df_Spp, 'SB_SppList.xlsx')
 
 
@@ -264,7 +264,7 @@ df.props_WIS_seed <- seedbankdf %>%
   complete(WIS, fill = list(Species_Name = 0, prop = 0)) ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
 #checkout color packages, ggplot color package
 
-view(df.props_WIS_seed)
+#view(df.props_WIS_seed)
 
 
 # Check it adds to one with the 5 groups  
@@ -282,7 +282,7 @@ df_WIS_means_sb <- df.props_WIS_seed %>%
 df_WIS_means_sb2 <- df.props_WIS_seed %>%
   group_by(Baseline, WIS) %>%
   dplyr::summarise(Mean = mean(prop))
-View(df_WIS_means_sb2)
+#View(df_WIS_means_sb2)
 
 
 #Make boxplot
@@ -323,7 +323,7 @@ print(WIS_BL)
 
 df_stacked <- aggregate(Mean ~ Bank_Location + WIS , data = df_WIS_means_sb, FUN = mean)
 
-#View(df_stacked)
+View(df_stacked)
 
 St_WIS <- df_stacked %>%
   mutate(WIS = fct_relevel(WIS, "UPL", 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.*')) %>%
@@ -336,6 +336,24 @@ St_WIS <- df_stacked %>%
 
 print(St_WIS)
 
+
+#stacked graph for baseline
+
+df_stacked_WIS_baseline_sb <- aggregate(prop ~ Baseline + WIS, data = df.props_WIS_seed, FUN = mean)
+
+View(df_stacked_WIS_baseline_sb)
+
+df_stacked_WIS_baseline_sb$Baseline <- as.character(df_stacked_WIS_baseline_sb$Baseline)
+
+df_stacked_WIS_baseline_sb %>%
+  mutate(WIS = fct_relevel(WIS, "UPL", 'FACU', 'FAC', 'FACW', 'OBL', 'Juncus sp.*')) %>%
+  mutate(Baseline = fct_relevel(Baseline, "B3", "B5", "B7", "B10", "B13", "B14", "B15", "B17", "B18")) %>%
+  ggplot(aes(fill = WIS, y = prop, x = Baseline))+
+  geom_bar(position = "stack", stat = "identity", color = "black") +
+  labs(x = "Baseline", y = "Proportion of Seed Bank") +
+  guides(fill = guide_legend("WIS")) +
+  theme_bw(base_size = 16)+
+  scale_fill_brewer(palette = "BuPu")
 
 ```
 

@@ -64,13 +64,13 @@ head(vegdf)
 #check species spellings
 
 df <- vegdf %>% distinct(VegHit_SoilSurfaceHit)
-View(df)
+#View(df)
 
 
 df_Spp_v <- distinct(vegdf, Species.Hit, .keep_all = TRUE) %>%
   arrange(Species.Hit)
 
-view(df_Spp_v)
+#view(df_Spp_v)
 ```
 
 
@@ -705,31 +705,24 @@ St_WIS_vg <- df_stacked_v %>%
 
 print(St_WIS_vg)
 
+#stacked graph for baseline
 
-#Make boxplot _CA CODE
-p <- df.props_WIS_veg_exp %>% ggplot(aes(x=factor(WIS_GP, levels = c('UPL', 'FACU', 'FAC', 'FACW', 'OBL')), y=prop))+ 
-  geom_boxplot()+
-  geom_point()+
+df_stacked_WIS_baseline <- aggregate(prop ~ baseline + WIS_GP, data = df.props_WIS_veg, FUN = mean)
 
-  labs(x = "Wetland Indicator Status", y = "Proportion of Vegetative Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = WIS_GP), position = position_dodge(.9), shape=20, size=2.5, color="red", fill="red")+
-  theme_bw(base_size = 16)+
-  theme(axis.text.x=element_text(angle=90, hjust=1))
-print(p)
+View(df_stacked_WIS_baseline)
 
-p + facet_wrap(~Bank_Location)
+df_stacked_WIS_baseline$baseline <- as.character(df_stacked_WIS_baseline$baseline)
 
-#Make stacked bar graph __ CA CODE
-
-df_stacked_WIS <- aggregate(prop ~ Bank_Location + WIS_GP, data = df.props_WIS_veg, FUN = mean)
-
-View(df_stacked)
-
-ggplot(df_stacked_WIS, aes(fill = WIS_GP, y = prop, x = Bank_Location))+
+df_stacked_WIS_baseline %>%
+  mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", 'FACU', 'FAC', 'FACW', 'OBL')) %>%
+  mutate(baseline = fct_relevel(baseline, "B3", "B5", "B7", "B10", "B13", "B14", "B15", "B17", "B18")) %>%
+  ggplot(aes(fill = WIS_GP, y = prop, x = baseline))+
   geom_bar(position = "stack", stat = "identity", color = "black") +
-  labs(x = "Bank Location", y = "Proportion of Cover") +
-  guides(fill = guide_legend("Wetland Indicator Status")) +
-  theme_bw(base_size = 16) 
+  labs(x = "Baseline", y = "Proportion of Cover") +
+  guides(fill = guide_legend("WIS")) +
+  theme_bw(base_size = 16)+
+  scale_fill_brewer(palette = "BuGn")
+ 
 
 ```
 
