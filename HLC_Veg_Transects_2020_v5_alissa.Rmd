@@ -626,6 +626,7 @@ View(df_prop_hit_type_means)
 ```
 
 
+
 ```{r graph WIS}
 
 #Prepping data file for proportion as response variable
@@ -1104,6 +1105,93 @@ legend(x=0.6,
        y=1.35, 
        legend = rownames(data[-c(1,2),]), 
        bty = "n", pch=20 , col = colors_line, cex = 1.05, pt.cex = 3)
+```
+
+```{r graph rank abundance curve}
+
+#Prepping data file for proportion as response variable
+
+vegdf$VegHit_SoilSurfaceHit <- as.factor(vegdf$VegHit_SoilSurfaceHit)
+
+df.props_RankAbund_veg <- vegdf %>%
+  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Species.Hit, VegHit_SoilSurfaceHit) %>%
+  filter(sample.bout =="1") %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") %>%
+  drop_na(Species.Hit, VegHit_SoilSurfaceHit) %>%  ## drops rows with missing values NA in either Species.Hit 
+  summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Transect, Bank_Location, VegHit_SoilSurfaceHit) %>%  
+  summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(VegHit_SoilSurfaceHit, fill = list(Species.Hit = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") #remove after complete function so they aren't included in graphs (same as with FG)
+
+
+# Check it adds to one with the 5 groups  
+sum(df.props_RankAbund_veg$prop[1:58])
+    
+View(df.props_RankAbund_veg)
+
+#get the means across transect (transected is nested within baseline as replication)
+df_RankAbund_means_veg <- df.props_RankAbund_veg %>%
+  group_by(baseline, Bank_Location, VegHit_SoilSurfaceHit) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+View(df_RankAbund_means_veg)
+
+#get the means again but average bank location as well
+df_RankAbund_means_veg2 <- df.props_RankAbund_veg %>%
+  group_by(baseline, VegHit_SoilSurfaceHit) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+View(df_RankAbund_means_veg2)
+
+
+# means again but average across all to get most common species
+df_RankAbund_means_veg3 <- df.props_RankAbund_veg %>%
+  group_by(VegHit_SoilSurfaceHit) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+Common_veg_species <- df_RankAbund_means_veg3 %>%
+  filter(Mean > 0.0099) %>%
+  arrange(Mean)
+
+
+View(Common_veg_species)
+
+#boxplot without bank location (not needed)
+
+RankAbund_veg1 <- df_RankAbund_means_veg2 %>%
+  arrange(Mean) %>%
+  filter(VegHit_SoilSurfaceHit == "Bromus inermis"
+         | VegHit_SoilSurfaceHit == "Phalaris arundinacea" 
+         | VegHit_SoilSurfaceHit == "Elymus repens"
+         | VegHit_SoilSurfaceHit == "Rhamnus cathartica" 
+         | VegHit_SoilSurfaceHit == "Dactylis glomerata" 
+         | VegHit_SoilSurfaceHit == "Cirsium arvense"
+         | VegHit_SoilSurfaceHit == "Taraxacum officinale" 
+         | VegHit_SoilSurfaceHit == "Parthenocissus vitacea" 
+         | VegHit_SoilSurfaceHit == "Convolvulus arvensis"
+         | VegHit_SoilSurfaceHit == "Symphyotrichum lanceolatum ssp. hesperium" 
+         | VegHit_SoilSurfaceHit == "Schedonorus arundinaceus" 
+         | VegHit_SoilSurfaceHit == "Carex emoryi"
+         | VegHit_SoilSurfaceHit == "Symphoricarpos occidentalis" 
+         | VegHit_SoilSurfaceHit == "Prunus virginiana")  %>%
+  mutate(VegHit_SoilSurfaceHit = fct_relevel(VegHit_SoilSurfaceHit, "Bromus inermis", "Phalaris arundinacea", "Elymus repens", "Rhamnus cathartica", "Dactylis glomerata", "Cirsium arvense", "Taraxacum officinale",  "Parthenocissus vitacea", "Convolvulus arvensis", "Symphyotrichum lanceolatum ssp. hesperium", "Schedonorus arundinaceus", "Carex emoryi", "Symphoricarpos occidentalis", "Prunus virginiana")) %>% 
+  ggplot(aes(x=factor(VegHit_SoilSurfaceHit), y=Mean, fill=VegHit_SoilSurfaceHit))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Species", y = "Proportion of Cover")+
+    stat_summary(fun=mean, geom="point", aes(group = VegHit_SoilSurfaceHit), position = position_dodge(.9), shape=20, size=2.5, color="purple", fill="purple")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    scale_fill_brewer(palette = "RdBu")
+
+
+print(RankAbund_veg1)
+ 
+
 ```
 
 
