@@ -820,7 +820,6 @@ View(Common_seed_species)
 #boxplot without bank location (not needed)
 
 RankAbund_seed <- df_RankAbund_means_seed2 %>%
-  arrange(Mean) %>%
   filter(Species_Name == "Taraxacum officinale"
          | Species_Name == "Juncus sp." 
          | Species_Name == "Phalaris arundinacea"
@@ -830,14 +829,12 @@ RankAbund_seed <- df_RankAbund_means_seed2 %>%
          | Species_Name == "Capsella bursa-pastoris" 
          | Species_Name == "Carex sp." 
          | Species_Name == "Plantago major"
-         | Species_Name == "Carex emoryi" 
-         | Species_Name == "Descurainia sophia" 
-         | Species_Name == "Dactylis glomerata") %>%
-  mutate(Species_Name = fct_relevel(Species_Name, "Taraxacum officinale", "Juncus sp.", "Phalaris arundinacea", "Rumex crispus", "Rorippa palustris", "Bromus tectorum", "Capsella bursa-pastoris",  "Carex sp.", "Plantago major", "Carex emoryi", "Descurainia sophia", "Dactylis glomerata")) %>% 
+         | Species_Name == "Carex emoryi") %>%
+  mutate(Species_Name = fct_relevel(Species_Name, "Taraxacum officinale", "Juncus sp.", "Phalaris arundinacea", "Rumex crispus", "Rorippa palustris", "Bromus tectorum", "Capsella bursa-pastoris",  "Carex sp.", "Plantago major", "Carex emoryi")) %>% 
   ggplot(aes(x=factor(Species_Name), y=Mean, fill=Species_Name))+ 
   geom_boxplot()+
     geom_point()+
-    labs(x = "Species", y = "Proportion of Cover")+
+    labs(x = "Species", y = "Proportion of Seed Bank")+
     stat_summary(fun=mean, geom="point", aes(group = Species_Name), position = position_dodge(.9), shape=20, size=2.5, color="purple", fill="purple")+
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
@@ -845,6 +842,37 @@ RankAbund_seed <- df_RankAbund_means_seed2 %>%
 
 
 print(RankAbund_seed)
+
+
+#all speciees RAC
+
+RankAbund_seed2 <- df_RankAbund_means_seed2 %>%
+  ggplot(aes(x=reorder(factor(Species_Name), -Mean), y=Mean))+ 
+  geom_boxplot()+
+    geom_point(data =df_RankAbund_means_seed3, mapping = aes (x=Species_Name, y =Mean) )+
+    labs(x = "Species", y = "Proportion of Seed Bank")+
+    stat_summary(fun=mean, geom="point", aes(group = Species_Name), position = position_dodge(.9), shape=20, size=2.5, color="purple", fill="purple")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
+    geom_line(data=df_RankAbund_means_seed3, mapping =aes(x = Species_Name, y = Mean))
+
+
+print(RankAbund_seed2)
+
+#all species RAC// with line connecting mean
+
+RankAbund_seed2 <- df_RankAbund_means_seed2 %>%
+  ggplot(aes(x=reorder(factor(Species_Name), -Mean), y=Mean))+ #not reordered perfectly, not sure how to fix
+  geom_boxplot()+
+    geom_point(data =df_RankAbund_means_seed3, mapping = aes (x=Species_Name, y =Mean), color="purple") +
+    geom_line(data = df_RankAbund_means_seed3, mapping = aes(x = Species_Name, y = Mean, group=1)) +
+    labs(x = "Species", y = "Proportion of Seed Bank")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))
+    
+
+
+print(RankAbund_seed2)
  
 
 ```

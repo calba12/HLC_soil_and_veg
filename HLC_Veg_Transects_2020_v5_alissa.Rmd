@@ -1143,7 +1143,8 @@ View(df_RankAbund_means_veg)
 #get the means again but average bank location as well
 df_RankAbund_means_veg2 <- df.props_RankAbund_veg %>%
   group_by(baseline, VegHit_SoilSurfaceHit) %>%
-  dplyr::summarise(Mean = mean(prop))
+  dplyr::summarise(Mean = mean(prop)) %>%
+  arrange(desc(Mean))
 
 View(df_RankAbund_means_veg2)
 
@@ -1153,9 +1154,10 @@ df_RankAbund_means_veg3 <- df.props_RankAbund_veg %>%
   group_by(VegHit_SoilSurfaceHit) %>%
   dplyr::summarise(Mean = mean(prop))
 
+view(df_RankAbund_means_veg3)
 Common_veg_species <- df_RankAbund_means_veg3 %>%
   filter(Mean > 0.0099) %>%
-  arrange(Mean)
+  arrange(-Mean)
 
 
 View(Common_veg_species)
@@ -1173,12 +1175,8 @@ RankAbund_veg1 <- df_RankAbund_means_veg2 %>%
          | VegHit_SoilSurfaceHit == "Taraxacum officinale" 
          | VegHit_SoilSurfaceHit == "Parthenocissus vitacea" 
          | VegHit_SoilSurfaceHit == "Convolvulus arvensis"
-         | VegHit_SoilSurfaceHit == "Symphyotrichum lanceolatum ssp. hesperium" 
-         | VegHit_SoilSurfaceHit == "Schedonorus arundinaceus" 
-         | VegHit_SoilSurfaceHit == "Carex emoryi"
-         | VegHit_SoilSurfaceHit == "Symphoricarpos occidentalis" 
-         | VegHit_SoilSurfaceHit == "Prunus virginiana")  %>%
-  mutate(VegHit_SoilSurfaceHit = fct_relevel(VegHit_SoilSurfaceHit, "Bromus inermis", "Phalaris arundinacea", "Elymus repens", "Rhamnus cathartica", "Dactylis glomerata", "Cirsium arvense", "Taraxacum officinale",  "Parthenocissus vitacea", "Convolvulus arvensis", "Symphyotrichum lanceolatum ssp. hesperium", "Schedonorus arundinaceus", "Carex emoryi", "Symphoricarpos occidentalis", "Prunus virginiana")) %>% 
+         | VegHit_SoilSurfaceHit == "Symphyotrichum lanceolatum ssp. hesperium")  %>%
+  mutate(VegHit_SoilSurfaceHit = fct_relevel(VegHit_SoilSurfaceHit, "Bromus inermis", "Phalaris arundinacea", "Elymus repens", "Rhamnus cathartica", "Dactylis glomerata", "Cirsium arvense", "Taraxacum officinale",  "Parthenocissus vitacea", "Convolvulus arvensis", "Symphyotrichum lanceolatum ssp. hesperium")) %>% 
   ggplot(aes(x=factor(VegHit_SoilSurfaceHit), y=Mean, fill=VegHit_SoilSurfaceHit))+ 
   geom_boxplot()+
     geom_point()+
@@ -1190,7 +1188,34 @@ RankAbund_veg1 <- df_RankAbund_means_veg2 %>%
 
 
 print(RankAbund_veg1)
- 
+
+#all speciees RAC
+
+RankAbund_veg1 <- df_RankAbund_means_veg2 %>%
+  ggplot(aes(x=reorder(factor(VegHit_SoilSurfaceHit),-Mean), y=Mean))+ 
+  geom_boxplot()+
+    geom_point()+
+    labs(x = "Species", y = "Proportion of Cover")+
+    stat_summary(fun=mean, geom="point", aes(group = VegHit_SoilSurfaceHit), position = position_dodge(.9), shape=20, size=2.5, color="purple", fill="purple")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))
+    scale_fill_brewer(palette = "RdBu")
+
+
+print(RankAbund_veg1)
+
+#all species RAC// with line connecting mean
+    
+RankAbund_veg2 <- df_RankAbund_means_veg2 %>%
+  ggplot(aes(x=reorder(factor(VegHit_SoilSurfaceHit),-Mean), y=Mean))+ 
+  geom_boxplot()+
+  geom_point(data =df_RankAbund_means_veg3, mapping = aes (x=VegHit_SoilSurfaceHit, y =Mean), color="purple")+
+  geom_line(data = df_RankAbund_means_veg3, mapping = aes(x = VegHit_SoilSurfaceHit, y = Mean, group=1)) +
+  labs(x = "Species", y = "Proportion of Cover")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))
+
+print(RankAbund_veg2)
 
 ```
 
