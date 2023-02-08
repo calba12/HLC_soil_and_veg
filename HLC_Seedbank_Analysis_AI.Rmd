@@ -740,25 +740,6 @@ radarchart( data  , axistype=1 ,
 
 #Prepping data file for proportion as response variable
 
-vegdf$VegHit_SoilSurfaceHit <- as.factor(vegdf$VegHit_SoilSurfaceHit)
-
-df.props_RankAbund_veg <- vegdf %>%
-  group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, Species.Hit, VegHit_SoilSurfaceHit) %>%
-  filter(sample.bout =="1") %>%
-  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
-         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") %>%
-  drop_na(Species.Hit, VegHit_SoilSurfaceHit) %>%  ## drops rows with missing values NA in either Species.Hit 
-  summarise(Species.Hit = n()) %>%  ## from the group_by groupings, count the number 
-  group_by(baseline, Transect, Bank_Location, VegHit_SoilSurfaceHit) %>%  
-  summarise(Species.Hit = sum(Species.Hit)) %>% ## groups by baseline and Bank_location to sum species.Hit
-  mutate(prop = Species.Hit/sum(Species.Hit)) %>% ## mutate the df by adding prop that is each #sp/total
-  complete(VegHit_SoilSurfaceHit, fill = list(Species.Hit = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
-  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
-         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") #remove after complete function so they aren't included in graphs (same as with FG)
-
-vegdf$VegHit_SoilSurfaceHit <- as.factor(vegdf$VegHit_SoilSurfaceHit)
-
-
 seedbankdf$Species <- as.factor(seedbankdf$Species)
 seedbankdf$Species_Name <- as.factor(seedbankdf$Species_Name)
 
@@ -788,14 +769,14 @@ sum(df.props_RankAbund_veg$prop[1:50])
     
 View(df.props_RankAbund_seed)
 
-#get the means across transect (transected is nested within baseline as replication)
+#get the means across transect (transected is nested within baseline as replication)// not this one
 df_RankAbund_means_seed <- df.props_RankAbund_seed %>%
   group_by(Baseline, Bank_Location, Species_Name) %>%
   dplyr::summarise(Mean = mean(prop))
 
 View(df_RankAbund_means_seed)
 
-#get the means again but average bank location as well
+#get the means again but average bank location as well /// this one is used for creating graph
 df_RankAbund_means_seed2 <- df.props_RankAbund_seed %>%
   group_by(Baseline, Species_Name) %>%
   dplyr::summarise(Mean = mean(prop))
@@ -803,14 +784,14 @@ df_RankAbund_means_seed2 <- df.props_RankAbund_seed %>%
 View(df_RankAbund_means_seed2)
 
 
-# means again but average across all to get most common species
+# means again but average across all to get most common species #absolute mean
 df_RankAbund_means_seed3 <- df.props_RankAbund_seed %>%
   group_by(Species_Name) %>%
   dplyr::summarise(Mean = mean(prop))
 
 View(df_RankAbund_means_seed3)
 
-Common_seed_species <- df_RankAbund_means_seed3 %>%
+Common_seed_species <- df_RankAbund_means_seed3 %>% #ignore
   filter(Mean > 0.0199) %>%
   arrange(Mean)
 
@@ -844,7 +825,7 @@ RankAbund_seed <- df_RankAbund_means_seed2 %>%
 print(RankAbund_seed)
 
 
-#all speciees RAC
+#all speciees RAC #ignore
 
 RankAbund_seed2 <- df_RankAbund_means_seed2 %>%
   ggplot(aes(x=reorder(factor(Species_Name), -Mean), y=Mean))+ 
@@ -861,6 +842,7 @@ print(RankAbund_seed2)
 
 #all species RAC// with line connecting mean
 
+#not ordered properly
 RankAbund_seed2 <- df_RankAbund_means_seed2 %>%
   ggplot(aes(x=reorder(factor(Species_Name), -Mean), y=Mean))+ #not reordered perfectly, not sure how to fix
   geom_boxplot()+
@@ -870,7 +852,28 @@ RankAbund_seed2 <- df_RankAbund_means_seed2 %>%
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))
     
+df_RankAbund_means_seed3
 
+print(RankAbund_seed2)
+
+##switching order again and changing species names to ranks
+df_RankAbund_means_seed3$rank <- NA
+df_RankAbund_means_seed3$rank[order(-df_RankAbund_means_seed3$Mean)] <- 1:nrow(df_RankAbund_means_seed3)
+jointdataset <- merge(df_RankAbund_means_seed2, df_RankAbund_means_seed3, by = 'Species_Name')
+jointdataset <- jointdataset %>% 
+        rename("Mean" = "Mean.x",
+               "baseline_mean" = "Mean.y")
+
+RankAbund_seed2 <- jointdataset %>%
+  ggplot(aes(x=reorder(factor(rank), -baseline_mean), y=Mean))+ #not reordered perfectly, not sure how to fix
+  geom_boxplot()+
+    geom_point(data =df_RankAbund_means_seed3, mapping = aes (x=rank, y =Mean), color="purple") +
+    geom_line(data = df_RankAbund_means_seed3, mapping = aes(x = rank, y = Mean, group=1)) +
+    labs(x = "Species", y = "Proportion of Seed Bank")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=0, hjust=1))
+    
+df_RankAbund_means_seed3
 
 print(RankAbund_seed2)
  

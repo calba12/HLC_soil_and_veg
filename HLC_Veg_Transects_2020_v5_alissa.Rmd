@@ -57,9 +57,11 @@ veg <- veg[veg$Hit.Number != "0",]
 vegdf <- veg %>% select(-Number.of.Points.Along.Transect_fromRick) %>%
 rename(Num_transect_points = Number.of.points.along.transect_ChrissyCalc)
 
+vegdf_bout1 <- subset(vegdf,sample.bout =="1") #subset only bout 1; this is the data frame to use! or use vegdf and filter for sample bout 1 (which is what most of the code does)
+
+
 head(vegdf)
 #View(vegdf)
-
 
 #check species spellings
 
@@ -1199,7 +1201,7 @@ RankAbund_veg1 <- df_RankAbund_means_veg2 %>%
     stat_summary(fun=mean, geom="point", aes(group = VegHit_SoilSurfaceHit), position = position_dodge(.9), shape=20, size=2.5, color="purple", fill="purple")+
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))
-    scale_fill_brewer(palette = "RdBu")
+    #scale_fill_brewer(palette = "RdBu")
 
 
 print(RankAbund_veg1)
@@ -1216,6 +1218,29 @@ RankAbund_veg2 <- df_RankAbund_means_veg2 %>%
     theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))
 
 print(RankAbund_veg2)
+
+
+
+##switching order again and changing species names to ranks
+df_RankAbund_means_veg3$rank <- NA
+df_RankAbund_means_veg3$rank[order(-df_RankAbund_means_veg3$Mean)] <- 1:nrow(df_RankAbund_means_veg3)
+jointdataset <- merge(df_RankAbund_means_veg2, df_RankAbund_means_veg3, by = 'VegHit_SoilSurfaceHit')
+jointdataset <- jointdataset %>% 
+        rename("Mean" = "Mean.x",
+               "baseline_mean" = "Mean.y")
+
+RankAbund_Veg3 <- jointdataset %>%
+  ggplot(aes(x=reorder(factor(rank), -baseline_mean), y=Mean))+ 
+  geom_boxplot()+
+    geom_point(data =df_RankAbund_means_veg3, mapping = aes (x=rank, y =Mean), color="purple") +
+    geom_line(data = df_RankAbund_means_veg3, mapping = aes(x = rank, y = Mean, group=1)) +
+    labs(x = "Species", y = "Proportion of Seed Bank")+
+    theme_bw(base_size = 10)+
+    theme(legend.position = "none", axis.text.x=element_text(angle=0, hjust=1))
+    
+df_RankAbund_means_veg3
+
+print(RankAbund_Veg3)
 
 ```
 
