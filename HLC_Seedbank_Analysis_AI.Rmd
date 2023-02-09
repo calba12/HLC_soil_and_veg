@@ -78,16 +78,24 @@ df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
 
 SB_Spp_tbl <- seedbankdf %>%
   select(Species_Name, Longevity_1, Habit, Nativity, WIS)%>% 
+  drop_na(Species_Name) %>%
+  filter(Species_Name !="Unknown Poaceae") %>% 
+  filter(Species_Name !="Unknown graminoid") %>%
+  filter(Species_Name !="Unknown") %>%
+  filter(Species_Name !="Unknown forb") %>%
   group_by(Species_Name, Longevity_1, Habit, Nativity, WIS) %>%
   summarise(Freq2 = n())
 
-SB_Spp_prop_tbl <- SB_Spp_tbl %>%
-  drop_na(Species_Name) %>%
-  mutate(prop = Freq2/sum(SB_Spp_tbl$Freq2))
+SB_Spp_tbl <- SB_Spp_tbl %>% #total proportions (not averaged)
+  mutate(totalprop = Freq2/sum(SB_Spp_tbl$Freq2))
 
-view(SB_Spp_prop_tbl)
+view(SB_Spp_tbl)
 sum(SB_Spp_prop_tbl$Freq2)
 #write_xlsx(SB_Spp_prop_tbl, 'SB_SppList_Proportions.xlsx')
+
+
+
+########
 
 #merge with veg prop data
 
@@ -749,13 +757,13 @@ df.props_RankAbund_seed <- seedbankdf %>%
  filter(Species_Name !="Unknown graminoid") %>%
  filter(Species_Name !="Unknown") %>%
  filter(Species_Name !="Unknown forb") %>%
-  group_by(Baseline, Transect_ID, Bank_Location, Species_Name, Species) %>%
+  group_by(Baseline, Transect_ID, Bank_Location, Species_Name) %>%
   drop_na(Species_Name) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
-  summarise(Species = n()) %>%  ## from the group_by groupings, count the number 
+  summarise(SpeciesCount = n()) %>%  ## from the group_by groupings, count the number 
   group_by(Baseline, Transect_ID, Bank_Location, Species_Name) %>% #added transect so I can get mean
-  summarise(Species = sum(Species)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
-  mutate(prop = Species/sum(Species)) %>% ## mutate the df by adding prop that is each #sp/total
-  complete(Species_Name, fill = list(Species = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+  summarise(SpeciesCount = sum(SpeciesCount)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SpeciesCount/sum(SpeciesCount)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(Species_Name, fill = list(SpeciesCount = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
   filter(Species_Name !="Unknown Poaceae") %>% #removing these groups from the graph (NAs were already dropped)
  filter(Species_Name !="Unknown graminoid") %>%
  filter(Species_Name !="Unknown") %>%
@@ -779,7 +787,7 @@ View(df_RankAbund_means_seed)
 #get the means again but average bank location as well /// this one is used for creating graph
 df_RankAbund_means_seed2 <- df.props_RankAbund_seed %>%
   group_by(Baseline, Species_Name) %>%
-  dplyr::summarise(Mean = mean(prop))
+  dplyr::summarise(AvgProp = mean(prop))
 
 View(df_RankAbund_means_seed2)
 
@@ -787,7 +795,7 @@ View(df_RankAbund_means_seed2)
 # means again but average across all to get most common species #absolute mean
 df_RankAbund_means_seed3 <- df.props_RankAbund_seed %>%
   group_by(Species_Name) %>%
-  dplyr::summarise(Mean = mean(prop))
+  dplyr::summarise(AvgProp = mean(prop), AvgSD=sd(prop))
 
 View(df_RankAbund_means_seed3)
 
@@ -879,6 +887,22 @@ print(RankAbund_seed2)
  
 
 ```
+
+```{r Create table with total proportion and average proportion}
+
+view(df_RankAbund_means_seed3) #table was created under "graph rank abundance curve" and contains average proportion and SD for each baseline 
+
+view(SB_Spp_tbl) #created under "create species tables" has TOTAL proportion and frequency and other info about each species. 
+
+#first I need to combine these two tables
+merged_proportions_seed <- merge(SB_Spp_tbl, df_RankAbund_means_seed3, by = 'Species_Name',all.x =TRUE)
+view(merged_proportions_seed)
+
+#then I need to merge this with the vegetation data? 
+
+```
+
+
 
 
 
