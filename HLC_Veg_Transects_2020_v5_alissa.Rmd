@@ -1274,6 +1274,8 @@ merged_proportions_VegSeed <- merge(merged_proportions_veg, merged_proportions_s
 #y=seed
 view(merged_proportions_VegSeed)
 
+write_xlsx(merged_proportions_VegSeed, 'merged_seedveg_AvgandTotalProps_02092023.xlsx')
+
 
 ```
 
