@@ -1116,9 +1116,27 @@ legend(x=0.6,
 vegdf$VegHit_SoilSurfaceHit <- as.factor(vegdf$VegHit_SoilSurfaceHit)
 
 
-df.props_RankAbund_veg <- vegdf %>%
+df.props_RankAbund_veg <- vegdf %>% ### WHYYYYYYY is it including sample bout 1?????
   group_by(sample.bout, baseline, baseline.rep, Transect, Hit.Number, Bank_Location, VegHit_SoilSurfaceHit) %>%
   filter(sample.bout =="1") %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris" & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") %>%
+  drop_na(VegHit_SoilSurfaceHit) %>%  ## drops rows with missing values NA in either Species.Hit 
+  summarise(SpeciesCount = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(sample.bout, baseline, Transect, Bank_Location, VegHit_SoilSurfaceHit) %>%  
+  summarise(SpeciesCount = sum(SpeciesCount)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(prop = SpeciesCount/sum(SpeciesCount)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(VegHit_SoilSurfaceHit, fill = list(SpeciesCount = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") %>%
+  filter(sample.bout =="1") #remove after complete function so they aren't included in graphs (same as with FG)
+
+## trying to start with ONLY SAMPLE BOUT 1
+
+vegdf_bout1$VegHit_SoilSurfaceHit <- as.factor(vegdf_bout1$VegHit_SoilSurfaceHit)
+
+
+df.props_RankAbund_veg_bout1 <- vegdf_bout1 %>% ### WHYYYYYYY is it including sample bout 1?????
+  group_by(baseline, baseline.rep, Transect, Hit.Number, Bank_Location, VegHit_SoilSurfaceHit) %>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris" & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") %>%
   drop_na(VegHit_SoilSurfaceHit) %>%  ## drops rows with missing values NA in either Species.Hit 
   summarise(SpeciesCount = n()) %>%  ## from the group_by groupings, count the number 
@@ -1129,6 +1147,8 @@ df.props_RankAbund_veg <- vegdf %>%
   subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
          & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") #remove after complete function so they aren't included in graphs (same as with FG)
 
+view(df.props_RankAbund_veg_bout1)
+
 
 # Check it adds to one with the 5 groups  
 sum(df.props_RankAbund_veg$prop[1:58])
@@ -1136,14 +1156,14 @@ sum(df.props_RankAbund_veg$prop[1:58])
 View(df.props_RankAbund_veg)
 
 #get the means across transect (transected is nested within baseline as replication)
-df_RankAbund_means_veg <- df.props_RankAbund_veg %>%
+df_RankAbund_means_veg <- df.props_RankAbund_veg_bout1 %>%
   group_by(baseline, Bank_Location, VegHit_SoilSurfaceHit) %>%
   dplyr::summarise(Mean = mean(prop))
 
 View(df_RankAbund_means_veg)
 
 #get the means again but average bank location as well
-df_RankAbund_means_veg2 <- df.props_RankAbund_veg %>%
+df_RankAbund_means_veg2 <- df.props_RankAbund_veg_bout1 %>%
   group_by(baseline, VegHit_SoilSurfaceHit) %>%
   dplyr::summarise(Mean = mean(prop)) %>%
   arrange(desc(Mean))
@@ -1152,9 +1172,9 @@ View(df_RankAbund_means_veg2)
 
 
 # means again but average across all to get most common species #absolute mean for each species
-df_RankAbund_means_veg3 <- df.props_RankAbund_veg %>%
+df_RankAbund_means_veg3 <- df.props_RankAbund_veg_bout1 %>%
   group_by(VegHit_SoilSurfaceHit) %>%
-  dplyr::summarise(AvgProp = mean(prop), AvgSD=sd(prop))
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
 
 view(df_RankAbund_means_veg3)
 
@@ -1236,7 +1256,7 @@ RankAbund_Veg3 <- jointdataset %>%
   geom_boxplot()+
     geom_point(data =df_RankAbund_means_veg3, mapping = aes (x=rank, y =Mean), color="purple") +
     geom_line(data = df_RankAbund_means_veg3, mapping = aes(x = rank, y = Mean, group=1)) +
-    labs(x = "Species", y = "Proportion of Seed Bank")+
+    labs(x = "Species", y = "Proportion of Cover")+
     theme_bw(base_size = 10)+
     theme(legend.position = "none", axis.text.x=element_text(angle=0, hjust=1))
     
