@@ -219,12 +219,12 @@ germinants.baseline <- seedbankdf %>%
 
 #families counted
 SB_families <- seedbankdf %>% 
-  group_by(Family) %>%
+  group_by(Family, Species_Name) %>%
   summarise(Species.Name = n()) 
 
 view(SB_families)
 
-write_xlsx(SB_families, 'sb_fam_counts.xlsx')
+#write_xlsx(SB_families, 'sb_fam_counts.xlsx')
 
 
 
@@ -777,6 +777,12 @@ sum(df.props_RankAbund_veg$prop[1:50])
     
 View(df.props_RankAbund_seed)
 
+#banklocation
+df_RankAbund_means_seed_BL <- df.props_RankAbund_seed %>%
+  group_by(Bank_Location, Species_Name) %>%
+  dplyr::summarise(Mean = mean(prop))
+
+view(df_RankAbund_means_seed_BL)
 #get the means across transect (transected is nested within baseline as replication)// not this one
 df_RankAbund_means_seed <- df.props_RankAbund_seed %>%
   group_by(Baseline, Bank_Location, Species_Name) %>%

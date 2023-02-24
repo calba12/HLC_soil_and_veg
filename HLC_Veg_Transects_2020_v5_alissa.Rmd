@@ -196,7 +196,7 @@ View(df.transect)
 #write_xlsx(df.transect, 'hits_byTransect.xlsx')
 
 VEG_families <- vegdf_bout1 %>% 
-  group_by(Family) %>%
+  group_by(Family, Species.Hit) %>%
   summarise(Species.Name = n()) 
 
 view(VEG_families)
