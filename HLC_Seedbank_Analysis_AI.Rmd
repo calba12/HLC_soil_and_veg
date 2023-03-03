@@ -48,9 +48,13 @@ seedbankdf <- seedbankdf %>% rename(c(Species_Name=SPECIFIC_EPITHET_FINAL, Germi
 
 #check species spellings
 
-df_sb <- seedbankdf %>% distinct(Species_Name)
+df_sb <- seedbankdf %>% 
+  #filter(Bank_Location=="Upper") %>%
+  distinct(Species_Name) %>%
+  filter(Species_Name!="Unknown" & Species_Name!="Unknown forb"
+         & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown Poaceae")
 
-#View(df_sb)
+View(df_sb)
 #^Looks good, not sure if I should keep or remove unknowns? 
 
 
@@ -62,10 +66,17 @@ df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
          & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown Poaceae") %>%
   select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS)
 
-#view(df_Spp)
+view(df_Spp)
 #write_xlsx(df_Spp, 'SB_SppList.xlsx')
 
+df_Spp <- distinct(seedbankdf, Species_Name, .keep_all = TRUE) %>%
+  arrange(Species_Name)%>%
+  subset()
+  subset(Species_Name!="Unknown" & Species_Name!="Unknown forb"
+         & Species_Name!="Unknown graminoid" & Species_Name!= "Unknown Poaceae") %>%
+  select(Species_Name, Bank_Location, Longevity_1, Habit, Functional_Group_2, Nativity, WIS)
 
+view(df_Spp)
 ```
 
 ```{r create species tables}
@@ -215,7 +226,7 @@ germinants.baseline <- seedbankdf %>%
   group_by(Baseline) %>%
   summarise(Species.Name = n()) 
 
-#View(germinants.baseline)
+View(germinants.baseline)
 
 #families counted
 SB_families <- seedbankdf %>% 
@@ -224,7 +235,7 @@ SB_families <- seedbankdf %>%
 
 view(SB_families)
 
-#write_xlsx(SB_families, 'sb_fam_counts.xlsx')
+write_xlsx(SB_families, 'sb_fam_counts_2023.xlsx')
 
 
 
@@ -244,7 +255,7 @@ germinants.bankloc <- seedbankdf %>%
   group_by(Transect_ID, Bank_Location) %>%
   summarise(Species_Name = n())
 
-#View(germinants.bankloc)
+View(germinants.bankloc)
 
 
 
@@ -780,7 +791,7 @@ View(df.props_RankAbund_seed)
 #banklocation
 df_RankAbund_means_seed_BL <- df.props_RankAbund_seed %>%
   group_by(Bank_Location, Species_Name) %>%
-  dplyr::summarise(Mean = mean(prop))
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
 
 view(df_RankAbund_means_seed_BL)
 #get the means across transect (transected is nested within baseline as replication)// not this one
@@ -1491,7 +1502,7 @@ SB_total_abundances <- seedbankdf %>%
   summarise(Freq2 = n()) #abundances of each tray/sample (all 81)
 
 SB_BL_mean_abundance <- SB_total_abundances %>%
-  group_by(Baseline, Bank_Location) %>%
+  group_by(Bank_Location) %>%
   summarise(mean = mean(Freq2)) #averages transects to give means for baseline and bank location (27)
 view(SB_BL_mean_abundance)
 

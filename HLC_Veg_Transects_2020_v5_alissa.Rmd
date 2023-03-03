@@ -504,7 +504,7 @@ sum(df.prop_hit_type$prop_cover_type[1:5])
 View(df.prop_hit_type)
 
 
-#Make boxplot
+#Make boxplot/ simple
 
 p <- df.prop_hit_type %>% ggplot(aes(x=Surface.Hit, y=prop_cover_type))+ 
   geom_boxplot()+
@@ -528,6 +528,21 @@ df_prop_hit_type_means <- df.prop_hit_type %>%
   dplyr::summarise(Mean = mean(prop_cover_type))
 
 View(df_prop_hit_type_means)
+
+#means across canal (not by bank) for stats
+df_prop_hit_type_means2 <- df.prop_hit_type %>%
+  group_by(Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type))
+
+View(df_prop_hit_type_means2)
+
+#means banks for stats
+df_prop_hit_type_means3 <- df.prop_hit_type %>%
+  group_by(Bank_Location, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type))
+
+View(df_prop_hit_type_means3)
+
 
 #Now create new boxplot with baseline means
 
