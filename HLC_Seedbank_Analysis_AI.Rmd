@@ -907,7 +907,15 @@ print(RankAbund_seed2)
 
 ```{r Create table with total proportion and average proportion}
 
-view(df_RankAbund_means_seed3) #table was created under "graph rank abundance curve" and contains average proportion and SD for each baseline 
+# means again but average across all to get most common species #absolute mean
+df_RankAbund_means_seed4 <- df.props_RankAbund_seed %>%
+  group_by(Family, Species_Name) %>%
+  dplyr::summarise(AvgProp = mean(prop), AvgSD=sd(prop))
+
+View(df_RankAbund_means_seed4)
+
+
+view(df_RankAbund_means_seed4) #table was created under "graph rank abundance curve" and contains average proportion and SD for each baseline #changed name from seed3 > seed4
 
 view(SB_Spp_tbl) #created under "create species tables" has TOTAL proportion and frequency and other info about each species. 
 
@@ -919,6 +927,127 @@ view(merged_proportions_seed)
 
 ```
 
+```{r species proportions based on bank location, averaged }
+
+seedbankdf$Species <- as.factor(seedbankdf$Species)
+seedbankdf$Species_Name <- as.factor(seedbankdf$Species_Name)
+
+seed_df_lower <- seedbankdf %>%
+  subset(Bank_Location=="Lower")
+
+#LOWER
+df.props_RankAbund_seed_lower <- seed_df_lower %>%
+  filter(Species_Name !="Unknown Poaceae") %>% #removing these groups from the graph (NAs were already dropped)
+ filter(Species_Name !="Unknown graminoid") %>%
+ filter(Species_Name !="Unknown") %>%
+ filter(Species_Name !="Unknown forb") %>%
+  group_by(Baseline, Transect_ID, Bank_Location, Species_Name) %>%
+  drop_na(Species_Name) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(SpeciesCount = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(Baseline, Transect_ID, Bank_Location, Species_Name) %>% #added transect so I can get mean
+  summarise(SpeciesCount = sum(SpeciesCount)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SpeciesCount/sum(SpeciesCount)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(Species_Name, fill = list(SpeciesCount = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+  filter(Species_Name !="Unknown Poaceae") %>% #removing these groups from the graph (NAs were already dropped)
+ filter(Species_Name !="Unknown graminoid") %>%
+ filter(Species_Name !="Unknown") %>%
+ filter(Species_Name !="Unknown forb")
+#checkout color packages, ggplot color package
+
+# Check it adds to one with the 5 groups  
+sum(df.props_RankAbund_seed$prop[1:50])
+    
+View(df.props_RankAbund_seed)
+
+
+# means again but average across all to get most common species #absolute mean
+df_RankAbund_means_seed3_lower <- df.props_RankAbund_seed_lower %>%
+  group_by(Species_Name) %>%
+  dplyr::summarise(AvgProp = mean(prop), AvgSD=sd(prop))
+
+View(df_RankAbund_means_seed3_lower)
+
+
+ 
+
+#MIDDLE
+seed_df_middle <- seedbankdf %>%
+  subset(Bank_Location=="Middle")
+
+df.props_RankAbund_seed_middle <- seed_df_middle %>%
+  filter(Species_Name !="Unknown Poaceae") %>% #removing these groups from the graph (NAs were already dropped)
+ filter(Species_Name !="Unknown graminoid") %>%
+ filter(Species_Name !="Unknown") %>%
+ filter(Species_Name !="Unknown forb") %>%
+  group_by(Baseline, Transect_ID, Bank_Location, Species_Name) %>%
+  drop_na(Species_Name) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(SpeciesCount = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(Baseline, Transect_ID, Bank_Location, Species_Name) %>% #added transect so I can get mean
+  summarise(SpeciesCount = sum(SpeciesCount)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SpeciesCount/sum(SpeciesCount)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(Species_Name, fill = list(SpeciesCount = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+  filter(Species_Name !="Unknown Poaceae") %>% #removing these groups from the graph (NAs were already dropped)
+ filter(Species_Name !="Unknown graminoid") %>%
+ filter(Species_Name !="Unknown") %>%
+ filter(Species_Name !="Unknown forb")
+#checkout color packages, ggplot color package
+
+# Check it adds to one with the 5 groups  
+sum(df.props_RankAbund_seed_middle$prop[1:50])
+    
+View(df.props_RankAbund_seed_middle)
+
+
+# means again but average across all to get most common species #absolute mean
+df_RankAbund_means_seed3_middle <- df.props_RankAbund_seed_middle %>%
+  group_by(Species_Name) %>%
+  dplyr::summarise(AvgProp = mean(prop), AvgSD=sd(prop))
+
+View(df_RankAbund_means_seed3_middle)
+
+
+
+
+
+
+#UPPER
+seed_df_upper <- seedbankdf %>%
+  subset(Bank_Location=="Upper")
+
+df.props_RankAbund_seed_upper <- seed_df_upper %>%
+  filter(Species_Name !="Unknown Poaceae") %>% #removing these groups from the graph (NAs were already dropped)
+ filter(Species_Name !="Unknown graminoid") %>%
+ filter(Species_Name !="Unknown") %>%
+ filter(Species_Name !="Unknown forb") %>%
+  group_by(Baseline, Transect_ID, Bank_Location, Species_Name) %>%
+  drop_na(Species_Name) %>%  ## drops rows with missing values NA in either SPECIFIC_EPITHET_FINAL or WIS
+  summarise(SpeciesCount = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(Baseline, Transect_ID, Bank_Location, Species_Name) %>% #added transect so I can get mean
+  summarise(SpeciesCount = sum(SpeciesCount)) %>%  ## groups by baseline and Bank_location to sum SPECIFIC_EPITHET_FINAL
+  mutate(prop = SpeciesCount/sum(SpeciesCount)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(Species_Name, fill = list(SpeciesCount = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both   SPECIFIC_EPITHET_FINAL and prop
+  filter(Species_Name !="Unknown Poaceae") %>% #removing these groups from the graph (NAs were already dropped)
+ filter(Species_Name !="Unknown graminoid") %>%
+ filter(Species_Name !="Unknown") %>%
+ filter(Species_Name !="Unknown forb")
+#checkout color packages, ggplot color package
+
+# Check it adds to one with the 5 groups  
+sum(df.props_RankAbund_seed_upper$prop[1:50])
+    
+View(df.props_RankAbund_seed_upper)
+
+
+# means again but average across all to get most common species #absolute mean
+df_RankAbund_means_seed3_upper <- df.props_RankAbund_seed_upper %>%
+  group_by(Species_Name) %>%
+  dplyr::summarise(AvgProp = mean(prop), AvgSD=sd(prop))
+
+View(df_RankAbund_means_seed3_upper)
+
+
+
+```
 
 
 

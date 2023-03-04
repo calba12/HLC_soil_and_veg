@@ -1166,7 +1166,7 @@ view(df.props_RankAbund_veg_bout1)
 
 
 # Check it adds to one with the 5 groups  
-sum(df.props_RankAbund_veg$prop[1:58])
+sum(df.props_RankAbund_veg$prop[1:57])
     
 View(df.props_RankAbund_veg)
 
@@ -1280,6 +1280,117 @@ df_RankAbund_means_veg3
 print(RankAbund_Veg3)
 
 ```
+
+```{r species proportions based on Bank location, averaged}
+
+###LOWER
+vegdf$VegHit_SoilSurfaceHit <- as.factor(vegdf$VegHit_SoilSurfaceHit)
+
+vegdf_bout1$VegHit_SoilSurfaceHit <- as.factor(vegdf_bout1$VegHit_SoilSurfaceHit)
+
+veg_df_lower <- vegdf_bout1 %>%
+  subset(Bank_Location=="lower")
+
+df.props_RankAbund_veg_lower <- veg_df_lower %>% 
+  group_by(baseline, baseline.rep, Transect, Hit.Number, Bank_Location, VegHit_SoilSurfaceHit) %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris" & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") %>%
+  drop_na(VegHit_SoilSurfaceHit) %>%  ## drops rows with missing values NA in either Species.Hit 
+  summarise(SpeciesCount = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Transect, Bank_Location, VegHit_SoilSurfaceHit) %>%  
+  summarise(SpeciesCount = sum(SpeciesCount)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(prop = SpeciesCount/sum(SpeciesCount)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(VegHit_SoilSurfaceHit, fill = list(SpeciesCount = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") #remove after complete function so they aren't included in graphs (same as with FG)
+
+view(df.props_RankAbund_veg_lower)
+
+
+# Check it adds to one with the 5 groups  
+sum(df.props_RankAbund_veg_lower$prop[1:57])
+    
+View(df.props_RankAbund_veg_lower)
+
+
+# means again but average across all to get most common species #absolute mean for each species
+df_RankAbund_means_veg3_lower <- df.props_RankAbund_veg_lower %>%
+  group_by(VegHit_SoilSurfaceHit) %>%
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
+
+view(df_RankAbund_means_veg3_lower)
+
+
+
+
+
+###MIDDLE
+veg_df_middle <- vegdf_bout1 %>%
+  subset(Bank_Location=="middle")
+
+df.props_RankAbund_veg_middle <- veg_df_middle %>% 
+  group_by(baseline, baseline.rep, Transect, Hit.Number, Bank_Location, VegHit_SoilSurfaceHit) %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris" & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") %>%
+  drop_na(VegHit_SoilSurfaceHit) %>%  ## drops rows with missing values NA in either Species.Hit 
+  summarise(SpeciesCount = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Transect, Bank_Location, VegHit_SoilSurfaceHit) %>%  
+  summarise(SpeciesCount = sum(SpeciesCount)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(prop = SpeciesCount/sum(SpeciesCount)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(VegHit_SoilSurfaceHit, fill = list(SpeciesCount = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") #remove after complete function so they aren't included in graphs (same as with FG)
+
+view(df.props_RankAbund_veg_middle)
+
+
+# Check it adds to one with the 5 groups  
+sum(df.props_RankAbund_veg_middle$prop[1:57])
+    
+View(df.props_RankAbund_veg_middle)
+
+
+# means again but average across all to get most common species #absolute mean for each species
+df_RankAbund_means_veg3_middle <- df.props_RankAbund_veg_middle %>%
+  group_by(VegHit_SoilSurfaceHit) %>%
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
+
+view(df_RankAbund_means_veg3_middle)
+
+
+
+
+
+
+###Upper
+veg_df_upper <- vegdf_bout1 %>%
+  subset(Bank_Location=="upper")
+
+df.props_RankAbund_veg_upper <- veg_df_upper %>% 
+  group_by(baseline, baseline.rep, Transect, Hit.Number, Bank_Location, VegHit_SoilSurfaceHit) %>%
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris" & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") %>%
+  drop_na(VegHit_SoilSurfaceHit) %>%  ## drops rows with missing values NA in either Species.Hit 
+  summarise(SpeciesCount = n()) %>%  ## from the group_by groupings, count the number 
+  group_by(baseline, Transect, Bank_Location, VegHit_SoilSurfaceHit) %>%  
+  summarise(SpeciesCount = sum(SpeciesCount)) %>% ## groups by baseline and Bank_location to sum species.Hit
+  mutate(prop = SpeciesCount/sum(SpeciesCount)) %>% ## mutate the df by adding prop that is each #sp/total
+  complete(VegHit_SoilSurfaceHit, fill = list(SpeciesCount = 0, prop = 0)) %>% ## keep all levels of factor and replace NA with zeros for both Species.Hit and prop
+  subset(VegHit_SoilSurfaceHit!="bare soil" & VegHit_SoilSurfaceHit!="downed woody debris"
+         & VegHit_SoilSurfaceHit!="litter" & VegHit_SoilSurfaceHit!="rock" & VegHit_SoilSurfaceHit!="water" & VegHit_SoilSurfaceHit!="NULL") #remove after complete function so they aren't included in graphs (same as with FG)
+
+# Check it adds to one with the 5 groups  
+sum(df.props_RankAbund_veg_upper$prop[1:57])
+    
+View(df.props_RankAbund_veg_upper)
+
+
+# means again but average across all to get most common species #absolute mean for each species
+df_RankAbund_means_veg3_upper <- df.props_RankAbund_veg_upper %>%
+  group_by(VegHit_SoilSurfaceHit) %>%
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
+
+view(df_RankAbund_means_veg3_upper)
+
+```
+
 
 ```{r Create table with total proportion and average proportion}
 
