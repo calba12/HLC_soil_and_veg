@@ -1319,6 +1319,7 @@ df_RankAbund_means_veg3_lower <- df.props_RankAbund_veg_lower %>%
 
 view(df_RankAbund_means_veg3_lower)
 
+write_xlsx(df_RankAbund_means_veg3_lower, 'VEG_SpeciesProportions_lowerbank2023.xlsx') 
 
 
 
@@ -1355,6 +1356,7 @@ df_RankAbund_means_veg3_middle <- df.props_RankAbund_veg_middle %>%
 
 view(df_RankAbund_means_veg3_middle)
 
+write_xlsx(df_RankAbund_means_veg3_middle, 'VEG_SpeciesProportions_middlebank2023.xlsx') 
 
 
 
@@ -1388,6 +1390,9 @@ df_RankAbund_means_veg3_upper <- df.props_RankAbund_veg_upper %>%
   dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
 
 view(df_RankAbund_means_veg3_upper)
+
+write_xlsx(df_RankAbund_means_veg3_upper, 'VEG_SpeciesProportions_upperbank2023.xlsx') 
+
 
 ```
 

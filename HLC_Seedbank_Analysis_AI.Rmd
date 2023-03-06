@@ -931,6 +931,11 @@ view(merged_proportions_seed)
 
 seedbankdf$Species <- as.factor(seedbankdf$Species)
 seedbankdf$Species_Name <- as.factor(seedbankdf$Species_Name)
+seedbankdf$WIS <- as.factor(seedbankdf$WIS)
+seedbankdf$Functional_Group_1 <- as.factor(seedbankdf$Functional_Group_1)
+seedbankdf$Nativity <- as.factor(seedbankdf$Nativity)
+
+
 
 seed_df_lower <- seedbankdf %>%
   subset(Bank_Location=="Lower")
@@ -955,9 +960,9 @@ df.props_RankAbund_seed_lower <- seed_df_lower %>%
 #checkout color packages, ggplot color package
 
 # Check it adds to one with the 5 groups  
-sum(df.props_RankAbund_seed$prop[1:50])
+sum(df.props_RankAbund_seed_lower$prop[1:50])
     
-View(df.props_RankAbund_seed)
+View(df.props_RankAbund_seed_lower)
 
 
 # means again but average across all to get most common species #absolute mean
@@ -967,8 +972,7 @@ df_RankAbund_means_seed3_lower <- df.props_RankAbund_seed_lower %>%
 
 View(df_RankAbund_means_seed3_lower)
 
-
- 
+write_xlsx(df_RankAbund_means_seed3_lower, 'SB_SpeciesProportions_lowerbank2023.xlsx') 
 
 #MIDDLE
 seed_df_middle <- seedbankdf %>%
@@ -1006,6 +1010,7 @@ df_RankAbund_means_seed3_middle <- df.props_RankAbund_seed_middle %>%
 View(df_RankAbund_means_seed3_middle)
 
 
+write_xlsx(df_RankAbund_means_seed3_middle, 'SB_SpeciesProportions_middlebank2023.xlsx') 
 
 
 
@@ -1045,6 +1050,7 @@ df_RankAbund_means_seed3_upper <- df.props_RankAbund_seed_upper %>%
 
 View(df_RankAbund_means_seed3_upper)
 
+write_xlsx(df_RankAbund_means_seed3_upper, 'SB_SpeciesProportions_upperbank2023.xlsx') 
 
 
 ```
