@@ -442,31 +442,6 @@ print(stacked_p)
 
 
 
-#new formatting
-
-install.packages("wesanderson")
-library(wesanderson)
-library(hrbrthemes) # for plot themes
-library(gapminder) # for data
-library(ggbump) # for the bump plot
-
-W <- wes_palette("Zissou1", 5, type=c("discrete"))
-
-COVER_TYPE_BPw <- df_prop_hit_type_means %>% 
-  ggplot(aes(x=factor(Surface.Hit, levels = c('litter', 'Vegetation', 'bare soil', 'downed woody debris', 'water')), y=Mean, fill=Surface.Hit))+
-  geom_boxplot()+
-  geom_point()+
-  labs(x = "Cover Type", y = "Proportion of Cover")+
-  stat_summary(fun=mean, geom="point", aes(group = Surface.Hit), position = position_dodge(.9), shape=20, size=2.5, color="yellow", fill="yellow")+
-  theme_bw(base_size = 13)+
-  theme(legend.position = "none", axis.text.x=element_text(angle=45, hjust=1))+
- scale_color_manual(values= wes_palette("Royal2", n = 5))
-
-?scale_color_manual
-print(COVER_TYPE_BPw)
-
-COVER_TYPE_BPw + facet_wrap(~Bank_Location)
-
 ```
 
 ```{r graphs for hit type by bare soil, litter, vegetation, water, dwd _updated 1/25/23}
@@ -529,12 +504,13 @@ df_prop_hit_type_means <- df.prop_hit_type %>%
 
 View(df_prop_hit_type_means)
 
-#means across canal (not by bank) for stats
+#means across canal (not by bank) for stats ###HERE
 df_prop_hit_type_means2 <- df.prop_hit_type %>%
   group_by(Surface.Hit) %>%
-  dplyr::summarise(Mean = mean(prop_cover_type))
+  dplyr::summarise(Mean = mean(prop_cover_type), AvgSD=sd(prop_cover_type))
 
 View(df_prop_hit_type_means2)
+
 
 #means banks for stats
 df_prop_hit_type_means3 <- df.prop_hit_type %>%
@@ -679,6 +655,20 @@ df_WIS_means_veg2 <- df.props_WIS_veg %>%
 
 View(df_WIS_means_veg2)
 
+#For STATS -- Across canal
+df_WIS_means_veg3 <- df.props_WIS_veg %>%
+  group_by(WIS_GP) %>%
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
+
+View(df_WIS_means_veg3)
+
+#For STATS -- Bank location
+df_WIS_means_veg4 <- df.props_WIS_veg %>%
+  group_by(Bank_Location, WIS_GP) %>%
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
+
+View(df_WIS_means_veg4)
+
 #boxplot without bank location
 WIS_veg1 <- df_WIS_means_veg2 %>% 
   mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", 'FACU', 'FAC', 'FACW', 'OBL')) %>% 
@@ -780,6 +770,23 @@ df_nativ_means_veg2 <- df.props_Nativity_veg %>%
   dplyr::summarise(Mean = mean(prop))
 
 View(df_nativ_means_veg2)
+
+#####
+#For STATS -- Across canal
+df_nativ_means_veg3 <- df.props_Nativity_veg %>%
+  group_by(Nativity) %>%
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
+
+View(df_nativ_means_veg3)
+
+#For STATS -- Bank location
+df_nativ_means_veg4 <- df.props_Nativity_veg %>%
+  group_by(Bank_Location, Nativity) %>%
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
+
+View(df_nativ_means_veg4)
+####
+
 
 #boxplot without bank location
 

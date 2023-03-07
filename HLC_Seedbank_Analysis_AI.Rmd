@@ -513,6 +513,19 @@ df_nativity_means1 <- df.props_nativity_sb %>%
 View(df_nativity_means1)
 
 
+##########
+#Means for stats
+df_nativity_means2 <- df.props_nativity_sb %>%
+  group_by(Nativity) %>%
+  dplyr::summarise(Mean = mean(prop))
+View(df_nativity_means2)
+
+df_nativity_means3 <- df.props_nativity_sb %>%
+  group_by(Bank_Location, Nativity) %>%
+  dplyr::summarise(Mean = mean(prop))
+View(df_nativity_means3)
+
+
 #Make boxplot with means
 
 #boxplot without bank location
