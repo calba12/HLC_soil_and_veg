@@ -669,6 +669,13 @@ df_WIS_means_veg4 <- df.props_WIS_veg %>%
 
 View(df_WIS_means_veg4)
 
+#For STATS -- Baselines
+df_WIS_means_veg4 <- df.props_WIS_veg %>%
+  group_by(baseline, WIS_GP) %>%
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
+
+View(df_WIS_means_veg4)
+
 #boxplot without bank location
 WIS_veg1 <- df_WIS_means_veg2 %>% 
   mutate(WIS_GP = fct_relevel(WIS_GP, "UPL", 'FACU', 'FAC', 'FACW', 'OBL')) %>% 
@@ -875,6 +882,29 @@ df_FG_means_veg2 <- df.props_FG_veg %>%
   dplyr::summarise(Mean = mean(propFG))
 
 View(df_FG_means_veg2)
+
+
+
+
+
+#For STATS -- Across canal
+df_FG_means_veg3 <- df.props_FG_veg %>%
+  group_by(FunctionalGroup2) %>%
+  dplyr::summarise(Mean = mean(propFG), AvgSD=sd(propFG))
+
+View(df_FG_means_veg3)
+
+#For STATS -- Bank location
+df_FG_means_veg4 <- df.props_FG_veg %>%
+  group_by(Bank_Location, FunctionalGroup2) %>%
+  dplyr::summarise(Mean = mean(propFG), AvgSD=sd(propFG))
+
+View(df_FG_means_veg4)
+
+
+
+
+
 
 #boxplot without bank location
 FG_veg1 <- df_FG_means_veg2 %>% 

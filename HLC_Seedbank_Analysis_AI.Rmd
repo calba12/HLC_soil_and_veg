@@ -304,6 +304,24 @@ df_WIS_means_sb2 <- df.props_WIS_seed %>%
 #View(df_WIS_means_sb2)
 
 
+##########
+#Means for stats
+df_WIS_means3 <- df.props_WIS_seed %>%
+  group_by(WIS) %>%
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
+View(df_WIS_means3)
+
+df_WIS_means4 <- df.props_WIS_seed %>%
+  group_by(Bank_Location, WIS) %>%
+  dplyr::summarise(Mean = mean(prop))
+View(df_WIS_means4)
+
+df_WIS_means5 <- df.props_WIS_seed %>%
+  group_by(Baseline, WIS) %>%
+  dplyr::summarise(Mean = mean(prop),  AvgSD=sd(prop))
+View(df_WIS_means5)
+
+
 #Make boxplot
 
 #boxplot without bank location
@@ -428,6 +446,27 @@ df_FGroup_means_sb2 <- df.props_FunctGroup_seed %>%
   dplyr::summarise(Mean = mean(prop))
 #View(df_FGroup_means_sb2)
 
+
+
+##########
+#Means for stats
+df_FGroup_means_sb3 <- df.props_FunctGroup_seed %>%
+  group_by(FunctionalGroup) %>%
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
+View(df_FGroup_means_sb3)
+
+df_FGroup_means_sb4 <- df.props_FunctGroup_seed %>%
+  group_by(Bank_Location, FunctionalGroup) %>%
+  dplyr::summarise(Mean = mean(prop))
+View(df_FGroup_means_sb4)
+
+df_FGroup_means_sb4 <- df.props_FunctGroup_seed %>%
+  group_by(Baseline, FunctionalGroup) %>%
+  dplyr::summarise(Mean = mean(prop))
+View(df_FGroup_means_sb4)
+
+
+
 #boxplot without bank location
 FGroup1 <- df_FGroup_means_sb2 %>% 
   ggplot(aes(x=FunctionalGroup, y=Mean, fill=FunctionalGroup))+ 
@@ -517,7 +556,7 @@ View(df_nativity_means1)
 #Means for stats
 df_nativity_means2 <- df.props_nativity_sb %>%
   group_by(Nativity) %>%
-  dplyr::summarise(Mean = mean(prop))
+  dplyr::summarise(Mean = mean(prop), AvgSD=sd(prop))
 View(df_nativity_means2)
 
 df_nativity_means3 <- df.props_nativity_sb %>%
