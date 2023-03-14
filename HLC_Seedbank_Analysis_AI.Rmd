@@ -1301,10 +1301,10 @@ sjPlot::plot_model(lmer_gaus_fg_4, type = "est", show.values = T)
 
 sjPlot::tab_model(lmer_gaus_fg_4, df.method = "satterthwaite", title = "Proportion of Functional Groups in Vegetation", dv.labels = "Proportion Cover")
 
-emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ Functional_Group_2, adjust = "tukey")
+emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup, adjust = "tukey")
 
 
-emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ Functional_Group_2 | Bank_Location, adjust = "tukey")
+emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup | Bank_Location, adjust = "tukey")
 
 FG_emmeans_output_SB<-as.data.frame(emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ Functional_Group_2 | Bank_Location, adjust = "tukey")) #data frame
 write_xlsx(FG_emmeans_output_SB, 'FG_emmeans_output_SB.xlsx')

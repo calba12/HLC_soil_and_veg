@@ -1673,7 +1673,7 @@ emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup2
 FG_emmeans_output<-as.data.frame(emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup2 | Bank_Location, adjust = "tukey")) #data frame
 write_xlsx(FG_emmeans_output, 'FG_emmeans_output.xlsx')
 
-emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup | Bank_Location, adjust = "tukey")
+emmeans(lmer_gaus_fg_4, df.method = "satterthwaite", pairwise ~ FunctionalGroup2 | Bank_Location, adjust = "tukey")
 
 emmip(lmer_gaus_fg_4, FunctionalGroup2 ~ Bank_Location, CIs = TRUE)
 
