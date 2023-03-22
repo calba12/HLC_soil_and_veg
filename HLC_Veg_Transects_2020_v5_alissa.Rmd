@@ -407,6 +407,15 @@ df_prop_hit_type_means <- df.prop_hit_type %>%
 
 View(df_prop_hit_type_means)
 
+
+#Stats
+df_prop_hit_type_means <- df.prop_hit_type %>%
+  group_by(Bank_Location, Surface.Hit) %>%
+  dplyr::summarise(Mean = mean(prop_cover_type), AvgSD=sd(prop_cover_type))
+
+View(df_prop_hit_type_means)
+
+
 #Now create new boxplot with baseline means
 
 COVER_TYPE <- df_prop_hit_type_means %>% 
@@ -879,7 +888,7 @@ df_FG_means_veg <- df.props_FG_veg %>%
 #get the means again but average bank location as well
 df_FG_means_veg2 <- df.props_FG_veg %>%
   group_by(baseline, FunctionalGroup2) %>%
-  dplyr::summarise(Mean = mean(propFG))
+  dplyr::summarise(Mean = mean(propFG), AvgSD=sd(propFG))
 
 View(df_FG_means_veg2)
 
